@@ -1,7 +1,7 @@
 # _Title_
 
 ## Changes
-- _add Changes__
+- _add Changes_
 
 ## Screenshots
 (prefer animated gif)
