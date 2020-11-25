@@ -1,8 +1,8 @@
 ---
-name: Feature request
+name: Docs request
 about: Suggest an idea for this project
 title: ''
-labels: enhancement
+labels: documentation
 assignees: ''
 
 ---
