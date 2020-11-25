@@ -13,7 +13,7 @@
 - [ ] updated the docs
 - [ ] added a test
 
-**Fixes _add Links__**
+**Fixes _add Links_**
 
 Notes
 -----
