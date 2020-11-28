@@ -1,9 +1,11 @@
-# _Title_
-
 _optional description text_
+
 
 ## Changes
 - _add Changes_
+
+**Fixes _add Links_**
+
 
 ## Screenshots
 (prefer animated gif)
@@ -15,7 +17,6 @@ _optional description text_
 - [ ] updated the docs
 - [ ] added a test
 
-**Fixes _add Links_**
 
 Notes
 -----
