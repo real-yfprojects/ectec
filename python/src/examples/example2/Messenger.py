@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct 16 18:20:09 2018
@@ -11,8 +12,8 @@ import tkinter.messagebox as tkm
 import time
 dsp = messengerstuff.dsp
 
-ip = '192.168.178.32'
-port = 50001
+ip = '127.0.0.1'
+port = 40000
 
 
 class Messenger:
