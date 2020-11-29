@@ -4,7 +4,7 @@ about: Elaborate a task that has to be done
 title: "[TODO] Title"
 labels: TODO
 assignees: ''
-projects: general
+
 ---
 
 ## Description of the Task
