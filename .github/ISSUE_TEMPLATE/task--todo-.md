@@ -1,7 +1,7 @@
 ---
 name: Task (TODO)
 about: Elaborate a task that has to be done
-title: 'TODO: [Title]'
+title: "[TODO] Title"
 labels: TODO
 assignees: ''
 
