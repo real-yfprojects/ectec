@@ -1,5 +1,5 @@
-# One Example Protocol
-# Version 1
+# Basic Mesage Chattool Protocol
+# Version 1.0
 
 process client
 const	version : version number
