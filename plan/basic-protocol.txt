@@ -1,0 +1,240 @@
+# One Example Protocol
+# Version 1
+
+process client
+const	version : version number
+	name : str
+	role : str[user]
+
+var	connected : boolean
+
+connect	server : server
+
+Messages [send]
+ def info
+	INFO <version>
+
+ def register
+	REGISTER <name> AS <role>
+	
+	<name> : any str
+	<role> : str("user")
+
+def message
+        MSG <type> <from> <to> WITH <length>\n
+
+        <content> \EOF
+
+        <type>    : str("text/unicode|text/ascii")
+        <from>    : str
+        <to>      : str
+        <length>  : int {number of bit in content}
+        <content> : bit
+
+
+Messages [receive]
+def info 
+	INFO <version> <ok>
+	
+	<ok> : boolean
+
+def ok
+	OK
+
+def error
+	ERROR <type> <message>
+	
+	<type> : {kind of error}
+	<message> : str (optional)
+	
+def message
+	MSG <type> <from> <to> WITH <length>\n 
+	
+	<content> \EOF
+
+	<type>	  : str("text/unicode|text/ascii")
+	<from>	  : str
+	<to>	  : str
+	<length>  : int {number of bit in content}
+	<content> : bit
+
+def connect
+	UPDATE USER <user> <connect>
+
+	<user> : str
+	<add>  : boolean {wether the user connected or disconnected}
+
+state #Connect:start
+
+	send info[version] to server
+	
+	receive info[-v, -ok]
+	not -ok --> close
+	
+	{Check Info, prepare stuff}
+
+	send register[name; role] to server
+	
+	receive ok()/error(-type;) from server
+	
+	{process error}
+	{error is returned when user name is already registered}	
+	{change name and try again}
+
+	enter #Wait
+
+
+state #Wait
+
+	do connected:
+		receive message->-msg from server --> enter #RecvMSG -msg
+		
+		receive error from server --> {process error}
+
+		receive connect from server --> {process new user/disconnect}
+	od
+
+
+state #RecvMSG
+	
+	msg[type; from; to; length]
+	
+	receive bytes(length)->-content from server
+	
+	{process msg}
+
+
+state #Send:command
+	
+	content = any
+	length = length(content)	
+
+	send message[any, any, any, length, content] to server
+
+
+state #END:close
+	
+	exit
+
+state :end
+
+	{pass}
+
+
+process server
+const	port : int
+	version : version number
+
+	names : list of str
+
+var	connected : boolean
+	user : str
+
+bind port
+
+listen for client
+
+Messages [recv]
+ def info
+	INFO <version>
+
+ def register
+	REGISTER <name> AS <role>
+	
+	<name> : any str
+	<role> : str("user")
+
+def message
+        MSG <type> <from> <to> WITH <length>\n
+
+        <content> \EOF
+
+        <type>    : str("text/unicode|text/ascii")
+        <from>    : str
+        <to>      : str
+        <length>  : int {number of bit in content}
+        <content> : bit
+
+
+Messages [send]
+def info 
+	INFO <version> <ok>
+	
+	<ok> : boolean
+	
+def message
+	MSG <type> <from> <to> WITH <length>\n 
+	
+	<content> \EOF
+
+	<type>	  : str("text/unicode|text/ascii")
+	<from>	  : str
+	<to>	  : str
+	<length>  : int {number of bit in content}
+	<content> : bit
+
+def connect
+	UPDATE USER <user> <connect>
+
+	<user> : str
+	<add>  : boolean {wether the user connected or disconnected
+
+
+state #Connect:start
+
+	receive info[-v] from client
+	
+	{process version; make -ok}
+	
+	receive info[version, -ok] from client
+	not -ok --> close
+	
+	{prepare stuff}
+
+	receive register[-name; -role] from client
+	
+	{process -name and -role}
+
+	user = -name
+
+	if -role = {user role} --> send connect[user, 1] to {all clients}
+
+	enter #Wait
+
+
+state #Wait
+
+	do connected:
+		receive message->-msg from server --> enter #RecvMSG -msg
+	od
+
+
+state #RecvMSG
+	
+	msg[type; from; to; length]
+	
+	receive bytes(length)->-content from server
+	
+	{process msg}
+
+	{do #Send with msg for each connected client}
+
+
+state #Send:command
+	
+	content = any
+	length = length(content)	
+
+	send message[any, any, any, length, content] to client
+
+
+state #END:close
+	
+	if -role = {user role} --> send connect[user; 0] to {all clients}
+	exit
+
+state :end
+
+	{pass}
+
+
