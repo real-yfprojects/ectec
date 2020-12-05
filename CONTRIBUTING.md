@@ -3,6 +3,7 @@
 ## 1. Always create a Pull Request with a reasonable description
 
 ## 2. Document your code in detail
+ - Wiki entries are welcome! Please keep the wiki well structured.
  - Each function, class, method and file needs a docstring
  - The numpy docsting format is preferred *(in python code)*
  
