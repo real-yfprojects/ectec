@@ -13,4 +13,7 @@
 ## 4. Python Coding
 
  - Use setter and getters through *property* decorators if needed.
- - Wrap UI text using gettext. *[Python Docs](https://docs.python.org/3/library/gettext.html#internationalizing-your-programs-and-modules)*
+ <!-- - wrap UI text using pyqt's translate function [Localisation](https://doc.bccnsoft.com/docs/PyQt5/i18n.html) -->
+ 
+ ## 5. Create Tests whenever possible
+ - Use python *unittest* library for python code.
