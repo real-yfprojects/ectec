@@ -17,3 +17,6 @@
  
  ## 5. Create Tests whenever possible
  - Use python *unittest* library for python code.
+
+
+*By contributing you aggree that your contribution will be licensed under the same license as this repository.*
