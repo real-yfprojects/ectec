@@ -20,4 +20,4 @@
 
 
 ***
-*By contributing you agree that your contribution will be licensed under the same license as this repository.*
+*By contributing you agree that your contribution will be licensed under the same license as this repository and published along with it.*
