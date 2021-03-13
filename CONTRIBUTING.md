@@ -20,6 +20,6 @@
 
 
 ***
-*By contributing you agree that your contribution will be licensed under the same license as this repository and you affirm the (Developer Certificate of Origin)[dco].*
+*By contributing you agree that your contribution will be licensed under the same license as this repository and you affirm the [Developer Certificate of Origin][dco].*
 
 [dco]: https://developercertificate.org/
