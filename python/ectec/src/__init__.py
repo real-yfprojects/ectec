@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import enum
 from typing import Callable, List, Union
 
 from .version import SemanticVersion, Version
@@ -61,8 +62,8 @@ class IncompatibleVersion(ConnectException):
     The client and the server have incompatible version numbers.
     """
 
-# ---- Assets
 
+# ---- Assets
 
 class Package():
     """
@@ -97,7 +98,7 @@ class Package():
     """
 
     def __init__(self, sender: str, recipient: str, type: str,
-                 time : float = None):
+                 time: float = None):
         """
 
         A package being sent using ectec.
@@ -138,6 +139,10 @@ class Package():
         raise NotImplementedError("Must be implemented by subclasses")
 
 
+class Role(enum.Enum):
+    USER = "user"
+
+
 # ---- Client API / Standard User
 
 class PackageStorage:
@@ -150,8 +155,8 @@ class PackageStorage:
     def __init__(self):
         pass
 
-    def remove(self, *packages : List[Package],
-               func: Callable[[Package], bool] = None) -> int :
+    def remove(self, *packages: List[Package],
+               func: Callable[[Package], bool] = None) -> int:
         """
         Remove packages from the storage.
 
@@ -172,7 +177,7 @@ class PackageStorage:
         """
         return 0
 
-    def add(self, *packages : List[Package]):
+    def add(self, *packages: List[Package]):
         """
         Add packages to the PackageStorage.
 
@@ -187,7 +192,7 @@ class PackageStorage:
 
         """
 
-    def all(self) -> List[Package] :
+    def all(self) -> List[Package]:
         """
         Return a list of all packages in the PackageStorage.
 
@@ -202,8 +207,8 @@ class PackageStorage:
 
         return []
 
-    def filter(self, func : Callable[[Package], bool]=None,
-               **kwargs) -> List[Package] :
+    def filter(self, func: Callable[[Package], bool] = None,
+               **kwargs) -> List[Package]:
         """
         Return a filtered list of the packages in the PackageStorage.
 
@@ -246,7 +251,7 @@ class UserClient:
 
     version = VERSION
 
-    def __init__(self, username : str):
+    def __init__(self, username: str):
         """
         A Client for the normal user role.
 
@@ -267,11 +272,11 @@ class UserClient:
             The PackageStorage managing the received packages.
 
         """
-        self.username : str = username
-        self.users : List[str]
-        self.packages : PackageStorage
+        self.username: str = username
+        self.users: List[str]
+        self.packages: PackageStorage
 
-    def connect(self, server : str, port : int):
+    def connect(self, server: str, port: int):
         """
         Connect to a server.
 
@@ -306,7 +311,7 @@ class UserClient:
 
         """
 
-    def send(self, package : Package):
+    def send(self, package: Package):
         """
         Send a package.
 
@@ -326,7 +331,7 @@ class UserClient:
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
-    def receive(self, n : int = None) -> Union[Package, List[Package]]:
+    def receive(self, n: int = None) -> Union[Package, List[Package]]:
         """
         Read out the buffer of Packages.
 
@@ -356,3 +361,56 @@ class UserClient:
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
+
+# ---- Server API
+
+class Server():
+    """
+    A Server ectec clients can connect to.
+
+    Attributes
+    ----------
+    users : list of (str, Role)
+        list of users as name, role pairs
+    hostname : str
+        hostname of the server
+    ip : str
+        ip address of the server
+
+    Notes
+    -----
+    The `bind` method is a synonym for the `start` method.
+    """
+    version = VERSION
+
+    def __init__(self):
+        pass
+
+    def start(self, port: str, address: str = None):
+        """
+        Start the server at the given port and address.
+
+        Parameters
+        ----------
+        address : str
+            the address.
+        port : str
+            the port.
+
+        Returns
+        -------
+        None.
+
+        """
+
+    bind = start
+
+    def stop(self):
+        """
+        Stops the server.
+
+        Returns
+        -------
+        None.
+
+        """
