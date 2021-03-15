@@ -32,12 +32,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import enum
 from typing import Callable, List, Union
 
+from . import logs
 from .version import SemanticVersion, Version
 
 VERSION: Version = SemanticVersion(0, 0, 1)
 
 
+# ---- Logging
+
+logger = logs.getLogger(__name__)  # Parent logger for the module
+
+nullhandler = logs.NullHandler()  # Bin for logs
+
+handler = logs.StreamHandler()  # Output to console
+handler.setLevel(logs.WARNING)  # Log everything with equal or greater level
+formatter = logs.EctecFormatter()  # Control format of output
+handler.setFormatter(formatter)  # Add formatter to handler
+
+# Add Handlers to logger
+logger.addHandler(nullhandler)
+logger.addHandler(handler)
+
 # ---- Exceptions
+
 
 class EctecException(Exception):
     """
