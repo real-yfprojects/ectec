@@ -82,7 +82,39 @@ class IncompatibleVersion(ConnectException):
 
 # ---- Assets
 
-class Package():
+
+class Address:
+
+    __slots__ = ['ip', 'port']
+
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+
+    def to_tuple(self):
+        return (self.ip, self.port)
+
+    @classmethod
+    def unpack(cls, address) -> 'Address':
+        """
+        Create an Address from a tuple of ip and port.
+
+        Parameters
+        ----------
+        address : interable like (ip, port)
+            The tuple representing the address.
+
+        Returns
+        -------
+        Address
+            The Address object.
+
+        """
+
+        return cls(address[0], address[1])
+
+
+class Package:
     """
     A package being sent using ectec.
 
@@ -113,6 +145,8 @@ class Package():
         the time the package was received. Might be None.
 
     """
+
+    __slots__ = ['sender', 'recipient', 'type', 'time']
 
     def __init__(self, sender: str, recipient: str, type: str,
                  time: float = None):
