@@ -134,7 +134,7 @@ class SemanticVersion(Version):
         return a and b and c and d and e
 
     @classmethod
-    def parse(cls, string: str):
+    def parse(cls, string: str) -> 'SemanticVersion':
         """
         Parses a string describing a semantic version number.
 
@@ -144,7 +144,7 @@ class SemanticVersion(Version):
         Parameters
         ----------
         string : str
-            DESCRIPTION.
+            the string representing the version number.
 
         Raises
         ------
