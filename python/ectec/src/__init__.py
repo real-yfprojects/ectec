@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import enum
+from collections import namedtuple
 from typing import Callable, List, Union
 
 from . import logs
@@ -83,35 +84,10 @@ class IncompatibleVersion(ConnectException):
 # ---- Assets
 
 
-class Address:
-
-    __slots__ = ['ip', 'port']
-
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = port
-
-    def to_tuple(self):
-        return (self.ip, self.port)
-
-    @classmethod
-    def unpack(cls, address) -> 'Address':
-        """
-        Create an Address from a tuple of ip and port.
-
-        Parameters
-        ----------
-        address : interable like (ip, port)
-            The tuple representing the address.
-
-        Returns
-        -------
-        Address
-            The Address object.
-
-        """
-
-        return cls(address[0], address[1])
+Address = namedtuple('Address', ['ip', 'port'])
+Address.__doc__ += ": A namedtuple representing a socket address."
+Address.ip.__doc__ = "The ip address or hostname of the computer"
+Address.port.__doc__ = "The port of the socket"
 
 
 class Package:
