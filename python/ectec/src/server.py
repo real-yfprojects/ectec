@@ -25,14 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 import logging
+import re
 import socket
 import socketserver
 import threading
 import time
 from collections import namedtuple
 
-from . import VERSION, Address, EctecException, Package, Role, logs, version
-from .util import ClassPropertyMetaClass, classproperty
+from . import VERSION, Address, EctecException, Role, logs, version
 
 # ---- Logging
 
@@ -146,24 +146,67 @@ class UnexpectedCommand(UnexpectedData):
 
 ClientData = namedtuple('ClientData', ['name', 'role', 'address', 'handler'])
 
+Package = namedtuple('Package', ['sender', 'recipient',
+                                 'type', 'content'])
+
 
 # ---- Socketserver Implementation
 
-class UserClientHandler(socketserver.BaseRequestHandler,
-                        metaclass=ClassPropertyMetaClass):
+class ClientHandler(socketserver.BaseRequestHandler):
+    """
+    Handles one client connecting to the server.
+
+    Multiple instaces can handle all clients to the server.
+    Clients are identified by their name and stored in `clients`. The names
+    aren't case sensitiv.
+
+    Attributes
+    ----------
+    run
+        Run the protocoll until the client is registered.
+    handle_XXX
+        Handle client with a specific role.
+    recv_bytes
+        Receive a specified number of bytes.
+    recv_command
+        Receive unspecified command. This should be called in methods that
+        receive a specific command.
+    recv_XXX
+        Receive a specific command and interpret it.
+    send_XXX
+        Send a specific command. Don't harcode the seperator!
+
+    Notes
+    -----
+    Each client has to perform a version check.
+    After that it is able to register itself with a name and a role.
+    The name must be unique among all roles. The names are case sensitiv.
+    But when checking uniquness the case is ignored.
+
+    There is one handle method for each type of role. The method will be
+    called after registering.
+    """
 
     # ---- Process (server) wide constants
     TIMEOUT = 1000  # ms timeout for awaited commands
 
     TRANSMISSION_TIMEOUT = 0.200  # seconds of timeout between parts
-    COMMAND_TIMOUT = 1.000  # s timeout for a command to be completely received
+    COMMAND_TIMEOUT = 0.300  # s timeout for a command to be completely received
     SOCKET_BUFSIZE = 4096  # bytes to read from socket at once
     COMMAND_SEPERATOR = b'\n'  # seperates commands of the ectec protocol
     COMMAND_LENGTH = 4096  # bytes - the maximum length of a command
 
+    # Users with the listed roles are shared with all clients:
+    PUBLIC_ROLES = [Role.USER]
+
     # ---- Process (server) wide data
 
     class Locks:
+        """
+        This is a data class holding locks for class variables.
+
+        Its puprose is making the code cleaner.
+        """
         clients: threading.Lock = threading.Lock()
 
     clients = {role.value: [] for role in Role}
@@ -209,11 +252,31 @@ class UserClientHandler(socketserver.BaseRequestHandler,
     # ---- Functionalities
 
     def run(self):
+        """
+        Run the initial register sequence of the ectec protocoll.
 
-        # ---- Handel connect
+        The `handle_XXX` methods are called depending on the role.
+
+        Raises
+        ------
+        RequestRefusedError
+            The connection and register attempt was refused.
+        NotImplementedError
+            The role is not yet implemented.
+
+        Returns
+        -------
+        None.
+
+        """
+        # ---- Version check
 
         # Receive version number
-        client_version = self.recv_info()
+        try:
+            client_version = self.recv_info()
+        except (OSError, CommandError, CommandTimeout) as error:
+            self.log.debug("Error while receiving client info: " +
+                           str(error.args[0]))
 
         # Check if version number is compatible
         # This raises an exception when there is a major problem
@@ -224,8 +287,12 @@ class UserClientHandler(socketserver.BaseRequestHandler,
             self.log.debug('Incompatible version. Refused')
             return  # The connection socket is closed automatically
 
+        self.log.debug("Version check passed. Sending answer.")
+
         # Version is compatible - tell the client
         self.send_info(True)
+
+        # ---- Register
 
         # Receive the role and name of the user
         name, role_str = self.recv_register()
@@ -242,7 +309,7 @@ class UserClientHandler(socketserver.BaseRequestHandler,
 
         # Check if name is already used
         with self.Locks.clients:
-            for role_str, client_list in self.clients.items():
+            for dummy, client_list in self.clients.items():
                 for client in client_list:  # client : ClientData
                     if client.name.lower() == name.lower():  # Design choice
                         # Name in use
@@ -258,13 +325,162 @@ class UserClientHandler(socketserver.BaseRequestHandler,
 
         self.log.info("Registered as {0}, {1}".format(name, role.value))
 
+        # ---- Send user update
+        # Update user lists of all clients
+        with self.Locks.clients:
+            for dummy, client_list in self.clients.items():
+                for client in client_list:
+                    try:
+                        client.handler.send_update()
+                    except OSError:
+                        # client disconnected
+                        pass
+                    except Exception as error:
+                        self.log.debug(f"Couldn't update because {str(error)}")
+
+        if role == Role.USER:
+            self.handle_user()
+        else:
+            raise NotImplementedError("The role {str(role)} is not supported.")
+
+    def handle_user(self):
+        """
+        Handle a client (after registering) with the role `USER`.
+
+        Raises
+        ------
+        OSError
+            The connection was closed by the client.
+
+        """
         # Receive packages
         while True:
-            break
+            try:
+                package = self.recv_pkg()
+            except (OSError, ConnectionClosed) as error:  # Connection closed
+                raise error
+            except CommandTimeout as error:
+                # wait for next command
+                self.send_error(error)
+            except CommandError as error:
+                # wait for next command
+                self.send_error(error)
 
-        # TODO: Well the rest
+            command = "PACKAGE {} FROM {} TO {} WITH {}"
+            self.log.info(command.format(package.type,
+                                         package.sender,
+                                         package.recipient,
+                                         len(package.content)
+                                         ))
 
-    def recv_command(self, max_length, start_timeout=None, timeout=None):
+            # forward package
+            with self.Locks.clients:
+                for client in self.clients[Role.USER]:
+                    try:
+                        client.handler.send_pkg(package)
+                    except OSError:
+                        # client already disconnected
+                        self.log.debug("Couldn't forward package to " +
+                                       f"{client.address.ip}")
+
+    def recv_bytes(self, length, start_timeout=None, timeout=None) -> bytes:
+        """
+        Receive a specified amount of bytes.
+
+        Parameters
+        ----------
+        length : int
+            the amount of bytes.
+        start_timeout : int, optional
+            The timeout in s for receiving first data. The default is None.
+        timeout : int, optional
+            The timeout in s for the end of the command. The default is None.
+
+        Raises
+        ------
+        CommandTimeout
+            The command timed out.
+
+        Returns
+        -------
+        bytes
+            the received data.
+
+        """
+        msg = self.buffer
+        self.buffer = bytes(0)
+        bufsize = self.SOCKET_BUFSIZE
+
+        if len(msg) < 1:
+            # buffer empty -> command not incoming yet
+            self.request.setblocking(True)
+            self.request.settimeout(start_timeout)
+
+            try:
+                msg = self.request.recv(bufsize)  # msg was empty
+            except socket.timeout as error:
+                raise CommandTimeout(
+                    "The receiving of the data timed out.") from error
+
+            if not msg:
+                # connection was closed
+                raise ConnectionClosed(
+                    "The connection was closed by the client.")
+
+        if len(msg) >= length:  # separator found
+            data = msg[:length]
+            self.buffer = msg[length:]
+
+            return data
+
+        # Data wasn't received completely yet.
+        self.request.setblocking(True)
+        self.request.settimeout(self.TRANSMISSION_TIMEOUT)
+
+        # read out the most precice system clock for timeouting
+        start_time = time.perf_counter_ns()
+
+        # convert timeout to ns (nanoseconds)
+        timeout = timeout * 0.000000001 if timeout is not None else None
+
+        data_length = len(msg)
+        needed = length - data_length
+        while True:  # ends by an error or a return
+            try:
+                part = self.request.recv(bufsize)
+            except socket.timeout as error:
+                raise CommandTimeout("Data parts timed out.") from error
+
+            if not part:
+                # connection was closed
+                raise ConnectionClosed(
+                    "The connection was closed by the client.")
+
+            time_elapsed = time.perf_counter_ns()-start_time
+
+            part_length = len(part)
+
+            if part_length >= needed:
+                data = msg + part[:needed]
+                self.buffer = part[needed:]
+                return data
+
+            # check time
+            if timeout is not None and time_elapsed > timeout:
+                raise CommandTimeout("Receiving of a data took too long" +
+                                     f". {time_elapsed} nanoseconds" +
+                                     " have already past.")
+
+            # end of command not yet received
+            # check length
+            data_length += part_length
+            needed = length - data_length
+
+            # add part to local buffer
+            msg += part
+
+    def recv_command(self, max_length,
+                     start_timeout=None, timeout=None) -> bytes:
         """
         Receive a command and return it.
 
@@ -279,9 +495,9 @@ class UserClientHandler(socketserver.BaseRequestHandler,
         ----------
         max_length : int
             The maximum lenght of a command in bytes.
-        start_timeout : int, optional
+        start_timeout : float, optional
             The timeout in s for receiving first data. The default is None.
-        timeout : int, optional
+        timeout : float, optional
             The timeout in s for the end of the command. The default is None.
 
         Raises
@@ -298,6 +514,7 @@ class UserClientHandler(socketserver.BaseRequestHandler,
 
         """
         msg = self.buffer
+        self.buffer = bytes(0)
         seperator = self.COMMAND_SEPERATOR
         bufsize = self.SOCKET_BUFSIZE
 
@@ -330,8 +547,8 @@ class UserClientHandler(socketserver.BaseRequestHandler,
                 raise CommandError(
                     f"Command too long: {cmd_length} bytes" +
                     f" from {max_length}")
-            else:
-                return command
+
+            return command
 
         # Command wasn't received completely yet.
         self.request.setblocking(True)
@@ -341,7 +558,7 @@ class UserClientHandler(socketserver.BaseRequestHandler,
         start_time = time.perf_counter_ns()
 
         # convert timeout to ns (nanoseconds)
-        timeout = timeout * 0.000000001 if timeout != None else None
+        timeout = timeout * 0.000000001 if timeout is not None else None
 
         length = len(msg)
         while True:  # ends by an error or a return
@@ -358,7 +575,6 @@ class UserClientHandler(socketserver.BaseRequestHandler,
             time_elapsed = time.perf_counter_ns()-start_time
 
             i = part.find(seperator)  # end of command?
-
             if i >= 0:  # separator found
                 command = msg + part[:i]
                 self.buffer = part[i+len(seperator):]  # seperator is removed
@@ -369,35 +585,44 @@ class UserClientHandler(socketserver.BaseRequestHandler,
                     raise CommandError(
                         f"Command too long: {cmd_length} bytes" +
                         f" from {max_length}")
-                else:
-                    return command
-            elif timeout is not None and time_elapsed > timeout:
+
+                return command
+
+            # check time
+            if timeout is not None and time_elapsed > timeout:
                 raise CommandTimeout("Receiving of a command took too long" +
                                      f". {time_elapsed} nanoseconds" +
                                      " have already past.")
-            else:
-                # end of command not yet received
-                # check length
-                length += len(part)
 
-                if length > max_length:
-                    # too long
-                    raise CommandError(
-                        f"Command too long: over {max_length} bytes")
-                else:
-                    # add part to local buffer
-                    msg += part
+            # end of command not yet received
+            # check length
+            length += len(part)
+
+            if length > max_length:
+                # too long
+                raise CommandError(
+                    f"Command too long: over {max_length} bytes")
+
+            # add part to local buffer
+            msg += part
+
+    # regular expression for the INFO command
+    regex_info = re.compile(r"INFO ([\w+.-]+)")
 
     def recv_info(self):
         """
         Receive the info command from the client.
 
-        The whole command must not exceed 4096 bit, that is 512 byte.
-        The version number therefore must not exceed 507 letters.
+        The whole command must not exceed 4096 byte.
+        The version number therefore must not exceed 4091 letters.
+        The regex in `regex_info` is used. You should only change it when
+        subclassing.
 
         ::
 
-            INFO <version number as str>
+            INFO ([\\w+.-]+)
+                 ----------
+                 version number
 
 
         Returns
@@ -407,11 +632,29 @@ class UserClientHandler(socketserver.BaseRequestHandler,
 
         """
 
-        # TODO
+        raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        cmd = raw_cmd.decode(encoding='utf-8', errors='surrogateescape')
+
+        # match regular expression
+        match = self.regex_info.fullmatch(cmd)  # should match the whole text
+
+        if not match:
+            raise CommandError("Received data doesn't match INFO command.")
+
+        return match.group(1)
+
+    # regular expression for the REGISTER command
+    regex_register = re.compile(r"REGISTER (\w+) AS (/w+)")
 
     def recv_register(self):
         """
         Receive the register command of the client.
+
+        ::
+
+            REGISTER (\\w+) AS (\\w+)
+                     ----     -----
+                     name     role
 
         Returns
         -------
@@ -419,20 +662,172 @@ class UserClientHandler(socketserver.BaseRequestHandler,
             the name and the role received.
 
         """
-        # TODO
+        raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        cmd = raw_cmd.decode(encoding='utf-8', errors='surrogateescape')
 
-    def recv_pkg(self):
-        pass  # TODO
+        # match regular expression on the whole text
+        match = self.regex_register.fullmatch(cmd)
 
-    def send_info(self, ok: bool):
-        pass  # TODO
+        if not match:
+            raise CommandError("Received data doesn't match REGISTER command.")
 
-    def send_pkg(self, package):
-        pass  # TODO
+        return match.group(1), match.group(2)
+
+    # regular expression for the PACKAGE command
+    regex_package = re.compile(
+        r"PACKAGE ([\w/.-]+) FROM ([\w/.-]+) TO ([\w/.-]+) WITH .{2}")
+
+    def recv_pkg(self, timeout=None):
+        """
+        Receive a package command from the client.
+
+        A package command is a normal command followed by a specified
+        stream of bytes. There are two bytes which representing a integer in
+        the big endian format. The integer sprecifies the length of the
+        content in bytes. The content therefore must not exceed 65,535 bytes.
+
+        ::
+
+            PACKAGE ([\\w/.-]+) FROM ([\\w/.-]+) TO ([\\w/.-]+) WITH .{2}
+                    ----------      ----------    ----------      ----
+                    content-type    sender        recipient      content-length
+
+        Parameters
+        ----------
+        timeout : float
+            The timeout for when the package should arrive.
+            The default is None.
+
+        Raises
+        ------
+        CommandError
+            Wrong command.
+
+        Returns
+        -------
+        package : Package
+            the packages fields in a namedtuple.
+
+        """
+        raw_cmd = self.recv_command(4096, timeout, self.COMMAND_TIMEOUT)
+        cmd = raw_cmd.decode(encoding='utf-8', errors='surrogateescape')
+
+        # match regular expression on the whole text
+        match = self.regex_package.fullmatch(cmd)
+
+        if not match:
+            raise CommandError("Received data doesn't match PACKAGE command.")
+
+        type_code = match.group(1)
+        sender = match.group(2)
+        recipient = match.group(3)
+
+        # decode length
+        length_bytes = match.group(4).encode(
+            encoding='utf-8', errors='surrogateescape')
+        length = int.from_bytes(length_bytes, 'big', signed=False)
+
+        # receive package content
+        if length:
+            content = self.recv_bytes(length)
+        else:
+            content = b''
+
+        # create package
+        package = Package(sender, recipient, type_code, content)
+
+        return package
+
+    def send_info(self, accepted: bool):
+        """
+        Send a INFO command to the remote.
+
+        The INFO command contains the version number of the module. That is
+        `str(VERSION)`.
+
+        Parameters
+        ----------
+        accepted : bool
+            Wether the client's version was accepted.
+
+        """
+        template = b'INFO {ok} {version}{sep}'
+
+        command = template.format(ok=accepted,
+                                  version=str(VERSION).encode('utf-8'),
+                                  sep=self.COMMAND_SEPERATOR)
+        self.request.sendall(command)
+
+    def send_pkg(self, package: Package):
+        """
+        Send a package command with the packages content.
+
+        ::
+
+            PACKAGE {typ} FROM {sender} TO {recipient} WITH {length}
+
+        Parameters
+        ----------
+        package : Package
+            The namedtuple containing the package data.
+
+        """
+        template = b'PACKAGE {typ} FROM {sender} TO {recipient} WITH {l}{sep}'
+
+        length = len(package.content).to_bytes(2, 'big', signed=False)
+
+        command = template.format(typ=package.type,
+                                  sender=package.sender,
+                                  recipient=package.recipient,
+                                  l=length,
+                                  sep=self.COMMAND_SEPERATOR)
+        data = command + package.content
+
+        self.request.sendall(data)
+
+    def send_update(self):
+        """
+        Send an update to the user list of the remote.
+
+        The user list is automatically created from the users in `clients`.
+        But users with roles that aren't specified in `PUBLIC_ROLES`
+        are ignored. The users are sent after the command and seperated by
+        spaces.
+
+        ::
+
+            UPDATE USERS {length}
+
+        """
+        template = b'UPDATE USERS {length}{sep}'
+
+        user_names = []
+        with self.Locks.clients:
+            for role in self.PUBLIC_ROLES:
+                # role is type `Role`
+                for user in self.clients[role.value]:
+                    # user is type `ClientData`
+                    user_names.append(user.name)
+
+        user_list = b' '.join(user_names)
+        length = len(user_list).to_bytes(2, 'big', signed=False)
+
+        command = template.format(length=length,
+                                  sep=self.COMMAND_SEPERATOR)
+        data = command + user_list
+
+        self.request.sendall(data)
 
     def send_error(self, error):
         """
         Send an error message to the client.
+
+        The message may contain every character besides the command seperator
+
+        ::
+
+            ERROR {message}{sep}
+
 
         Parameters
         ----------
@@ -444,7 +839,23 @@ class UserClientHandler(socketserver.BaseRequestHandler,
         None.
 
         """
-        # TODO
+        template = b'ERROR {typ} {message}{sep}'
+
+        if isinstance(error, Exception):
+            name = type(error).__name__
+            text = '; '.join(error.args).replace(self.COMMAND_SEPERATOR, '')
+
+            message = name + ': ' + text
+        else:
+            message = str(error)
+
+        command = template.format(message=message.encode('utf-8'),
+                                  sep=self.COMMAND_SEPERATOR)
+
+        try:
+            self.request.sendall(command)
+        except OSError:
+            self.log.debug("Error couldn't be sent.")
 
     def finish(self):
         # Unregister client
@@ -453,21 +864,54 @@ class UserClientHandler(socketserver.BaseRequestHandler,
             try:
                 with self.Locks.clients:
                     self.clients[role.value].remove(self.client_data)
-            except ValueError as error:
+            except ValueError:
                 self.log.debug("Client data wasn't found for removal." +
                                "(likely not registered)")
 
             self.log.info("Unregistered")
 
+            # ---- Send user update
+            # Update user lists of all clients
+            with self.Locks.clients:
+                for dummy, client_list in self.clients.items():
+                    for client in client_list:
+                        try:
+                            client.handler.send_update()
+                        except OSError:
+                            # client disconnected
+                            pass
+                        except Exception as error:
+                            self.log.debug(
+                                f"Couldn't update because {str(error)}")
+
     @classmethod
     def check_version(cls, version_str: str) -> bool:
+        """
+        Check wether a version string represents a compatible version number.
+
+        Parameters
+        ----------
+        version_str : str
+            the received version string.
+
+        Raises
+        ------
+        RequestRefusedError
+            The version number is invalid.
+
+        Returns
+        -------
+        bool
+            Wether the version is compatible.
+
+        """
         try:
-            v = version.SemanticVersion.parse(version_str)
+            vers = version.SemanticVersion.parse(version_str)
         except:
             raise RequestRefusedError(
                 f"Invalid version number {version_str}") from None
 
-        if v.major != VERSION.major or v.minor != VERSION.minor:
+        if vers.major != VERSION.major or vers.minor != VERSION.minor:
             return False
 
         return True
