@@ -32,7 +32,8 @@ import threading
 import time
 from collections import namedtuple
 
-from . import VERSION, Address, EctecException, Role, logs, version
+from . import (VERSION, AbstractServer, Address, EctecException, Role, logs,
+               version)
 
 # ---- Logging
 
@@ -915,3 +916,182 @@ class ClientHandler(socketserver.BaseRequestHandler):
             return False
 
         return True
+
+    @classmethod
+    def get_client_list(cls):
+        """
+        Get a list of the connected clients.
+
+        Returns
+        -------
+        client_list : list of ClientData
+            a list of the clients.
+
+        """
+        clientl = []
+        for role in cls.clients:
+            clientl += cls.clients[role]
+
+        return clientl
+
+
+class Server(AbstractServer):
+    """
+    A Server ectec clients can connect to.
+
+    Parameters
+    ----------
+    requesthandler : BaseRequestHandler, optional
+        The request handler for the TCPServer.
+        Needs a `get_client_list` static/class method.
+        The default is ClientHandler.
+
+    Attributes
+    ----------
+    users : list of (str, Role, *)
+        list of users as name, role pairs
+    hostname : str
+        hostname of the server.
+    address : str
+        ip address of the server.
+    port : int
+        the port of the server.
+
+    Notes
+    -----
+    The `bind` method is a synonym for the `start` method.
+    """
+    version = VERSION
+
+    def __init__(self, requesthandler=ClientHandler):
+        """
+        Init the instance.
+
+        Parameters
+        ----------
+        requesthandler : BaseRequestHandler, optional
+            The request handler for the TCPServer.
+            Needs a `get_client_list` static/class method.
+            The default is ClientHandler.
+
+        Returns
+        -------
+        None.
+
+        """
+        super().__init__()
+
+        self.requesthandler_class = requesthandler
+
+        self.__ip = None
+        self.__port = None
+        self.__users = None
+
+        # Holds the thread running TCPServer.serve_forever
+        self._serve_thread = None
+
+        # Holds the ThreadingTCPServer
+        self._server = None
+
+    @property
+    def hostname(self):
+        """
+        Get the contents of the hostname property.
+
+        Returns
+        -------
+        str
+            The hostname of the maschine.
+
+        """
+        return socket.gethostname()
+
+    @property
+    def address(self):
+        """
+        Get the contents of the ip property.
+
+        Returns
+        -------
+        str
+            The (ip) address of the server/maschine.
+
+        """
+        if not self._server:
+            return socket.gethostbyname(self.hostname)
+
+        return self._server.server_address[0]
+
+    @property
+    def port(self):
+        if not self._server:
+            raise AttributeError(
+                "Server not runnning.")
+        return self._server.server_address[1]
+
+    @property
+    def users(self):
+        """
+        Get the list of users
+
+        Returns
+        -------
+        list of ClientData
+            namedtuple for each client.
+
+        """
+        return self.requesthandler_class.get_client_list()
+
+    @property
+    def running(self):
+        """
+        Get the contents of the running property.
+
+        Returns
+        -------
+        bool
+
+        """
+        return self._serve_thread and self._serve_thread.is_alive()
+
+    def start(self, port: str, address: str = ""):
+        """
+        Start the server at the given port and address.
+
+        Parameters
+        ----------
+        port : str
+            the port.
+        address : str
+            The address. Defaults to an empty string.
+
+        Returns
+        -------
+        ServerRunningContext
+            A context object for closing the server.
+
+        """
+        server = socketserver.ThreadingTCPServer((address, port),
+                                                 self.requesthandler_class)
+        self._server = server
+
+        self._serve_thread = threading.Thread(target=server.serve_forever)
+        self._serve_thread.start()
+
+        return type('ServerRunningContext', (),
+                    {'__enter__': (lambda x: x),
+                     '__exit__': (lambda *args: self.stop())
+                     })()
+
+    def stop(self):
+        """
+        Stops the server.
+
+        Returns
+        -------
+        None.
+
+        """
+        if self._server:
+            self._server.shutdown()
+            self._server.server_close()

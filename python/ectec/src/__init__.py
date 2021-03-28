@@ -54,7 +54,7 @@ handler.setFormatter(formatter)  # Add formatter to handler
 logger.addHandler(nullhandler)
 logger.addHandler(handler)
 
-# ---- Exceptions
+# ---- Exceptions Client Side
 
 
 class EctecException(Exception):
@@ -65,7 +65,7 @@ class EctecException(Exception):
 
 class ConnectException(EctecException):
     """
-    Raised if there is an error on the process of connecting to a server.
+    Raised if there is an error in the process of connecting to a server.
     """
 
 
@@ -79,6 +79,8 @@ class IncompatibleVersion(ConnectException):
     """
     The client and the server have incompatible version numbers.
     """
+
+# ---- Exceptions Server Side
 
 
 # ---- Assets
@@ -94,7 +96,7 @@ class Package:
     """
     A package being sent using ectec.
 
-    This class can be used before and after sending.
+    This class is used by the PackageStorage.
 
     Parameters
     ----------
@@ -391,18 +393,20 @@ class UserClient:
 
 # ---- Server API
 
-class Server():
+class AbstractServer:
     """
     A Server ectec clients can connect to.
 
     Attributes
     ----------
-    users : list of (str, Role)
+    users : list of (str, Role, *)
         list of users as name, role pairs
     hostname : str
-        hostname of the server
-    ip : str
-        ip address of the server
+        hostname of the server.
+    address : str
+        ip address of the server.
+    port : int
+        the port of the server.
 
     Notes
     -----
@@ -430,7 +434,7 @@ class Server():
 
         """
 
-    bind = start
+    bind = property(lambda self: self.start)
 
     def stop(self):
         """
