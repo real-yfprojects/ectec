@@ -16,4 +16,11 @@
 
 # Planned
 
-- [ ] ...
+- [ ] UR: Encryption using RSA
+- [ ] UR: Encryption using AES
+- [ ] UR: Formatting of messages (bold, italic, encrypted/plain)
+- [ ] UR: Hashing
+- [ ] UR: Signing
+- [ ] Detection of servers in the network
+- [ ] S: Unbound port detection
+- [ ] Client Person in the Middle Role (MR)
