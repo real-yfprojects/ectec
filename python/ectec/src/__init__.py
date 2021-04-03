@@ -42,6 +42,7 @@ VERSION: Version = SemanticVersion(0, 0, 1)
 # ---- Logging
 
 logger = logs.getLogger(__name__)  # Parent logger for the module
+logger.setLevel(logs.DEBUG)
 
 nullhandler = logs.NullHandler()  # Bin for logs
 

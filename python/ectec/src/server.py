@@ -93,8 +93,6 @@ class ConnectionAdapter(logging.LoggerAdapter):
 
         """
         msg = "|{ip:>15}| {msg}".format(ip=self.remote.ip, msg=msg)
-        kwargs['ip'] = self.remote.ip
-        kwargs['port'] = self.remote.port
         return super().process(msg, kwargs)
 
 # ---- Exceptions for this implementation
@@ -192,8 +190,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
     TIMEOUT = 1000  # ms timeout for awaited commands
 
     TRANSMISSION_TIMEOUT = 0.200  # seconds of timeout between parts
-    COMMAND_TIMEOUT = 0.300  # s timeout for a command to be completely received
-    SOCKET_BUFSIZE = 4096  # bytes to read from socket at once
+    COMMAND_TIMEOUT = 0.300  # s timeout for a command to end
+    SOCKET_BUFSIZE = 8192  # bytes to read from socket at once
     COMMAND_SEPERATOR = b'\n'  # seperates commands of the ectec protocol
     COMMAND_LENGTH = 4096  # bytes - the maximum length of a command
 
@@ -248,7 +246,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.log.exception("Critical Error while handling client.")
             self.send_error('Critical Error.')
         finally:
-            pass
+            self.request.close()
 
     # ---- Functionalities
 
@@ -278,6 +276,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         except (OSError, CommandError, CommandTimeout) as error:
             self.log.debug("Error while receiving client info: " +
                            str(error.args[0]))
+            return
 
         # Check if version number is compatible
         # This raises an exception when there is a major problem
@@ -319,8 +318,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
             # Register
             self.client_data = ClientData(name, role,
-                                          Address._make(
-                                              self.request.getsockname()),
+                                          Address._make(self.client_address),
                                           self)
             self.clients[role.value].append(self.client_data)
 
@@ -332,7 +330,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             for dummy, client_list in self.clients.items():
                 for client in client_list:
                     try:
-                        client.handler.send_update()
+                        client.handler.send_update(lock=False)
                     except OSError:
                         # client disconnected
                         pass
@@ -359,7 +357,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             try:
                 package = self.recv_pkg()
             except (OSError, ConnectionClosed) as error:  # Connection closed
-                raise error
+                return
             except CommandTimeout as error:
                 # wait for next command
                 self.send_error(error)
@@ -376,7 +374,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
             # forward package
             with self.Locks.clients:
-                for client in self.clients[Role.USER]:
+                for client in self.clients[Role.USER.value]:
+                    if client.name == self.client_data.name:
+                        continue
                     try:
                         client.handler.send_pkg(package)
                     except OSError:
@@ -414,7 +414,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         if len(msg) < 1:
             # buffer empty -> command not incoming yet
-            self.request.setblocking(True)
             self.request.settimeout(start_timeout)
 
             try:
@@ -435,7 +434,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
             return data
 
         # Data wasn't received completely yet.
-        self.request.setblocking(True)
         self.request.settimeout(self.TRANSMISSION_TIMEOUT)
 
         # read out the most precice system clock for timeouting
@@ -645,7 +643,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         return match.group(1)
 
     # regular expression for the REGISTER command
-    regex_register = re.compile(r"REGISTER (\w+) AS (/w+)")
+    regex_register = re.compile(r"REGISTER (\w+) AS (\w+)")
 
     def recv_register(self):
         """
@@ -676,21 +674,20 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
     # regular expression for the PACKAGE command
     regex_package = re.compile(
-        r"PACKAGE ([\w/.-]+) FROM ([\w/.-]+) TO ([\w/.-]+) WITH .{2}")
+        r"PACKAGE ([\w/.-]+) FROM ([\w/.-]+) TO ([\w/.-]+) WITH (\d+)")
 
     def recv_pkg(self, timeout=None):
         """
         Receive a package command from the client.
 
         A package command is a normal command followed by a specified
-        stream of bytes. There are two bytes which representing a integer in
-        the big endian format. The integer sprecifies the length of the
-        content in bytes. The content therefore must not exceed 65,535 bytes.
+        stream of bytes. The number of bytes is specified by the field
+        `content-length` in human readable format.
 
         ::
 
-            PACKAGE ([\\w/.-]+) FROM ([\\w/.-]+) TO ([\\w/.-]+) WITH .{2}
-                    ----------      ----------    ----------      ----
+            PACKAGE ([\\w/.-]+) FROM ([\\w/.-]+) TO ([\\w/.-]+) WITH (\\d+)
+                    ----------      ----------    ----------      -----
                     content-type    sender        recipient      content-length
 
         Parameters
@@ -711,7 +708,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         """
         raw_cmd = self.recv_command(4096, timeout, self.COMMAND_TIMEOUT)
-        cmd = raw_cmd.decode(encoding='utf-8', errors='surrogateescape')
+        cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression on the whole text
         match = self.regex_package.fullmatch(cmd)
@@ -724,9 +721,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         recipient = match.group(3)
 
         # decode length
-        length_bytes = match.group(4).encode(
-            encoding='utf-8', errors='surrogateescape')
-        length = int.from_bytes(length_bytes, 'big', signed=False)
+        length = int(match.group(4))
 
         # receive package content
         if length:
@@ -746,18 +741,23 @@ class ClientHandler(socketserver.BaseRequestHandler):
         The INFO command contains the version number of the module. That is
         `str(VERSION)`.
 
+        ::
+
+            INFO {ok} {version}
+
         Parameters
         ----------
         accepted : bool
             Wether the client's version was accepted.
 
         """
-        template = b'INFO {ok} {version}{sep}'
+        template = 'INFO {ok} {version}'
 
         command = template.format(ok=accepted,
-                                  version=str(VERSION).encode('utf-8'),
-                                  sep=self.COMMAND_SEPERATOR)
-        self.request.sendall(command)
+                                  version=str(VERSION))
+        msg = command.encode('utf-8', errors='backslashreplace') + \
+            self.COMMAND_SEPERATOR
+        self.request.sendall(msg)
 
     def send_pkg(self, package: Package):
         """
@@ -773,20 +773,21 @@ class ClientHandler(socketserver.BaseRequestHandler):
             The namedtuple containing the package data.
 
         """
-        template = b'PACKAGE {typ} FROM {sender} TO {recipient} WITH {l}{sep}'
+        template = 'PACKAGE {typ} FROM {sender} TO {recipient} WITH {l}'
 
-        length = len(package.content).to_bytes(2, 'big', signed=False)
+        length = len(package.content)
 
         command = template.format(typ=package.type,
                                   sender=package.sender,
                                   recipient=package.recipient,
-                                  l=length,
-                                  sep=self.COMMAND_SEPERATOR)
-        data = command + package.content
+                                  l=str(length))
+
+        data = command.encode('utf-8', errors='backslashreplace') + \
+            self.COMMAND_SEPERATOR + package.content
 
         self.request.sendall(data)
 
-    def send_update(self):
+    def send_update(self, lock=True):
         """
         Send an update to the user list of the remote.
 
@@ -799,23 +800,36 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
             UPDATE USERS {length}
 
+        Parameters
+        ----------
+        lock : bool, optional
+            Wether to use the lock for the `clients` member
+
         """
-        template = b'UPDATE USERS {length}{sep}'
+        template = 'UPDATE USERS {length}'
 
         user_names = []
-        with self.Locks.clients:
+        if lock:
+            with self.Locks.clients:
+                for role in self.PUBLIC_ROLES:
+                    # role is type `Role`
+                    for user in self.clients[role.value]:
+                        # user is type `ClientData`
+                        user_names.append(user.name)
+        else:
             for role in self.PUBLIC_ROLES:
                 # role is type `Role`
                 for user in self.clients[role.value]:
                     # user is type `ClientData`
                     user_names.append(user.name)
 
-        user_list = b' '.join(user_names)
-        length = len(user_list).to_bytes(2, 'big', signed=False)
+        user_list = ' '.join(user_names)
+        length = len(user_list)
 
-        command = template.format(length=length,
-                                  sep=self.COMMAND_SEPERATOR)
-        data = command + user_list
+        command = template.format(length=length)
+        data = command.encode('utf-8', errors='backslashreplace') + \
+            self.COMMAND_SEPERATOR + \
+            user_list.encode('utf-8', errors='backslashreplace')
 
         self.request.sendall(data)
 
@@ -823,11 +837,11 @@ class ClientHandler(socketserver.BaseRequestHandler):
         """
         Send an error message to the client.
 
-        The message may contain every character besides the command seperator
+        The message may contain every character besides the command seperator.
 
         ::
 
-            ERROR {message}{sep}
+            ERROR {message}
 
 
         Parameters
@@ -840,21 +854,23 @@ class ClientHandler(socketserver.BaseRequestHandler):
         None.
 
         """
-        template = b'ERROR {typ} {message}{sep}'
+        template = 'ERROR {message}'
 
         if isinstance(error, Exception):
             name = type(error).__name__
-            text = '; '.join(error.args).replace(self.COMMAND_SEPERATOR, '')
+            text = '; '.join(error.args).replace(
+                str(self.COMMAND_SEPERATOR), '')
 
             message = name + ': ' + text
         else:
             message = str(error)
 
-        command = template.format(message=message.encode('utf-8'),
-                                  sep=self.COMMAND_SEPERATOR)
+        command = template.format(message=message)
 
         try:
-            self.request.sendall(command)
+            self.request.sendall(
+                command.encode('utf-8', errors='backslashreplace') +
+                self.COMMAND_SEPERATOR)
         except OSError:
             self.log.debug("Error couldn't be sent.")
 
@@ -877,7 +893,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 for dummy, client_list in self.clients.items():
                     for client in client_list:
                         try:
-                            client.handler.send_update()
+                            client.handler.send_update(lock=False)
                         except OSError:
                             # client disconnected
                             pass
