@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import enum
 from collections import namedtuple
-from typing import Callable, List, Union
+from typing import Callable, Iterable, Iterator, List, Union
 
 from . import logs
 from .version import SemanticVersion, Version
@@ -93,7 +93,7 @@ Address.ip.__doc__ = "The ip address or hostname of the computer"
 Address.port.__doc__ = "The port of the socket"
 
 
-class Package:
+class AbstractPackage:
     """
     A package being sent using ectec.
 
@@ -103,8 +103,8 @@ class Package:
     ----------
     sender : str
         the user who sends the package.
-    recipient : str
-        the user this package is sent to.
+    recipient : str or list of str
+        the user(s) this package is sent to.
     type : str
         the content type.
     time : float, optional
@@ -127,7 +127,8 @@ class Package:
 
     __slots__ = ['sender', 'recipient', 'type', 'time']
 
-    def __init__(self, sender: str, recipient: str, type: str,
+    def __init__(self, sender: str, recipient: Union[str, List[str]],
+                 type: str,
                  time: float = None):
         """
 
@@ -139,8 +140,8 @@ class Package:
         ----------
         sender : str
             the user who sends the package.
-        recipient : str
-            the user this package is sent to.
+        recipient : str or list of str
+        the user(s) this package is sent to.
         type : str
             the content type.
         time : float, optional
@@ -178,15 +179,13 @@ class Role(enum.Enum):
 class PackageStorage:
     """
     Stores and manages packages.
-
-
     """
 
     def __init__(self):
         pass
 
-    def remove(self, *packages: List[Package],
-               func: Callable[[Package], bool] = None) -> int:
+    def remove(self, *packages: AbstractPackage,
+               func: Callable[[AbstractPackage], bool] = None) -> int:
         """
         Remove packages from the storage.
 
@@ -207,7 +206,7 @@ class PackageStorage:
         """
         return 0
 
-    def add(self, *packages: List[Package]):
+    def add(self, *packages: AbstractPackage):
         """
         Add packages to the PackageStorage.
 
@@ -222,7 +221,7 @@ class PackageStorage:
 
         """
 
-    def all(self) -> List[Package]:
+    def all(self) -> Iterable[AbstractPackage]:
         """
         Return a list of all packages in the PackageStorage.
 
@@ -237,8 +236,8 @@ class PackageStorage:
 
         return []
 
-    def filter(self, func: Callable[[Package], bool] = None,
-               **kwargs) -> List[Package]:
+    def filter(self, func: Callable[[AbstractPackage], bool] = None,
+               **kwargs) -> Iterable[AbstractPackage]:
         """
         Return a filtered list of the packages in the PackageStorage.
 
@@ -257,7 +256,7 @@ class PackageStorage:
         return []
 
 
-class UserClient:
+class AbstractUserClient:
     """
     A Client for the normal user role.
 
@@ -341,7 +340,7 @@ class UserClient:
 
         """
 
-    def send(self, package: Package):
+    def send(self, package: AbstractPackage):
         """
         Send a package.
 
@@ -361,7 +360,8 @@ class UserClient:
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
-    def receive(self, n: int = None) -> Union[Package, List[Package]]:
+    def receive(self, n: int = None) -> Union[AbstractPackage,
+                                              List[AbstractPackage]]:
         """
         Read out the buffer of Packages.
 
