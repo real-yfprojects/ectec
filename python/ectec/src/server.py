@@ -674,7 +674,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
     # regular expression for the PACKAGE command
     regex_package = re.compile(
-        r"PACKAGE ([\w/.-]+) FROM ([\w/.-]+) TO ([\w/.-]+) WITH (\d+)")
+        r"PACKAGE ([\w/.-]+) FROM ([\w]+) TO ([\w,]+) WITH (\d+)")
 
     def recv_pkg(self, timeout=None):
         """
@@ -683,10 +683,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
         A package command is a normal command followed by a specified
         stream of bytes. The number of bytes is specified by the field
         `content-length` in human readable format.
+        Multiple recipients are seperated by a `,`. The recipient `all`
+        matches every recipient. There is only one sender allowed.
 
         ::
 
-            PACKAGE ([\\w/.-]+) FROM ([\\w/.-]+) TO ([\\w/.-]+) WITH (\\d+)
+            PACKAGE ([\\w/.-]+) FROM ([\\w]+) TO ([\\w,]+) WITH (\\d+)
                     ----------      ----------    ----------      -----
                     content-type    sender        recipient      content-length
 
