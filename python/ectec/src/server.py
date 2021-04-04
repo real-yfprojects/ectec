@@ -745,7 +745,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         ::
 
-            INFO {ok} {version}
+            INFO (True|False) ([\\w.-+]+)
 
         Parameters
         ----------
@@ -754,8 +754,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         """
         template = 'INFO {ok} {version}'
+        ok = 'True' if accepted else 'False'
 
-        command = template.format(ok=accepted,
+        command = template.format(ok=ok,
                                   version=str(VERSION))
         msg = command.encode('utf-8', errors='backslashreplace') + \
             self.COMMAND_SEPERATOR
@@ -767,7 +768,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         ::
 
-            PACKAGE {typ} FROM {sender} TO {recipient} WITH {length}
+            PACKAGE [\\w/.-]+ FROM [\\w]+ TO [\\w,]+ WITH \\d+
+                    --------      -----    ------      ---
+                    content-type  sender   recipient   content-length
 
         Parameters
         ----------
@@ -775,6 +778,17 @@ class ClientHandler(socketserver.BaseRequestHandler):
             The namedtuple containing the package data.
 
         """
+        # check characters of parameters using regexes
+        if not re.fullmatch('[\w/.-]+', str(package.type)):
+            raise ValueError("Type of package does't match `[\w/.-]+`.")
+        if not re.fullmatch('\w+', str(package.sender)):
+            raise ValueError("Sender of package does't match `\w+`.")
+        if not re.fullmatch('\w+', str(package.sender)):
+            raise ValueError("Sender of package does't match `\w+`.")
+        if not re.fullmatch('[\w,]+', str(package.recipient)):
+            raise ValueError("Recipient of package does't match `[\w,]+`.")
+
+        # compose and send command
         template = 'PACKAGE {typ} FROM {sender} TO {recipient} WITH {l}'
 
         length = len(package.content)
@@ -800,12 +814,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         ::
 
-            UPDATE USERS {length}
+            UPDATE USERS \d+
 
         Parameters
         ----------
         lock : bool, optional
-            Wether to use the lock for the `clients` member
+            Whether to use the lock for the `clients` member
 
         """
         template = 'UPDATE USERS {length}'
@@ -843,7 +857,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         ::
 
-            ERROR {message}
+            ERROR .*
 
 
         Parameters
