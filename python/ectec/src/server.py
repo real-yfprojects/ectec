@@ -1,7 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-The server api is implemented here.
+The server api of the ectec package is implemented here.
+
+Examples
+--------
+>>> server = Server()
+>>> with server.start(40000):
+...     # do something
+...     pass
+
+The server is started on port 40000 and automatically closed after leaving
+the context block (`with` statement).
+
+>>> server = Server()
+>>> with server.start(0):
+...     print(server.port)
+...     # do something
+40308
+
+The server is started on some uncontrolled, but free port.
+The port is printed out, so that clients can connect to the server.
+The server is automatically closed after leaving the context block.
 
 
 ***********************************
@@ -44,6 +64,11 @@ class ConnectionAdapter(logging.LoggerAdapter):
     """
     Adapter to add connection context information.
 
+    A given message `msg` is added the ip address of the client and
+    transformed to:
+    ::
+        |{ip_address}| {msg}
+
     Parameters
     ----------
     logger : logging.Logger or logging.LoggerAdapter
@@ -57,7 +82,7 @@ class ConnectionAdapter(logging.LoggerAdapter):
 
     def __init__(self, logger, remote, extra=None):
         """
-        Adapter to add connection context information..
+        Adapter to add connection context information.
 
         Parameters
         ----------
@@ -144,9 +169,37 @@ class UnexpectedCommand(UnexpectedData):
 
 
 ClientData = namedtuple('ClientData', ['name', 'role', 'address', 'handler'])
+"""
+Namedtuple that holds information about a client.
+
+Attributes
+----------
+name : str
+    The name/id of the client.
+role : Role
+    The role of the client.
+address : Tuple[str, int] or Address
+    The address of the client consisting of ip address and port.
+handler : ClientHandler
+    The ClientHandler handling this client.
+"""
 
 Package = namedtuple('Package', ['sender', 'recipient',
                                  'type', 'content'])
+"""
+Namedtuple holding the data of a package.
+
+Attributes
+----------
+sender : str
+    The sender of the package.
+recipient : str
+    The recipient(s) of the package.
+type : str
+    The type of the package.
+content : bytes
+    The content/body of the package.
+"""
 
 
 # ---- Socketserver Implementation
@@ -155,47 +208,69 @@ class ClientHandler(socketserver.BaseRequestHandler):
     """
     Handles one client connecting to the server.
 
-    Multiple instaces can handle all clients to the server.
+    Multiple instances can handle all clients to the server.
     Clients are identified by their name and stored in `clients`. The names
     aren't case sensitiv.
 
     Attributes
     ----------
-    run
+    PUBLIC_ROLES : List[Role]
+        The Roles that are public.
+        Users with that role will be made public to all users.
+    SOCKET_BUFSIZE : int
+        The bytes to read from the underlying buffer of the socket API at once.
+    COMMAND_SEPERATOR : bytes
+        You may but shouldn't change this.
+    client_data : ClientData
+        The ClientData of this handler's client.
+
+    Methods
+    -------
+    run()
         Run the protocoll until the client is registered.
     handle_XXX
         Handle client with a specific role.
-    recv_bytes
+    recv_bytes(length, start_timeout=None, timeout=None)
         Receive a specified number of bytes.
-    recv_command
+    recv_command(start_timeout=None, timeout=None)
         Receive unspecified command. This should be called in methods that
         receive a specific command.
     recv_XXX
         Receive a specific command and interpret it.
     send_XXX
-        Send a specific command. Don't harcode the seperator!
+        Send a specific command. Don't hardcode the seperator!
 
     Notes
     -----
     Each client has to perform a version check.
     After that it is able to register itself with a name and a role.
     The name must be unique among all roles. The names are case sensitiv.
-    But when checking uniquness the case is ignored.
+    But when checking uniqueness the case is ignored.
 
     There is one handle method for each type of role. The method will be
     called after registering.
+
+    Examples
+    --------
+    >>> class MyClientHandler(ClientHandler):
+    ...     # inherit and modify ClientHandler
+    ...     pass
+    >>> server = Server(MyClientHandler)
+
+    Create a server using your own modified ClientHandler.
+
     """
 
     # ---- Process (server) wide constants
-    TIMEOUT = 1000  # ms timeout for awaited commands
+    TIMEOUT = 1000  #: ms timeout for awaited commands
 
-    TRANSMISSION_TIMEOUT = 0.200  # seconds of timeout between parts
-    COMMAND_TIMEOUT = 0.300  # s timeout for a command to end
-    SOCKET_BUFSIZE = 8192  # bytes to read from socket at once
-    COMMAND_SEPERATOR = b'\n'  # seperates commands of the ectec protocol
-    COMMAND_LENGTH = 4096  # bytes - the maximum length of a command
+    TRANSMISSION_TIMEOUT = 0.200  #: seconds of timeout between parts
+    COMMAND_TIMEOUT = 0.300  #: s timeout for a command to end
+    SOCKET_BUFSIZE = 8192  #: bytes to read from socket at once
+    COMMAND_SEPERATOR = b'\n'  #: seperates commands of the ectec protocol
+    COMMAND_LENGTH = 4096  #: bytes - the maximum length of a command
 
-    # Users with the listed roles are shared with all clients:
+    #: Users with the listed roles are shared with all clients
     PUBLIC_ROLES = [Role.USER]
 
     # ---- Process (server) wide data
@@ -209,17 +284,27 @@ class ClientHandler(socketserver.BaseRequestHandler):
         clients: threading.Lock = threading.Lock()
 
     clients = {role.value: [] for role in Role}
-    # Structure: { 'role': [ClientData, ClientData],
-    #               }
-    # !!! the keys aren't thread safe
+    """
+    Structure: { 'role': [ClientData, ClientData],
+               }
+
+    !!! the keys aren't thread safe
+    """
 
     # ---- BaseRequestHandler API
 
     def setup(self):
-        # later stores the ClientData of this handler
+        """
+        Setups the Handler.
+
+        This is called by the TCPServer before the handle method.
+        There shouldn't be any error raised.
+
+        """
+        #: later stores the ClientData of this handler
         self.client_data: ClientData = None
 
-        # stores received bytes that belong to the next command
+        #: stores received bytes that belong to the next command
         self.buffer: bytes = bytes(0)  # bytes object with zero bytes
 
     def handle(self):
@@ -262,10 +347,14 @@ class ClientHandler(socketserver.BaseRequestHandler):
             The connection and register attempt was refused.
         NotImplementedError
             The role is not yet implemented.
-
-        Returns
-        -------
-        None.
+        CommandError
+            The REGISTER command was too long.
+        CommandTimeout
+            The REGISTER command timed out.
+        OSError
+            The connection was closed.
+        ValueError
+            The version number received was invalid.
 
         """
         # ---- Version check
@@ -281,7 +370,13 @@ class ClientHandler(socketserver.BaseRequestHandler):
         # Check if version number is compatible
         # This raises an exception when there is a major problem
         # else returns a boolean value.
-        if not self.check_version(client_version):
+        try:
+            compatible = self.check_version(client_version)
+        except ValueError:
+            raise RequestRefusedError(
+                f'Invalid version number {client_version}.')
+
+        if not compatible:
             # Version is incompatible
             self.send_info(False)  # Tell the client
             self.log.debug('Incompatible version. Refused')
@@ -325,17 +420,24 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.log.info("Registered as {0}, {1}".format(name, role.value))
 
         # ---- Send user update
-        # Update user lists of all clients
-        with self.Locks.clients:
-            for dummy, client_list in self.clients.items():
-                for client in client_list:
-                    try:
-                        client.handler.send_update(lock=False)
-                    except OSError:
-                        # client disconnected
-                        pass
-                    except Exception as error:
-                        self.log.debug(f"Couldn't update because {str(error)}")
+
+        # the user list only changes if user has a public role
+        # this prevents info leakage, traffic and a lock
+        # that is time and CPU usage
+        if role in self.PUBLIC_ROLES:
+
+            # Update user lists of all clients
+            with self.Locks.clients:
+                for dummy, client_list in self.clients.items():
+                    for client in client_list:
+                        try:
+                            client.handler.send_update(lock=False)
+                        except OSError:
+                            # client disconnected
+                            pass
+                        except Exception as error:
+                            self.log.debug(
+                                f"Couldn't update because {str(error)}")
 
         if role == Role.USER:
             self.handle_user()
@@ -386,26 +488,26 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
     def recv_bytes(self, length, start_timeout=None, timeout=None) -> bytes:
         """
-        Receive a specified amount of bytes.
+        Receive a specified number of bytes.
 
         Parameters
         ----------
         length : int
-            the amount of bytes.
+            The number of bytes.
         start_timeout : int, optional
             The timeout in s for receiving first data. The default is None.
         timeout : int, optional
-            The timeout in s for the end of the command. The default is None.
+            The timeout in s for all data to be received. The default is None.
 
         Raises
         ------
         CommandTimeout
-            The command timed out.
+            The data timed out.
 
         Returns
         -------
         bytes
-            the received data.
+            The received bytes.
 
         """
         msg = self.buffer
@@ -509,7 +611,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         Returns
         -------
         command : bytes
-            the command.
+            The command.
 
         """
         msg = self.buffer
@@ -779,14 +881,14 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         """
         # check characters of parameters using regexes
-        if not re.fullmatch('[\w/.-]+', str(package.type)):
-            raise ValueError("Type of package does't match `[\w/.-]+`.")
-        if not re.fullmatch('\w+', str(package.sender)):
-            raise ValueError("Sender of package does't match `\w+`.")
-        if not re.fullmatch('\w+', str(package.sender)):
-            raise ValueError("Sender of package does't match `\w+`.")
-        if not re.fullmatch('[\w,]+', str(package.recipient)):
-            raise ValueError("Recipient of package does't match `[\w,]+`.")
+        if not re.fullmatch(r'[\w/.-]+', str(package.type)):
+            raise ValueError("Type of package does't match `[\\w/.-]+`.")
+        if not re.fullmatch(r'\w+', str(package.sender)):
+            raise ValueError("Sender of package does't match `\\w+`.")
+        if not re.fullmatch(r'\w+', str(package.sender)):
+            raise ValueError("Sender of package does't match `\\w+`.")
+        if not re.fullmatch(r'[\w,]+', str(package.recipient)):
+            raise ValueError("Recipient of package does't match `[\\w,]+`.")
 
         # compose and send command
         template = 'PACKAGE {typ} FROM {sender} TO {recipient} WITH {l}'
@@ -814,7 +916,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         ::
 
-            UPDATE USERS \d+
+            UPDATE USERS \\d+
 
         Parameters
         ----------
@@ -891,6 +993,18 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.log.debug("Error couldn't be sent.")
 
     def finish(self):
+        """
+        Tidies up the handler.
+
+        This removes the clientdata from the list of clients and notifies
+        all other clients that the user left.
+
+        Notes
+        -----
+        This is called by the TCPServer after calling handle if the setup
+        method succeeded. It should not raise an Excpetion.
+
+        """
         # Unregister client
         if self.client_data:
             role = self.client_data.role
@@ -904,18 +1018,24 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.log.info("Unregistered")
 
             # ---- Send user update
-            # Update user lists of all clients
-            with self.Locks.clients:
-                for dummy, client_list in self.clients.items():
-                    for client in client_list:
-                        try:
-                            client.handler.send_update(lock=False)
-                        except OSError:
-                            # client disconnected
-                            pass
-                        except Exception as error:
-                            self.log.debug(
-                                f"Couldn't update because {str(error)}")
+
+            # the user list only changes if user has a public role
+            # this prevents info leakage, traffic and a lock
+            # that is time and CPU usage
+            if role in self.PUBLIC_ROLES:
+
+                # Update user lists of all clients
+                with self.Locks.clients:
+                    for dummy, client_list in self.clients.items():
+                        for client in client_list:
+                            try:
+                                client.handler.send_update(lock=False)
+                            except OSError:
+                                # client disconnected
+                                pass
+                            except Exception as error:
+                                self.log.debug(
+                                    f"Couldn't update because {str(error)}")
 
     @classmethod
     def check_version(cls, version_str: str) -> bool:
@@ -929,7 +1049,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         Raises
         ------
-        RequestRefusedError
+        ValueError
             The version number is invalid.
 
         Returns
@@ -941,7 +1061,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         try:
             vers = version.SemanticVersion.parse(version_str)
         except:
-            raise RequestRefusedError(
+            raise ValueError(
                 f"Invalid version number {version_str}") from None
 
         if vers.major != VERSION.major or vers.minor != VERSION.minor:
@@ -989,9 +1109,42 @@ class Server(AbstractServer):
     port : int
         the port of the server.
 
-    Notes
-    -----
-    The `bind` method is a synonym for the `start` method.
+    Examples
+    --------
+    >>> server = Server()
+    >>> with server.start(40000):
+    ...     # do something
+    ...     pass
+
+    The server is started on port 40000 and automatically closed after leaving
+    the context block (`with` statement).
+
+    >>> server = Server()
+    >>> with server.start(0):
+    ...     print(server.port)
+    ...     # do something
+    40308
+
+    The server is started on some uncontrolled, but free port.
+    The port is printed out, so that clients can connect to the server.
+    The server is automatically closed after leaving the context block.
+
+    >>> server = Server()
+    >>> server.start(40000)
+    >>> # do something
+    >>> server.stop()
+
+    The server is started without a `with` statement. It is then stopped using
+    `server.stop`. It is imported that stop is called (even in case of an
+    error/exception) so that the socket is closed and the threads are stopped.
+
+    >>> class MyClientHandler(ClientHandler):
+    ...     # inherit and modify ClientHandler
+    ...     pass
+    >>> server = Server(MyClientHandler)
+
+    Create a server using your own modified ClientHandler.
+
     """
     version = VERSION
 
@@ -1028,10 +1181,6 @@ class Server(AbstractServer):
     @property
     def hostname(self):
         """
-        Get the contents of the hostname property.
-
-        Returns
-        -------
         str
             The hostname of the maschine.
 
@@ -1041,10 +1190,6 @@ class Server(AbstractServer):
     @property
     def address(self):
         """
-        Get the contents of the ip property.
-
-        Returns
-        -------
         str
             The (ip) address of the server/maschine.
 
@@ -1056,6 +1201,11 @@ class Server(AbstractServer):
 
     @property
     def port(self):
+        """
+        int
+            The port of the server's socket for establishing connections.
+
+        """
         if not self._server:
             raise AttributeError(
                 "Server not runnning.")
@@ -1064,12 +1214,8 @@ class Server(AbstractServer):
     @property
     def users(self):
         """
-        Get the list of users
-
-        Returns
-        -------
         list of ClientData
-            namedtuple for each client.
+            namedtuple for each client connected to the server.
 
         """
         return self.requesthandler_class.get_client_list()
@@ -1077,11 +1223,8 @@ class Server(AbstractServer):
     @property
     def running(self):
         """
-        Get the contents of the running property.
-
-        Returns
-        -------
         bool
+            whether the server is currently running.
 
         """
         return self._serve_thread and self._serve_thread.is_alive()
@@ -1090,6 +1233,10 @@ class Server(AbstractServer):
         """
         Start the server at the given port and address.
 
+        A new `TheadingTCPServer` is created every time start is called.
+        It is important to call the `stop` method after this one so that
+        the `ThreadingTCPServer` is teared down and cleaned up.
+
         Parameters
         ----------
         port : str
@@ -1097,12 +1244,20 @@ class Server(AbstractServer):
         address : str
             The address. Defaults to an empty string.
 
+        Raises
+        ------
+        EctecException
+            The server is already running.
+
         Returns
         -------
-        ServerRunningContext
+        ServerRunningContextManager
             A context object for closing the server.
 
         """
+        if self.running:
+            raise EctecException('Server is already running.')
+
         server = socketserver.ThreadingTCPServer((address, port),
                                                  self.requesthandler_class)
         self._server = server
@@ -1110,7 +1265,7 @@ class Server(AbstractServer):
         self._serve_thread = threading.Thread(target=server.serve_forever)
         self._serve_thread.start()
 
-        return type('ServerRunningContext', (),
+        return type('ServerRunningContextManager', (),
                     {'__enter__': (lambda x: x),
                      '__exit__': (lambda *args: self.stop())
                      })()
@@ -1119,11 +1274,9 @@ class Server(AbstractServer):
         """
         Stops the server.
 
-        Returns
-        -------
-        None.
-
         """
-        if self._server:
+        if not self._server:
+            return
+        if self._serve_thread and self._serve_thread.is_alive():
             self._server.shutdown()
             self._server.server_close()
