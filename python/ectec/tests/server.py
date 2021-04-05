@@ -35,6 +35,7 @@ import threading
 import time
 import unittest
 from unittest import mock
+import copy
 
 if True:  # isort formatting
     PATH = sys.path
@@ -62,6 +63,8 @@ class FunctionThread(threading.Thread):
 
 
 # ---- TestCases
+
+CLIENTS = copy.deepcopy(ectecserver.ClientHandler.clients)
 
 
 class ClientHandlerTestCase(unittest.TestCase):
@@ -101,6 +104,8 @@ class ClientHandlerTestCase(unittest.TestCase):
                 self.request = request
                 self.client_address = address
                 self.server = server
+
+        TestHandler.clients = copy.deepcopy(CLIENTS)
 
         self.handler = TestHandler(self.handler_socket,
                                    self.address,
@@ -353,11 +358,13 @@ class ClientHandlerTestCase(unittest.TestCase):
     def test_recv_pkg(self):
         """Test the receiving of a package using the PACKAGE command."""
         numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000]
+                   6500, 30000]
 
-        names = ['plain', '_underscore_', 'long-name', 'Numbers1234']
+        names = ['plain', '_underscore_', 'long_name', 'Numbers1234']
         types = ['plain', 'meme/type', '_undescore_',
                  'long-type', 'numbered133type']
+
+        self.client_socket.settimeout(1)
 
         for length in numbers:
             for typ in types:
@@ -427,42 +434,10 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                         self.assertEqual(package, result)
 
-        length = 50 * 1000*1000
-        with self.subTest(sender=sender,
-                          recipient=recipient,
-                          content_length=length,
-                          type=typ):
-
-            template = 'PACKAGE {} FROM {} TO {} WITH {}'
-
-            command = template.format(typ,
-                                      sender,
-                                      recipient,
-                                      str(length))
-
-            command = command.encode(encoding='utf-8')
-            command += self.handler.COMMAND_SEPERATOR
-
-            content = secrets.token_bytes(length)
-
-            package = (sender, recipient, typ, content)
-
-            thread = FunctionThread(
-                target=self.handler.recv_pkg)
-            thread.start()
-
-            self.client_socket.sendall(command)
-            self.client_socket.sendall(content)
-
-            thread.join()
-            result = thread.return_value
-
-            self.assertEqual(package, result)
-
     def test_send_pkg(self):
         """Test the sending of a package."""
         numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000, 500 * 1000, 50*1000*1000]
+                   6500,  30000, 500 * 1000]
 
         for length in numbers:
             with self.subTest(length=length):
@@ -654,5 +629,9 @@ class ClientHandlerAdvancedTestCase(unittest.TestCase):
 if __name__ == '__main__':
     # unittest.main(buffer=True, verbosity=3)
     loader = unittest.TestLoader()
-    suite = loader.loadTestsFromTestCase(ClientHandlerAdvancedTestCase)
-    unittest.TextTestRunner(verbosity=3, buffer=True).run(suite)
+    suite = unittest.TestSuite([])
+
+    suite.addTest(loader.loadTestsFromTestCase(ClientHandlerTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(ClientHandlerAdvancedTestCase))
+
+    unittest.TextTestRunner(verbosity=3, buffer=False).run(suite)
