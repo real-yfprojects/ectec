@@ -307,6 +307,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
         #: stores received bytes that belong to the next command
         self.buffer: bytes = bytes(0)  # bytes object with zero bytes
 
+        #: lock used when accessing socket for sending
+        self.sending_lock = threading.Lock()
+
+        # only this thread accesses the socket for receiving
+        # -> no need for a lock in that case
+
     def handle(self):
         """
         Handle a client connection to a user.
@@ -862,7 +868,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
                                   version=str(VERSION))
         msg = command.encode('utf-8', errors='backslashreplace') + \
             self.COMMAND_SEPERATOR
-        self.request.sendall(msg)
+
+        with self.sending_lock:
+            self.request.sendall(msg)
 
     def send_pkg(self, package: Package):
         """
@@ -903,7 +911,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
         data = command.encode('utf-8', errors='backslashreplace') + \
             self.COMMAND_SEPERATOR + package.content
 
-        self.request.sendall(data)
+        with self.sending_lock:
+            self.request.sendall(data)
 
     def send_update(self, lock=True):
         """
@@ -949,7 +958,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.COMMAND_SEPERATOR + \
             user_list.encode('utf-8', errors='backslashreplace')
 
-        self.request.sendall(data)
+        with self.sending_lock:
+            self.request.sendall(data)
 
     def send_error(self, error):
         """
@@ -986,9 +996,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
         command = template.format(message=message)
 
         try:
-            self.request.sendall(
-                command.encode('utf-8', errors='backslashreplace') +
-                self.COMMAND_SEPERATOR)
+            with self.sending_lock:
+                self.request.sendall(
+                    command.encode('utf-8', errors='backslashreplace') +
+                    self.COMMAND_SEPERATOR)
         except OSError:
             self.log.debug("Error couldn't be sent.")
 
