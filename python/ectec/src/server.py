@@ -378,9 +378,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
         # else returns a boolean value.
         try:
             compatible = self.check_version(client_version)
-        except ValueError:
+        except ValueError as error:
             raise RequestRefusedError(
-                f'Invalid version number {client_version}.')
+                f'Invalid version number {client_version}.') from None
 
         if not compatible:
             # Version is incompatible
@@ -1240,6 +1240,24 @@ class Server(AbstractServer):
         """
         return self._serve_thread and self._serve_thread.is_alive()
 
+    class ServerRunningContextManager:
+        """The ContextManager for a running server."""
+
+        def __init__(self, server):
+            """Init the ContextManager"""
+            self.server = server
+
+        def __enter__(self):
+            """Enter the context. Does nothing."""
+            return self  # not necessary
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            """Exit the context and stop the server."""
+            self.server.stop()
+
+            # wether to raise the Exception or suppress
+            return False  # do not suppress
+
     def start(self, port: str, address: str = ""):
         """
         Start the server at the given port and address.
@@ -1263,7 +1281,7 @@ class Server(AbstractServer):
         Returns
         -------
         ServerRunningContextManager
-            A context object for closing the server.
+            A context manager for closing the server.
 
         """
         if self.running:
@@ -1276,10 +1294,7 @@ class Server(AbstractServer):
         self._serve_thread = threading.Thread(target=server.serve_forever)
         self._serve_thread.start()
 
-        return type('ServerRunningContextManager', (),
-                    {'__enter__': (lambda x: x),
-                     '__exit__': (lambda *args: self.stop())
-                     })()
+        return self.ServerRunningContextManager(server)
 
     def stop(self):
         """
