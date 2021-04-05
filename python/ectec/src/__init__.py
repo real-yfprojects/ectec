@@ -125,7 +125,7 @@ class AbstractPackage:
 
     """
 
-    __slots__ = ['sender', 'recipient', 'type', 'time']
+    __slots__ = ['sender', 'recipient', 'type', 'time', 'content']
 
     def __init__(self, sender: str, recipient: Union[str, List[str]],
                  type: str,
@@ -160,15 +160,7 @@ class AbstractPackage:
         time : float
             the time the package was received. Might be None.
 
-
         """
-
-    @property
-    def content(self):
-        """Property content"""
-
-        raise NotImplementedError("Must be implemented by subclasses")
-
 
 class Role(enum.Enum):
     USER = "user"
@@ -176,7 +168,7 @@ class Role(enum.Enum):
 
 # ---- Client API / Standard User
 
-class PackageStorage:
+class AbstractPackageStorage:
     """
     Stores and manages packages.
     """
