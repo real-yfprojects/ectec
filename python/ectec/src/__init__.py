@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import enum
 from collections import namedtuple
-from typing import Callable, Iterable, Iterator, List, Union
+from typing import Callable, Iterable, List, Optional, Union
 
 from . import logs
 from .version import SemanticVersion, Version
@@ -162,6 +162,7 @@ class AbstractPackage:
 
         """
 
+
 class Role(enum.Enum):
     USER = "user"
 
@@ -173,16 +174,13 @@ class AbstractPackageStorage:
     Stores and manages packages.
     """
 
-    def __init__(self):
-        pass
-
     def remove(self, *packages: AbstractPackage,
-               func: Callable[[AbstractPackage], bool] = None) -> int:
+               func: Optional[Callable[[AbstractPackage], bool]] = None):
         """
         Remove packages from the storage.
 
         If `packages` is specified this method returns the number of
-        packages in `packages` that could not be removed.
+        packages in `packages` that were removed.
 
         Parameters
         ----------
@@ -193,7 +191,7 @@ class AbstractPackageStorage:
 
         Returns
         -------
-        Int.
+        None.
 
         """
         return 0
