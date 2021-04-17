@@ -265,6 +265,9 @@ class AbstractUserClient:
         list of users connected to the server.
     packages : PackageStorage
         The PackageStorage managing the received packages.
+    server : Tuple[str, int]
+        The servers address (ip addr, port). Or None if not connected.
+
 
     """
 
@@ -279,21 +282,10 @@ class AbstractUserClient:
         username : str
             The name for this client which is used as an identifier.
 
-        Attributes
-        ----------
-        version : Version
-            Equals `VERSION` of this python module.
-        username : str
-            The name for this client which is used as an identifier.
-        users : list of str
-            list of users connected to the server.
-        packages : PackageStorage
-            The PackageStorage managing the received packages.
-
         """
         self.username: str = username
         self.users: List[str]
-        self.packages: PackageStorage
+        self.packages: AbstractPackageStorage
 
     def connect(self, server: str, port: int):
         """
@@ -369,14 +361,6 @@ class AbstractUserClient:
         Returns
         -------
         Package or list of Package.
-
-        """
-        raise NotImplementedError("Must be implemented by subclasses")
-
-    @property
-    def server(self):
-        """
-        Property `server`. Read only.
 
         """
         raise NotImplementedError("Must be implemented by subclasses")

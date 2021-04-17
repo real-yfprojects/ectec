@@ -444,6 +444,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
                         except Exception as error:
                             self.log.debug(
                                 f"Couldn't update because {str(error)}")
+        else:
+            # This client has no list yet.
+            # It always needs an update
+            self.send_update()
 
         if role == Role.USER:
             self.handle_user()
@@ -714,7 +718,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             msg += part
 
     # regular expression for the INFO command
-    regex_info = re.compile(r"INFO ([\w+.-]+)")
+    regex_info = re.compile(r"INFO ([\w+.\-]+)")
 
     def recv_info(self):
         """
@@ -740,7 +744,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         """
 
         raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
-        cmd = raw_cmd.decode(encoding='utf-8', errors='surrogateescape')
+        cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression
         match = self.regex_info.fullmatch(cmd)  # should match the whole text
@@ -770,7 +774,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         """
         raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
-        cmd = raw_cmd.decode(encoding='utf-8', errors='surrogateescape')
+        cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression on the whole text
         match = self.regex_register.fullmatch(cmd)
@@ -853,7 +857,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         ::
 
-            INFO (True|False) ([\\w.-+]+)
+            INFO (True|False) ([\\w.\\-+]+)
 
         Parameters
         ----------
