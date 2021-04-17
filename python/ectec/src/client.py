@@ -162,7 +162,7 @@ class Package(AbstractPackage):
 
         # handle `recipient` types
         if isinstance(recipient, str):
-            self.recipient = recipient
+            self.recipient = (recipient,)
         else:
             self.recipient = tuple(recipient)
 
@@ -453,5 +453,469 @@ class PackageStorage(AbstractPackageStorage):
                     break  # breaks inner loop
 
 
-            if func and func(pkg):
-                yield pkg
+# ---- Client - General
+
+
+class ConnectionClosed(EctecException):
+    """
+    The connection was closed.
+    """
+
+
+class CommandError(EctecException):
+    """
+    There was a problem handling a command.
+    """
+
+
+class CommandTimeout(CommandError):
+    """
+    The receiving of a command timed out.
+    """
+
+
+class Client:
+    """
+    The superclass of all clients.
+
+    This class provides methods useful for all Ectec clients.
+    """
+
+    TIMEOUT = 1000  #: ms timeout for awaited commands
+
+    TRANSMISSION_TIMEOUT = 0.200  #: seconds of timeout between parts
+    COMMAND_TIMEOUT = 0.300  #: s timeout for a command to end
+    SOCKET_BUFSIZE = 8192  #: bytes to read from socket at once
+    COMMAND_SEPERATOR = b'\n'  #: seperates commands of the ectec protocol
+    COMMAND_LENGTH = 4096  #: bytes - the maximum length of a command
+
+    def __init__(self):
+        self.socket: socket.SocketType = None
+        self.buffer = b""
+
+    def recv_bytes(self, length, start_timeout=None, timeout=None) -> bytes:
+        """
+        Receive a specified number of bytes.
+
+        Parameters
+        ----------
+        length : int
+            The number of bytes.
+        start_timeout : int, optional
+            The timeout in s for receiving first data. The default is None.
+        timeout : int, optional
+            The timeout in s for all data to be received. The default is None.
+
+        Raises
+        ------
+        CommandTimeout
+            The data timed out.
+        ConnectionClosed
+            The connection was closed unexpectedly.
+
+        Returns
+        -------
+        bytes
+            The received bytes.
+
+        """
+        msg = self.buffer
+        self.buffer = bytes(0)
+        bufsize = self.SOCKET_BUFSIZE
+
+        if len(msg) < 1:
+            # buffer empty -> command not incoming yet
+            self.socket.settimeout(start_timeout)
+
+            try:
+                msg = self.socket.recv(bufsize)  # msg was empty
+            except socket.timeout as error:
+                raise CommandTimeout(
+                    "The receiving of the data timed out.") from error
+
+            if not msg:
+                # connection was closed
+                raise ConnectionClosed(
+                    "The connection was closed by the client.")
+
+        if len(msg) >= length:  # separator found
+            data = msg[:length]
+            self.buffer = msg[length:]
+
+            return data
+
+        # Data wasn't received completely yet.
+        self.socket.settimeout(self.TRANSMISSION_TIMEOUT)
+
+        # read out the most precice system clock for timeouting
+        start_time = time.perf_counter_ns()
+
+        # convert timeout to ns (nanoseconds)
+        timeout = timeout * 0.000000001 if timeout is not None else None
+
+        data_length = len(msg)
+        needed = length - data_length
+        while True:  # ends by an error or a return
+            try:
+                part = self.socket.recv(bufsize)
+            except socket.timeout as error:
+                raise CommandTimeout("Data parts timed out.") from error
+
+            if not part:
+                # connection was closed
+                raise ConnectionClosed(
+                    "The connection was closed by the client.")
+
+            time_elapsed = time.perf_counter_ns() - start_time
+
+            part_length = len(part)
+
+            if part_length >= needed:
+                data = msg + part[:needed]
+                self.buffer = part[needed:]
+                return data
+
+            # check time
+            if timeout is not None and time_elapsed > timeout:
+                raise CommandTimeout(
+                    "Receiving of a data took too long"
+                    + f". {time_elapsed} nanoseconds"
+                    + " have already past."
+                )
+
+            # end of command not yet received
+            # check length
+            data_length += part_length
+            needed = length - data_length
+
+            # add part to local buffer
+            msg += part
+
+    def recv_command(self, max_length,
+                     start_timeout=None, timeout=None) -> bytes:
+        """
+        Receive a command and return it.
+
+        Commands are seperatet by the a new line or the value of the
+        class variable `COMMAND_SEPERATOR`. Commands also must not exceed a
+        length of `max_length`. The timout for missing parts is defined in
+        `TRANSMISSION_TIMEOUT`. The amount of bits received at once in
+        `SOCKET_BUFSIZE`. This methods automatically exits about `timeout`
+        miliseconds after the receiving of the command started.
+
+        Parameters
+        ----------
+        max_length : int
+            The maximum lenght of a command in bytes.
+        start_timeout : float, optional
+            The timeout in s for receiving first data. The default is None.
+        timeout : float, optional
+            The timeout in s for the end of the command. The default is None.
+
+        Raises
+        ------
+        CommandError
+            The command was too long.
+        CommandTimeout
+            The command timed out.
+        ConnectionClosed
+            The connection was closed unexpectedly.
+
+        Returns
+        -------
+        command : bytes
+            The command.
+
+        """
+        msg = self.buffer
+        self.buffer = bytes(0)
+        seperator = self.COMMAND_SEPERATOR
+        bufsize = self.SOCKET_BUFSIZE
+
+        if len(msg) < 1:
+            # buffer empty -> command not incoming yet
+            self.socket.setblocking(True)
+            self.socket.settimeout(start_timeout)
+
+            try:
+                msg = self.socket.recv(bufsize)  # msg was empty
+            except socket.timeout as error:
+                raise CommandTimeout(
+                    "The receiving of the command timed out."
+                ) from error
+
+            if not msg:
+                # connection was closed
+                raise ConnectionClosed(
+                    "The connection was closed by the client.")
+
+        # check buffer or first data received
+        i = msg.find(seperator)
+
+        if i >= 0:  # separator found
+            command = msg[:i]
+            self.buffer = msg[i + len(seperator):]  # seperator is removed
+
+            # for expected behavoir check length of command
+            cmd_length = len(command)
+            if cmd_length > max_length:
+                raise CommandError(
+                    f"Command too long: {cmd_length} bytes" +
+                    f" from {max_length}"
+                )
+
+            return command
+
+        # Command wasn't received completely yet.
+        self.socket.setblocking(True)
+        self.socket.settimeout(self.TRANSMISSION_TIMEOUT)
+
+        # read out the most precice system clock for timeouting
+        start_time = time.perf_counter_ns()
+
+        # convert timeout to ns (nanoseconds)
+        timeout = timeout * 0.000000001 if timeout is not None else None
+
+        length = len(msg)
+        while True:  # ends by an error or a return
+            try:
+                part = self.socket.recv(bufsize)
+            except socket.timeout as error:
+                raise CommandTimeout("Command parts timed out.") from error
+
+            if not part:
+                # connection was closed
+                raise ConnectionClosed(
+                    "The connection was closed by the client.")
+
+            time_elapsed = time.perf_counter_ns() - start_time
+
+            i = part.find(seperator)  # end of command?
+            if i >= 0:  # separator found
+                command = msg + part[:i]
+                self.buffer = part[i + len(seperator):]  # seperator is removed
+
+                # for expected behavoir check length of command
+                cmd_length = len(command)
+                if cmd_length > max_length:
+                    raise CommandError(
+                        f"Command too long: {cmd_length} bytes" +
+                        f" from {max_length}"
+                    )
+
+                return command
+
+            # check time
+            if timeout is not None and time_elapsed > timeout:
+                raise CommandTimeout(
+                    "Receiving of a command took too long"
+                    + f". {time_elapsed} nanoseconds"
+                    + " have already past."
+                )
+
+            # end of command not yet received
+            # check length
+            length += len(part)
+
+            if length > max_length:
+                # too long
+                raise CommandError(
+                    f"Command too long: over {max_length} bytes")
+
+            # add part to local buffer
+            msg += part
+
+    # regular expression for the INFO command
+    regex_info = re.compile(r"INFO (True|False) ([\w.\-+]+)")
+
+    def parse_info(self, command):
+        """
+        Parse wether a command is an INFO command.
+
+        If it is an INFO command it is also processed.
+
+        ::
+
+            INFO (True|False) ([\\w.\\-+]+)
+                 ----------
+                 version number
+
+
+        Returns
+        -------
+        bool or str
+            False or wether the version was accepted and
+            the sent version number of the server.
+
+        Examples
+        --------
+        >>> raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        >>> cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
+        >>> res = client.parse_info(cmd)
+        >>> if res:
+        ...     if res[0]:
+        ...         print("Accepted")
+        ...     else:
+        ...         print("Incompatible version", res[1])
+
+        A command is received and decoded using UTF-8. Then the command is
+        parsed. If it is an INFO command the `accepted` attribute is checked.
+        If the version wasn't accepted the version of the server is printed.
+
+        """
+        # fullmatch regular expression
+        match = self.regex_info.fullmatch(command)
+
+        if not match:
+            return False
+
+        accepted = match.group(1).lower() == "True".lower()
+
+        return accepted, match.group(1)
+
+    # regular expression for the UPDATE USERS command
+    regex_update = re.compile(r"UPDATE USERS (\d+)")
+
+    def parse_update(self, command: str):
+        """
+        Parse and handle a update command.
+
+        The command is only handled if it is an UPDATE USERS command. In that
+        case the list of users is received and returned. If the command isn't
+        a user command `False` is returned.
+
+        .. warning:: The returned list might be empty.
+
+        Parameters
+        ----------
+        command : str
+            DESCRIPTION.
+
+        Returns
+        -------
+        bool or List[str]
+            False or list of names.
+
+        Examples
+        --------
+
+        >>> raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        >>> cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
+        >>> res = client.parse_update(cmd)
+        >>> if res is not False:
+        ...     print('\\n'.join(res))
+        name1
+        name2
+        name3
+
+        """
+        # fullmatch regular expression
+        match = self.regex_update.fullmatch(command)
+
+        if not match:
+            return False
+
+        length = int(match.group(1))
+        timeout = length * 2e-07
+
+        data = self.recv_bytes(length, 0.2, timeout if timeout > 0.3 else 0.3)
+        names = data.decode('utf-8', errors="backslashreplace").split(" ")
+
+        return names
+
+    # regular expression for the ERROR command
+    regex_error = re.compile(r"ERROR (.*)")
+
+    def parse_error(self, command: str):
+        """
+        Parse a received command to now wether it is an ERROR command.
+
+        If the `command` is not an ERROR command `False` is returned else
+        the error message is returned.
+
+        Parameters
+        ----------
+        command : str
+            The decoded command.
+
+        Returns
+        -------
+        bool or str
+            False or the error message.
+
+        """
+        # match regular expression
+        match = self.regex_info.fullmatch(command)
+
+        if not match:
+            return False
+        return match.group(1)
+
+    def send_command(self, command: str, data: bytes = b'',
+                     errors='backslashreplace'):
+        """
+        Send a command containing the given string.
+
+        Parameters
+        ----------
+        command : str
+            The command.
+        data : bytes, optional
+            Bytes to be appended to the command. The default is `b''`.
+        errors : str, optional
+            The error handler for encoding of the string.
+            The default is 'backslashreplace'.
+
+        """
+
+        command_bytes = command.encode('utf-8', errors=errors)
+
+        self.socket.sendall(command_bytes + self.COMMAND_SEPERATOR + data)
+
+    def send_info(self, version_str):
+        """
+        Send an INFO command.
+
+        Parameters
+        ----------
+        version_str : str
+            A string representing the version of the client.
+
+        Raises
+        ------
+        ValueError
+            Bad version string.
+
+        """
+        if not re.fullmatch(r'[\w.-+]+', version_str):
+            raise ValueError("Version string doesn't match `[\\w.-+]+`.")
+
+        command = "INFO {version}".format(version=version_str)
+        self.send_command(command)
+
+    def send_register(self, name, role):
+        """
+        Send a REGISTER command with the given name and role.
+
+        Parameters
+        ----------
+        name : str
+            The name to register as.
+        role : str
+            The role to register as.
+
+        Raises
+        ------
+        ValueError
+            Bad name or role.
+
+        """
+        if not re.fullmatch(r'\w+', name):
+            raise ValueError("Name doesn't match `\\w+`.")
+        if not re.fullmatch(r'\w+', role):
+            raise ValueError("Role doesn't match `\\w+`.")
+
+        command = "REGISTER {name} AS {role}".format(name=name, role=role)
+        self.send_command(command)
+
+

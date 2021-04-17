@@ -44,7 +44,7 @@ class PackageTestCase(unittest.TestCase):
         with self.subTest('No time, one recipient'):
             p = client.Package('testsender', 'testrecipient', 'testtype')
             self.assertEqual(p.sender, 'testsender')
-            self.assertEqual(p.recipient, ('testrecipient'))
+            self.assertEqual(p.recipient, ('testrecipient',))
             self.assertEqual(p.content, b'')
             self.assertEqual(p.type, 'testtype')
             self.assertEqual(p.time, None)
