@@ -26,10 +26,82 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import copy
 import datetime
-from typing import Callable, Iterator, Iterable, List, Optional, Union
+import re
+import socket
+import time
+from typing import Callable, Iterator, List, Optional, Union
 
 from . import (VERSION, AbstractPackage, AbstractPackageStorage,
-               AbstractUserClient, Role)
+               AbstractUserClient, ConnectException, EctecException, Role,
+               logs)
+
+# ---- Logging
+
+logger = logs.getLogger(__name__)
+
+
+class ClientAdapter(logs.logging.LoggerAdapter):
+    """
+    Adapter to add client context information.
+
+    A given message `msg` is added the ip address of the client and
+    transformed to:
+    ::
+        |{ip_address}| {msg}
+
+    Parameters
+    ----------
+    logger : logging.Logger or logging.LoggerAdapter
+        The interface for logging.
+    remote : (ip, port)
+        The address tuple of the remote.
+    extra : dict, optional
+        More context. The default is None.
+
+    """
+
+    def __init__(self, logger, client_type, extra=None):
+        """
+        Adapter to add connection context information.
+
+        Parameters
+        ----------
+        logger : logging.Logger or logging.LoggerAdapter
+            The interface for logging.
+        remote : (ip, port)
+            The address tuple of the remote (client).
+        extra : dict, optional
+            More context. The default is {}.
+
+
+        """
+        super().__init__(logger, extra if extra else {})
+        self.client_type = client_type
+
+    def process(self, msg, kwargs):
+        """
+        Process the log record, add ip info to msg.
+
+        Overrides super's process.
+
+        Parameters
+        ----------
+        msg : TYPE
+            DESCRIPTION.
+        kwargs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        msg = "[{}] {msg}".format(self.client_type, msg=msg)
+        return super().process(msg, kwargs)
+
+
+# ---- Package Managment
 
 
 class Package(AbstractPackage):
@@ -66,8 +138,7 @@ class Package(AbstractPackage):
 
     __slots__ = []
 
-    def __init__(self, sender: str, recipient: Union[str, List[str]],
-                 typ: str,
+    def __init__(self, sender: str, recipient: Union[str, List[str]], typ: str,
                  time: Optional[Union[float, datetime.datetime]] = None):
         """
         Init.
@@ -84,13 +155,14 @@ class Package(AbstractPackage):
             The time the package was received. The default is None.
 
         """
+        super().__init__(sender, recipient, typ)
         self.sender = sender
         self.type = typ
-        self.content = b''
+        self.content = b""
 
         # handle `recipient` types
         if isinstance(recipient, str):
-            self.recipient = (recipient)
+            self.recipient = recipient
         else:
             self.recipient = tuple(recipient)
 
@@ -105,16 +177,20 @@ class Package(AbstractPackage):
             raise TypeError(f"Unsupported type for `time`: {type(time)}")
 
     def __hash__(self):
-        return hash(
-            (self.sender, self.recipient, self.type, self.time, self.content))
+        return hash((self.sender, self.recipient, self.type, self.time,
+                     self.content))
 
     def __eq__(self, o):
         if not isinstance(o, AbstractPackage):
             return False
 
-        return self.sender == o.sender and self.recipient == o.recipient and \
-            self.type == o.type and self.content == o.content and \
-            self.time == o.time
+        return (
+            self.sender == o.sender
+            and self.recipient == o.recipient
+            and self.type == o.type
+            and self.content == o.content
+            and self.time == o.time
+        )
 
     def __str__(self):
         if not self.time:
@@ -122,8 +198,10 @@ class Package(AbstractPackage):
             return template.format(self.type, self.sender, str(self.recipient))
 
         template = "<Package type={} sender={} recipients={} time={}>"
-        return template.format(self.type, self.sender, str(self.recipient),
-                               str(self.time.timestamp()))
+        return template.format(
+            self.type, self.sender, str(
+                self.recipient), str(self.time.timestamp())
+        )
 
     def __repr__(self):
         return str(self)
@@ -244,8 +322,9 @@ class PackageStorage(AbstractPackageStorage):
         """
         return len(self.package_list)
 
-    def remove(self, *packages: Package,
-               func: Callable[[Package], bool] = None) -> None:
+    def remove(
+        self, *packages: Package, func: Callable[[Package], bool] = None
+    ) -> None:
         """
         Remove packages from the storage.
 
@@ -278,7 +357,7 @@ class PackageStorage(AbstractPackageStorage):
         self.package_list = new_list
 
     def add(self, *packages: Union[Package, List[Package]],
-            as_list: Optional[List[Package]] = None) -> None:
+            as_list: Optional[List[Package]] = None,) -> None:
         """
         Add packages to the PackageStorage.
 
@@ -295,7 +374,7 @@ class PackageStorage(AbstractPackageStorage):
 
         """
         if packages and isinstance(packages[0], list):
-            raise ValueError('Expected Package not list for `*packages`.')
+            raise ValueError("Expected Package not list for `*packages`.")
 
         self.package_list.extend(packages)
         if as_list:
@@ -319,11 +398,12 @@ class PackageStorage(AbstractPackageStorage):
     def filter(self, func: Optional[Callable[[Package], bool]] = None,
                **kwargs) -> Iterator[Package]:
         """
-        Return a filtered list of the packages in the PackageStorage.
+        Filter the packages in the PackageStorage.
 
         This functions returns an iterable yielding all packages that
-        have a positive return value when passing to `func` OR
-        that match all the `kwargs`. The keywords are checked first.
+        have a positive return value when passing to `func` AND
+        match all the `kwargs`. The keywords are checked first.
+        The PackageStorage isn't changed.
 
         Parameters
         ----------
@@ -332,23 +412,46 @@ class PackageStorage(AbstractPackageStorage):
         **kwargs : Any.
             Attributes of Package that should match.
 
-        Returns
-        -------
-        Iterator over the packages.
+        Yields
+        ------
+        Package
+            The packages matching the filter.
 
         """
         # the list is iterated faster than the view
         kwargs_items = list(kwargs.items())
 
         for pkg in self.package_list:
-            if kwargs:
-                for keyword, value in kwargs_items:
-                    if not hasattr(pkg, keyword) or \
-                            getattr(pkg, keyword) != value:
-                        break
-                else:
+            for keyword, value in kwargs_items:
+                if not hasattr(pkg, keyword) or getattr(pkg, keyword) != value:
+                    break
+            else:
+                if (not func) or (func and func(pkg)):
                     yield pkg
-                    continue
+
+    def filter_recipient(self, *recipients: str):
+        """
+        Filter out the packages that have one of the given recipients.
+
+        This method exists for greater performance.
+
+        Parameters
+        ----------
+        *recipients : str
+            The allowed recipients.
+
+        Yields
+        ------
+        Package
+            The packages.
+
+        """
+        for pkg in self.package_list:
+            for recipient in recipients:
+                if recipient in pkg.recipient:
+                    yield pkg
+                    break  # breaks inner loop
+
 
             if func and func(pkg):
                 yield pkg
