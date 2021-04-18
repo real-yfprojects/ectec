@@ -63,7 +63,7 @@ class PackageTestCase(unittest.TestCase):
             p = client.Package('testsender', 'testrecipient', 'testtype',
                                time.timestamp())
             self.assertEqual(p.sender, 'testsender')
-            self.assertEqual(p.recipient, ('testrecipient'))
+            self.assertEqual(p.recipient, ('testrecipient',))
             self.assertEqual(p.content, b'')
             self.assertEqual(p.type, 'testtype')
             self.assertEqual(p.time, time)
@@ -295,7 +295,7 @@ class PackageStorageTestCase(unittest.TestCase):
             ps.add(as_list=packages)
             self.assertEqual(ps.all(), packages)
 
-            filtered = list(ps.filter(recipient=('testrecipient')))
+            filtered = list(ps.filter(recipient=('testrecipient',)))
 
             self.assertEqual(filtered, [p1, p2, p3, p4, p5, p6])
 

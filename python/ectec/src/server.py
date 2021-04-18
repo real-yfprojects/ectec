@@ -897,8 +897,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
             raise ValueError("Type of package does't match `[\\w/.-]+`.")
         if not re.fullmatch(r'\w+', str(package.sender)):
             raise ValueError("Sender of package does't match `\\w+`.")
-        if not re.fullmatch(r'\w+', str(package.sender)):
-            raise ValueError("Sender of package does't match `\\w+`.")
         if not re.fullmatch(r'[\w,]+', str(package.recipient)):
             raise ValueError("Recipient of package does't match `[\\w,]+`.")
 
