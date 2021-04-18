@@ -108,7 +108,8 @@ class Package(AbstractPackage):
     """
     A package being sent using ectec.
 
-    This class is used by the PackageStorage.
+    This class is used by the PackageStorage. The content has to be assigned
+    to the `content` attribute after initialization.
 
     Parameters
     ----------
@@ -136,7 +137,7 @@ class Package(AbstractPackage):
 
     """
 
-    __slots__ = []
+    __slots__ = ['__time']
 
     def __init__(self, sender: str, recipient: Union[str, List[str]], typ: str,
                  time: Optional[Union[float, datetime.datetime]] = None):
@@ -159,6 +160,7 @@ class Package(AbstractPackage):
         self.sender = sender
         self.type = typ
         self.content = b""
+        self.time = time
 
         # handle `recipient` types
         if isinstance(recipient, str):
@@ -166,13 +168,42 @@ class Package(AbstractPackage):
         else:
             self.recipient = tuple(recipient)
 
+    @property
+    def time(self):
+        """
+        Get the `time` property.
+
+        Returns
+        -------
+        datetime.datetime or None
+            The time the package was received.
+
+        """
+        return self.__time
+
+    @time.setter
+    def time(self, value):
+        """
+        Set the `time` property
+
+        Parameters
+        ----------
+        value : None, number or datetime.datetime
+            DESCRIPTION.
+
+        Raises
+        ------
+        TypeError
+            Tried to set to an unsupported type.
+
+        """
         # handle `time` types
-        if time is None:
-            self.time = None
-        elif isinstance(time, (float, int)):
-            self.time = datetime.datetime.fromtimestamp(time)
-        elif isinstance(time, datetime.datetime):
-            self.time = time
+        if value is None:
+            self.__time = None
+        elif isinstance(value, (float, int)):
+            self.__time = datetime.datetime.fromtimestamp(value)
+        elif isinstance(value, datetime.datetime):
+            self.__time = value
         else:
             raise TypeError(f"Unsupported type for `time`: {type(time)}")
 
@@ -816,12 +847,66 @@ class Client:
             return False
 
         length = int(match.group(1))
-        timeout = length * 2e-07
+        # Keep the timeout between 0.3 and 5
+        timeout = min(max(length * 2e-07, 0.3), 5)
 
-        data = self.recv_bytes(length, 0.2, timeout if timeout > 0.3 else 0.3)
+        data = self.recv_bytes(length, 0.2, timeout)
         names = data.decode('utf-8', errors="backslashreplace").split(" ")
 
         return names
+
+    # regular expression for the PACKAGE command
+    regex_package = re.compile(
+        r"PACKAGE ([\w/.-]+) FROM ([\w]+) TO ([\w,]+) WITH (\d+)")
+
+    def parse_package(self, command: str):
+        """
+        Parse and handle a PACKAGE command.
+
+        The content of the command is received if it is a PACKAGE command.
+
+        Parameters
+        ----------
+        command : str
+            The received command.
+
+        Returns
+        -------
+        bool or Package
+            False or the package without timestamp.
+
+        Examples
+        --------
+
+        >>> raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        >>> cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
+        >>> res = client.parse_update(cmd)
+        >>> if res:
+        ...     # Package command received
+        ...     print(res)
+        <Package ...>
+
+        """
+        match = self.regex_package.fullmatch(command)
+
+        if not match:
+            return False
+
+        content_type = match.group(1)
+        sender = match.group(2)
+        recipients = match.group(3).split(',')
+
+        length = int(match.group(4))
+
+        # Keep the timeout between 0.3 and 5
+        timeout = min(max(length * 2e-07, 0.3), 5)
+
+        data = self.recv_bytes(length, 0.2, timeout)
+
+        package = Package(sender, recipients, content_type)
+        package.content = data
+
+        return package
 
     # regular expression for the ERROR command
     regex_error = re.compile(r"ERROR (.*)")
@@ -918,4 +1003,23 @@ class Client:
         command = "REGISTER {name} AS {role}".format(name=name, role=role)
         self.send_command(command)
 
+    def send_package(self, package):
+        recipient = ",".package.recipient
+        length = len(package.content)
+
+        # check characters of parameters using regexes
+        if not re.fullmatch(r'[\w/.-]+', str(package.type)):
+            raise ValueError("Type of package does't match `[\\w/.-]+`.")
+        if not re.fullmatch(r'\w+', str(package.sender)):
+            raise ValueError("Sender of package does't match `\\w+`.")
+        if not re.fullmatch(r'[\w,]+', str(recipient)):
+            raise ValueError("Recipient of package does't match `[\\w,]+`.")
+
+        template = "PACKAGE {typ} FROM {sender} TO {recipient} WITH {length}"
+        command = template.format(typ=package.type,
+                                  sender=package.sender,
+                                  recipient=recipient,
+                                  length=length)
+
+        self.send_command(command, package.content)
 
