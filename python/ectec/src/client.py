@@ -28,6 +28,7 @@ import copy
 import datetime
 import re
 import socket
+import threading
 import time
 from typing import Callable, Iterator, List, Optional, Union
 
@@ -1004,7 +1005,22 @@ class Client:
         self.send_command(command)
 
     def send_package(self, package):
-        recipient = ",".package.recipient
+        """
+        Send a PACKAGE command containing the given package.
+
+        Parameters
+        ----------
+        package : Package
+            The package to send.
+
+        Raises
+        ------
+        ValueError
+            Some attribute of the package is not legal.
+
+
+        """
+        recipient = ",".join(package.recipient)
         length = len(package.content)
 
         # check characters of parameters using regexes
@@ -1023,3 +1039,325 @@ class Client:
 
         self.send_command(command, package.content)
 
+
+# ---- User Client
+
+class UserClientThread(threading.Thread):
+    """
+    Thread to do the UserClient receiving work.
+    """
+
+    def __init__(self, userclient: 'UserClient'):
+        super().__init__(name="Ectec-UserClientThread")
+        self.client: 'UserClient' = userclient
+        self.end = threading.Event()
+
+        self.log = ClientAdapter(logger, userclient.role)
+
+    def run(self):
+        try:
+            while not self.end.is_set():
+                try:
+                    # Recv a command
+                    raw_cmd = self.client.recv_command(
+                        4096, 0.5, self.client.COMMAND_TIMEOUT)
+                    cmd = raw_cmd.decode(
+                        encoding='utf-8', errors='backslashreplace')
+
+                    # Handle PACKAGE command
+                    res = self.client.parse_package(cmd)
+                    if res:
+                        # Handle package
+                        package: Package = res
+                        package.time = time.time()
+
+                        self.client._add_package(package)
+                        continue
+
+                    # Handle UPDATE USERS command
+                    res = self.client.parse_update(cmd)
+                    if res is not False:  # in case of empty list
+                        # update users
+                        self.client._update_users(res)
+                        continue
+
+                    # Handle ERROR command
+                    res = self.client.parse_error(cmd)
+                    if res:
+                        self.log.error("Server error: " + res)
+                        continue
+
+                    # Unkown command
+                    self.log.error("Server sent unkown command: " +
+                                   min(6, len(cmd)) + "...")
+
+                except (CommandError, CommandTimeout) as error:
+                    self.log.error("CommandError: " + str(error))
+
+        except (ConnectionClosed, OSError) as error:
+            self.log.warning(str(error))
+            self.client._handle_closed()
+        except Exception as error:
+            self.log.exception("Local Exception in UserClientThread.")
+
+
+class UserClient(Client, AbstractUserClient):
+    """
+    A Client for the normal user role.
+
+    Parameters
+    ----------
+    username : str
+        The name for this client which is used as an identifier.
+
+    Attributes
+    ----------
+    version : Version
+        Equals `VERSION` of this python module.
+    username : str
+        The name for this client which is used as an identifier.
+        None if the client is not connected to a server.
+    users : list of str
+        list of users connected to the server.
+    packages : PackageStorage
+        The PackageStorage managing the received packages.
+    role : Role
+        The role of this client. Equals Role.USER.
+
+    Methods
+    -------
+    connect(server, port)
+        Connect to a server.
+    disconnect()
+        Disconnect from the server the client currently is connected to.
+    send(package)
+        Send a package.
+    receive(n)
+        Read out the buffer of Packages.
+
+    """
+
+    def __init__(self, username: str):
+        """
+        A Client for the normal user role.
+
+        Parameters
+        ----------
+        username : str
+            The name for this client which is used as an identifier.
+
+        """
+        super().__init__()
+        self.username: str = username
+        self.role: Role = Role.USER
+        self.users: List[str] = None
+        self.packages: PackageStorage = PackageStorage()
+
+        #: A buffer for processing packages. This is used by `receive`.
+        self.buffer = []
+
+        #: The socket connected to the server. Or None.
+        self.socket = None
+
+        #: The LoggerAdapter for logging
+        self.log = ClientAdapter(logger, self.__class__.__name__)
+
+        #: Thread for background tasks
+        self._thread: threading.Thread = None
+
+    @property
+    def connected(self):
+        """
+        Get the `connected` property.
+
+        Returns wether the background thread is still running. This thead
+        is started on connect and stopped when the connection is closed.
+
+        Returns
+        -------
+        bool
+            Wether the client is connected to a ectec server.
+
+        """
+        return self._thread and self._thread.is_alive()
+
+    def _add_package(self, package: Package):
+        self.buffer.append(package)
+
+    def _update_users(self, user_list: List[str]):
+        self.users = user_list
+
+    def _handle_closed(self):
+        """
+        Handle the closing of the connection.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.users = []
+
+    def connect(self, server: str, port: int):
+        """
+        Connect to a server.
+
+        Parameters
+        ----------
+        server : str
+            The ip or hostname.
+        port : int
+            The port to connect to.
+
+        Raises
+        ------
+        OSError
+            Server not online. (Connection error on the socket layer.)
+        ConnectException
+            The connection couldn't be established.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.socket = socket.create_connection((server, port))
+
+        try:
+            # send version number
+            self.send_info(str(VERSION))
+
+            # receive answer of the server
+            # wether the version is accepted and the version of the server.
+            raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+            cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
+
+            parsed = self.parse_info(cmd)
+            if parsed:
+                # It is a INFO command
+                if not parsed[0]:
+                    # not accepted -> not compatible
+                    raise ConnectException(
+                        "Server ({}, {})[{}] refused.".format(server,
+                                                              port,
+                                                              parsed[1]))
+            else:
+                parsed = self.parse_error(cmd)
+                if parsed:
+                    raise ConnectException(
+                        "Server sent error '{}'.".format(parsed))
+
+                # unnecessary else after raise
+                raise ConnectException(
+                    "Server didn't follow the ectec protocol.")
+
+            # accepted -> compatible
+            self.log.info("Server ({}, {})[{}] accepted.".format(
+                server, port, parsed[1]))
+
+            # send register
+            self.send_register(self.username, self.role.value)
+
+            # Receive user list update
+            raw_cmd = self.recv_command(4096, 0.5, self.COMMAND_TIMEOUT)
+            cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
+
+            parsed = self.parse_update(cmd)
+            if parsed is not False:
+                # It is a UPDATE USERS command
+                self.users = parsed
+            else:
+                # It isn't a UPDATE USERS command
+                parsed = self.parse_error(cmd)
+                if parsed:
+                    raise ConnectException(
+                        "Server sent error '{}'.".format(parsed))
+
+                # unnecessary else after raise
+                raise ConnectException(
+                    "Server didn't follow the ectec protocol.")
+
+            # Start thread
+            self._thread = UserClientThread(self)
+            self._thread.start()
+
+        except (CommandError, ConnectionClosed) as error:
+            self.socket.close()
+            raise ConnectException(*error.args) from None
+        except OSError as error:
+            self.socket.close()
+            raise ConnectException("SocketError on connecting.") from error
+        except Exception as error:
+            self.socket.close()
+            raise error
+
+    def disconnect(self):
+        """
+        Disconnect from the server the client currently is connected to.
+
+        This then allows connecting to a different server.
+
+        Returns
+        -------
+        None.
+
+        """
+        self._thread.end.set()
+        self._thread.join()
+
+        self.users = []
+        self.socket.close()
+
+    def send(self, package: Package):
+        """
+        Send a package.
+
+        Parameters
+        ----------
+        package : Package
+            The package.
+
+        Raises
+        ------
+        Exceptions related to sending if the package couldn't be sent.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.send_package(package)
+
+    def receive(self, n: int = None) -> Union[AbstractPackage,
+                                              List[AbstractPackage]]:
+        """
+        Read out the buffer of Packages.
+
+        The buffer contains all Packages that were received since the last
+        time the buffer was read. The optional `n` specified how many packages
+        should be removed from the buffer and returned. If `n=1` a Package is
+        returned. If `n>1` a list of Packages is returned. If `n=None` or
+        `n<1` all packages in the buffer are returned.
+
+        Parameters
+        ----------
+        n : positive int, optional
+            Number of packages to read out. The default is None.
+
+        Returns
+        -------
+        Package or list of Package.
+
+        """
+        if n > 1:
+            packages = self.buffer[:n]
+            self.buffer = self.buffer[n:]
+
+            return packages
+        if n == 1:
+            package = self.buffer[0]
+            self.buffer = self.buffer[1:]
+            return package
+
+        raise ValueError(
+            "Cannot receive less than one package from buffer.")
