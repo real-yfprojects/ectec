@@ -8,6 +8,7 @@
 - [ ] UR: Chat view
 - [ ] UR: Filter messages by receiver
 
+<br>
 
 - [ ] Server (S)
 - [ ] S: Let users connect
