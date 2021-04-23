@@ -8,6 +8,7 @@
 - [ ] UR: Chat view
 - [ ] UR: Filter messages by receiver
 
+
 - [ ] Server (S)
 - [ ] S: Let users connect
 - [ ] S: List connected users
@@ -22,5 +23,13 @@
 - [ ] UR: Hashing
 - [ ] UR: Signing
 - [ ] Detection of servers in the network
-- [ ] S: Unbound port detection
+- [ ] S: Unbound (free) port detection
 - [ ] Client Person in the Middle Role (MR)
+- [ ] S: Kicking clients
+- [ ] S: Blocking any new clients option
+- [ ] S: Displaying server logs in the GUI
+- [ ] Displaying client logs in the GUI
+- [ ] Context help (F1 key)
+- [ ] Help document for students
+- [ ] Tasks and technical information in the Help document
+- [ ] Developer docs connected to the GUI and context help
