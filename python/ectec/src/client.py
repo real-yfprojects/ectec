@@ -33,8 +33,8 @@ import time
 from typing import Callable, Iterator, List, Optional, Union
 
 from . import (VERSION, AbstractPackage, AbstractPackageStorage,
-               AbstractUserClient, ConnectException, EctecException, Role,
-               logs)
+               AbstractUserClient, Address, ConnectException, EctecException,
+               Role, logs)
 
 # ---- Logging
 
@@ -1129,6 +1129,8 @@ class UserClient(Client, AbstractUserClient):
         The PackageStorage managing the received packages.
     role : Role
         The role of this client. Equals Role.USER.
+    server : Address or None
+        The address the client is connected to.
 
     Methods
     -------
@@ -1187,6 +1189,23 @@ class UserClient(Client, AbstractUserClient):
         """
         return self._thread and self._thread.is_alive()
 
+    @property
+    def server(self):
+        """
+        Get the `server` property.
+
+        If the client isn't connected to a server this property is None.
+
+        Returns
+        -------
+        None or Address
+            The address of the server the client is connected to.
+        """
+        if not self.connected or not self.socket:
+            return None
+
+        return Address._make(self.socket.getpeername())
+
     def _add_package(self, package: Package):
         self.buffer.append(package)
 
@@ -1203,6 +1222,25 @@ class UserClient(Client, AbstractUserClient):
 
         """
         self.users = []
+
+    class ConnectionContextManager:
+        """
+        Context manager for the context of the client connected to a server.
+
+        This manager closes the connection when the context is left.
+        """
+
+        def __init__(self, client):
+            self.client: UserClient = client
+
+        def __enter__(self):
+            pass
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            self.client.disconnect()
+
+            # wether to raise the Exception or suppress
+            return False  # do not suppress
 
     def connect(self, server: str, port: int):
         """
@@ -1296,6 +1334,8 @@ class UserClient(Client, AbstractUserClient):
         except Exception as error:
             self.socket.close()
             raise error
+
+        return self.ConnectionContextManager(self)
 
     def disconnect(self):
         """
