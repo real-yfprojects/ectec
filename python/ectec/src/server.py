@@ -341,6 +341,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
     # ---- Functionalities
 
+    #: The regex defining the characters of a clients name
+    regex_name = re.compile(r"\w+")
+
     def run(self):
         """
         Run the initial register sequence of the ectec protocoll.
@@ -397,6 +400,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         # Receive the role and name of the user
         name, role_str = self.recv_register()
+
+        # Check name
+        if not self.regex_name.fullmatch(name):
+            raise RequestRefusedError("Not a valid name.")
 
         # Check role twice to prevent flaws
         try:
