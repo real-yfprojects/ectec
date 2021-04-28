@@ -25,7 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import datetime
 import os.path as osp
+import secrets
+import socket
 import sys
+import threading
+import time
 import unittest
 
 if True:  # isort formatting
@@ -34,6 +38,8 @@ if True:  # isort formatting
 
 import src as ectec
 from src import client
+
+# ---- Asset Test
 
 
 class PackageTestCase(unittest.TestCase):
@@ -444,14 +450,467 @@ class PackageStorageTestCase(unittest.TestCase):
             self.assertEqual(filtered, [p4, p5, p7])
 
 
+# ---- Client Tests
+
+class FunctionThread(threading.Thread):
+
+    def run(self):
+        self.return_value = None
+        try:
+            if self._target:
+                self.return_value = self._target(*self._args, **self._kwargs)
+        finally:
+            # Avoid a refcycle if the thread is running a function with
+            # an argument that has a member that points to the thread.
+            del self._target, self._args, self._kwargs
+
+
+class ClientTestCase(unittest.TestCase):
+    """
+    Test the methods and functionalities provided by the `Client` class.
+
+    These functionalities are inherited by every Client.
+    """
+
+    def setUp(self):
+        self.client = client.Client()
+
+        self.client.socket, self.server_socket = socket.socketpair()
+
+    def test_recv_bytes(self):
+        """Test the receiving of x random bytes."""
+
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
+                   6500,  30000, 500 * 1000]
+
+        # no buffer required
+        self.client.socket.settimeout(0)  # wrong timout - should be handled
+        for length in numbers:
+            with self.subTest("Same length", length=length):
+                data = secrets.token_bytes(length)
+
+                thread = FunctionThread(
+                    target=self.client.recv_bytes, args=[length])
+                thread.start()
+
+                t1 = time.perf_counter()
+                self.server_socket.sendall(data)
+                t2 = time.perf_counter()
+
+                thread.join()
+
+                result = thread.return_value
+
+                self.assertEqual(data, result)
+
+        # buffer needed
+        self.client.socket.settimeout(0)
+        buffer = b'test'
+        self.server_socket.sendall(buffer)
+        for length in numbers[5:-2]:
+            with self.subTest("Buffer needed", length=length):
+                data = secrets.token_bytes(length)
+
+                thread = FunctionThread(
+                    target=self.client.recv_bytes, args=[length])
+                thread.start()
+
+                self.server_socket.sendall(data)
+
+                thread.join()
+
+                result = thread.return_value
+
+                res_data = buffer + data[:-4]
+                buffer = data[-4:]
+
+                self.assertEqual(res_data, result)
+
+        # test start timeout
+        self.client.socket.settimeout(0)
+        timeout = 0.500
+        self.client.buffer = b''
+        with self.subTest("Wait timeout", timeout=timeout):
+            with self.assertRaises(client.CommandTimeout):
+                t1 = time.perf_counter()
+                self.client.recv_bytes(100, start_timeout=timeout)
+            t2 = time.perf_counter()
+            if t2-t1 > timeout+0.100:
+                self.fail(f"Timout too late by: {t2-t1-timeout}")
+
+        # test end timeout
+        self.client.socket.settimeout(0)
+        timeout = 0.500
+        length = 1000
+        with self.subTest("Part timout", timeout=timeout):
+
+            def run(self, timeout, length):
+                times = timeout * 2 // (self.client.COMMAND_TIMEOUT*0.5)
+                for i in range(int(times)):
+                    data = secrets.token_bytes(length//10)
+
+                    self.server_socket.sendall(data)
+                    time.sleep(self.client.COMMAND_TIMEOUT*0.5)
+
+            thread = FunctionThread(target=run, args=[self, timeout, length])
+            thread.start()
+            with self.assertRaises(client.CommandTimeout):
+                t1 = time.perf_counter()
+                self.client.recv_bytes(length, timeout=timeout)  # in seconds
+            t2 = time.perf_counter()
+            thread.join()
+
+            if t2-t1 > timeout+self.client.COMMAND_TIMEOUT:
+                self.fail(f"Timout too late by: {t2-t1-timeout}")
+
+    def test_recv_command(self):
+        """Test the receiving of a random command."""
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
+                   6500,  30000, 500 * 1000]
+
+        # no buffer required
+        self.client.socket.settimeout(0)  # wrong timout - should be handled
+        for length in numbers:
+            with self.subTest("Same length", length=length):
+                data = secrets.token_bytes(length).replace(
+                    self.client.COMMAND_SEPERATOR, b'a')
+
+                thread = FunctionThread(
+                    target=self.client.recv_command,
+                    args=[length*2 + len(self.client.COMMAND_SEPERATOR)])
+                thread.start()
+
+                self.server_socket.sendall(
+                    data + self.client.COMMAND_SEPERATOR)
+
+                thread.join()
+
+                result = thread.return_value
+
+                self.assertEqual(data, result)
+
+        # buffer needed
+        self.client.socket.settimeout(0)
+        buffer = b'test'
+        self.server_socket.sendall(buffer)
+        for length in numbers[5:]:
+            with self.subTest("Buffer needed", length=length):
+                data = secrets.token_bytes(length).replace(
+                    self.client.COMMAND_SEPERATOR, b'a')
+
+                thread = FunctionThread(
+                    target=self.client.recv_command, args=[length*2])
+                thread.start()
+
+                self.server_socket.sendall(
+                    data[:-4] + self.client.COMMAND_SEPERATOR + data[-4:])
+
+                thread.join()
+
+                result = thread.return_value
+
+                res_data = buffer + data[:-4]
+                buffer = data[-4:]
+
+                self.assertEqual(res_data, result)
+
+        # test start timeout
+        self.client.socket.settimeout(0)
+        timeout = 0.500
+        self.client.buffer = b''
+        with self.subTest("Wait timeout", timeout=timeout):
+            with self.assertRaises(client.CommandTimeout):
+                t1 = time.perf_counter()
+                self.client.recv_command(100, start_timeout=timeout)
+            t2 = time.perf_counter()
+            if t2-t1 > timeout+0.100:
+                self.fail(f"Timout too late by: {t2-t1-timeout}")
+
+        # test end timeout
+        self.client.socket.settimeout(0)
+        timeout = 0.500
+        length = 1000
+        with self.subTest("Part timout", timeout=timeout):
+
+            def run(self, timeout, length):
+                times = timeout * 2 // (self.client.COMMAND_TIMEOUT*0.5)
+                for i in range(int(times)):
+                    data = secrets.token_bytes(length//10).replace(
+                        self.client.COMMAND_SEPERATOR, b'a')
+
+                    self.server_socket.sendall(data)
+                    time.sleep(self.client.COMMAND_TIMEOUT*0.5)
+
+            thread = FunctionThread(target=run, args=[self, timeout, length])
+            thread.start()
+            with self.assertRaises(client.CommandTimeout):
+                t1 = time.perf_counter()
+                self.client.recv_command(
+                    length*2, timeout=timeout)  # in seconds
+            t2 = time.perf_counter()
+            thread.join()
+
+            if t2-t1 > timeout+self.client.COMMAND_TIMEOUT:
+                self.fail(f"Timout too late by: {t2-t1-timeout}")
+
+    def test_parse_info(self):
+        """Test the parsing of an INFO command."""
+        with self.subTest("Other command"):
+            command = 'ERROR Some Exception was raised'
+
+            res = self.client.parse_info(command)
+            self.assertFalse(res)
+
+        with self.subTest("Bad argument"):
+            command = 'INFO bool version'
+
+            res = self.client.parse_info(command)
+            self.assertFalse(res)
+
+        with self.subTest("Accepted"):
+            command = 'INFO True 1.9.0-testlabel+meta'
+
+            res = self.client.parse_info(command)
+
+            self.assertNotEqual(res, False)
+            self.assertTrue(len(res) >= 2)
+
+            self.assertTrue(res[0])
+            self.assertEqual(res[1], '1.9.0-testlabel+meta')
+
+        with self.subTest("Refused"):
+            command = 'INFO False 1.9.0-testlabel+meta'
+
+            res = self.client.parse_info(command)
+
+            self.assertNotEqual(res, False)
+            self.assertTrue(len(res) >= 2)
+
+            self.assertFalse(res[0])
+            self.assertEqual(res[1], '1.9.0-testlabel+meta')
+
+    def test_parse_update(self):
+        """Test parsing an UPDATE USERS command."""
+        with self.subTest("Other command"):
+            command = 'INFO'
+
+            res = self.client.parse_update(command)
+            self.assertFalse(res)
+
+        with self.subTest("Valid, one client"):
+            command = 'UPDATE USERS 10'
+            data = b'testclient'
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_update(command)
+
+            self.assertEqual(res, ['testclient'])
+
+        with self.subTest("Valid, three client"):
+            command = 'UPDATE USERS 21'
+            data = b'testclient hello test'
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_update(command)
+
+            self.assertEqual(res, ['testclient', 'hello', 'test'])
+
+        with self.subTest("Valid, complex client"):
+            command = 'UPDATE USERS 7'
+            data = b'hell_2g'
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_update(command)
+
+            self.assertEqual(res, ['hell_2g'])
+
+        with self.subTest("Valid, no client"):
+            command = 'UPDATE USERS 0'
+            data = b''
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_update(command)
+
+            self.assertEqual(res, [])
+
+        with self.subTest("Valid, small client"):
+            command = 'UPDATE USERS 1'
+            data = b'3'
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_update(command)
+
+            self.assertEqual(res, ['3'])
+
+    def test_parse_package(self):
+        with self.subTest("Other command"):
+            command = 'INFO'
+
+            res = self.client.parse_package(command)
+            self.assertFalse(res)
+
+        with self.subTest("Valid"):
+            command = 'PACKAGE testtype FROM ben TO anna WITH 20'
+            data = b'a\xd9\xf7\xafa-\xd3#\xea\xf3$\xedj\xa2\x1f[\xe6i\x85\xbe'
+
+            package = client.Package('ben', 'anna', 'testtype')
+            package.content = data
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_package(command)
+
+            self.assertEqual(res, package)
+
+        with self.subTest("Empty"):
+            command = 'PACKAGE testtype FROM ben TO anna WITH 0'
+            data = b''
+
+            package = client.Package('ben', 'anna', 'testtype')
+            package.content = data
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_package(command)
+
+            self.assertEqual(res, package)
+
+        with self.subTest("Small"):
+            command = 'PACKAGE testtype FROM ben TO anna WITH 1'
+            data = b'a'
+
+            package = client.Package('ben', 'anna', 'testtype')
+            package.content = data
+
+            if self.server_socket.send(data) < len(data):
+                raise Exception("Data wasn't sent at once.")
+
+            res = self.client.parse_package(command)
+
+            self.assertEqual(res, package)
+
+    def test_parse_error(self):
+        """Test parsing an ERROR command."""
+        with self.subTest("Other command"):
+            command = 'INFO'
+
+            res = self.client.parse_error(command)
+            self.assertFalse(res)
+
+        with self.subTest("One word"):
+            command = 'ERROR baderr'
+
+            res = self.client.parse_error(command)
+            self.assertEqual(res, 'baderr')
+
+        with self.subTest("Three words"):
+            command = 'ERROR Exception is bad'
+
+            res = self.client.parse_error(command)
+            self.assertEqual(res, 'Exception is bad')
+
+    def test_send_command(self):
+        with self.subTest("Empty"):
+            self.client.send_command('')
+
+            ans = self.server_socket.recv(4096)
+
+            self.assertEqual(ans, self.client.COMMAND_SEPERATOR)
+
+        with self.subTest("Normal"):
+            self.client.send_command('HELLO test g3')
+
+            ans = self.server_socket.recv(4096)
+
+            self.assertEqual(ans, b'HELLO test g3' +
+                             self.client.COMMAND_SEPERATOR)
+
+        with self.subTest("With data"):
+            self.client.send_command('HELLO test g3', b'gjkl')
+
+            ans = self.server_socket.recv(4096)
+
+            self.assertEqual(ans, b'HELLO test g3' +
+                             self.client.COMMAND_SEPERATOR + b'gjkl')
+
+    def test_send_info(self):
+        self.client.send_info('testversion')
+        ans = self.server_socket.recv(4096)
+
+        self.assertEqual(ans, b'INFO testversion' +
+                         self.client.COMMAND_SEPERATOR)
+
+    def test_send_register(self):
+        self.client.send_register('testname', 'testrole')
+        ans = self.server_socket.recv(4096)
+
+        self.assertEqual(ans, b'REGISTER testname AS testrole' +
+                         self.client.COMMAND_SEPERATOR)
+
+    def test_send_package(self):
+        sep = self.client.COMMAND_SEPERATOR
+
+        with self.subTest("Empty package"):
+            package = client.Package("ben", "anna", "typ4")
+
+            self.client.send_package(package)
+
+            ans = self.server_socket.recv(4096)
+
+            expected = b"PACKAGE typ4 FROM ben TO anna WITH 0" + sep
+            self.assertEqual(ans, expected)
+
+        with self.subTest("Normal package"):
+            package = client.Package("ben", "anna", "typ4")
+            package.content = b'Test'
+
+            self.client.send_package(package)
+
+            ans = self.server_socket.recv(4096)
+
+            expected = b"PACKAGE typ4 FROM ben TO anna WITH 4" + sep + b'Test'
+            self.assertEqual(ans, expected)
+
+        with self.subTest("Small package"):
+            package = client.Package("ben", "anna", "typ4")
+            package.content = b'T'
+
+            self.client.send_package(package)
+
+            ans = self.server_socket.recv(4096)
+
+            expected = b"PACKAGE typ4 FROM ben TO anna WITH 1" + sep + b'T'
+            self.assertEqual(ans, expected)
+
+
+def getModuleSuite():
+    suite = unittest.TestSuite([])
+    suite.addTest(loader.loadTestsFromTestCase(PackageTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(PackageStorageTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(ClientTestCase))
+
+    return suite
+
+
 if __name__ == '__main__':
     # unittest.main(buffer=True, verbosity=3)
     loader = unittest.TestLoader()
-    suite = unittest.TestSuite([])
-
-    suite.addTest(loader.loadTestsFromTestCase(PackageTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(PackageStorageTestCase))
-
     runner = unittest.TextTestRunner(verbosity=3, buffer=False)
 
-    runner.run(suite)
+    # suite = unittest.TestSuite([])
+    # suite.addTest(loader.loadTestsFromTestCase(ClientTestCase))
+    # runner.run(suite)
+
+    runner.run(getModuleSuite())

@@ -551,6 +551,9 @@ class Client:
             The received bytes.
 
         """
+        if length < 1:
+            return b''
+
         msg = self.buffer
         self.buffer = bytes(0)
         bufsize = self.SOCKET_BUFSIZE
@@ -803,7 +806,7 @@ class Client:
 
         accepted = match.group(1).lower() == "True".lower()
 
-        return accepted, match.group(1)
+        return accepted, match.group(2)
 
     # regular expression for the UPDATE USERS command
     regex_update = re.compile(r"UPDATE USERS (\d+)")
@@ -852,7 +855,10 @@ class Client:
         timeout = min(max(length * 2e-07, 0.3), 5)
 
         data = self.recv_bytes(length, 0.2, timeout)
-        names = data.decode('utf-8', errors="backslashreplace").split(" ")
+        if data:
+            names = data.decode('utf-8', errors="backslashreplace").split(" ")
+        else:
+            names = []
 
         return names
 
@@ -931,7 +937,7 @@ class Client:
 
         """
         # match regular expression
-        match = self.regex_info.fullmatch(command)
+        match = self.regex_error.fullmatch(command)
 
         if not match:
             return False
@@ -973,7 +979,7 @@ class Client:
             Bad version string.
 
         """
-        if not re.fullmatch(r'[\w.-+]+', version_str):
+        if not re.fullmatch(r'[\w.\-+]+', version_str):
             raise ValueError("Version string doesn't match `[\\w.-+]+`.")
 
         command = "INFO {version}".format(version=version_str)
