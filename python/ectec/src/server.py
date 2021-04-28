@@ -527,6 +527,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
             The received bytes.
 
         """
+        if length < 1:
+            return b''
+
         msg = self.buffer
         self.buffer = bytes(0)
         bufsize = self.SOCKET_BUFSIZE
