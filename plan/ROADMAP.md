@@ -23,14 +23,20 @@
 - [ ] UR: Formatting of messages (bold, italic, encrypted/plain)
 - [ ] UR: Hashing
 - [ ] UR: Signing
+- [ ] Displaying client logs in the GUI
+
 - [ ] Detection of servers in the network
-- [ ] S: Unbound (free) port detection
 - [ ] Client Person in the Middle Role (MR)
+
+- [ ] S: Unbound (free) port detection
 - [ ] S: Kicking clients
 - [ ] S: Blocking any new clients option
 - [ ] S: Displaying server logs in the GUI
-- [ ] Displaying client logs in the GUI
+
 - [ ] Context help (F1 key)
 - [ ] Help document for students
 - [ ] Tasks and technical information in the Help document
 - [ ] Developer docs connected to the GUI and context help
+- [ ] Reporting assistant
+- [ ] Information for getting in touch
+- [ ] *About*
