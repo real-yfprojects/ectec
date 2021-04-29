@@ -1327,7 +1327,7 @@ class UserClient(Client, AbstractUserClient):
 
         except (CommandError, ConnectionClosed) as error:
             self.socket.close()
-            raise ConnectException(*error.args) from None
+            raise ConnectException(str(error)) from None
         except OSError as error:
             self.socket.close()
             raise ConnectException("SocketError on connecting.") from error

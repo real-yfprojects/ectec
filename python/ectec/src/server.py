@@ -328,10 +328,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
         try:
             self.run()
         except RequestRefusedError as error:
-            self.log.exception("Connection refused: {msg}", msg=error.args[0])
+            self.log.exception("Connection refused: {msg}", msg=str(error))
             self.send_error(error)
         except OSError as error:
-            self.log.exception("OSError: {msg}", msg=error.args[0])
+            self.log.exception("OSError: {msg}", msg=str(error))
             self.send_error('Critical Error.')
         except Exception as error:
             self.log.exception("Critical Error while handling client.")
@@ -373,7 +373,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             client_version = self.recv_info()
         except (OSError, CommandError, CommandTimeout) as error:
             self.log.debug("Error while receiving client info: " +
-                           str(error.args[0]))
+                           str(error))
             return
 
         # Check if version number is compatible
@@ -998,7 +998,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         if isinstance(error, Exception):
             name = type(error).__name__
-            text = '; '.join(error.args).replace(
+            text = str(error).replace(
                 str(self.COMMAND_SEPERATOR), '')
 
             message = name + ': ' + text
