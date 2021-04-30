@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 import datetime
+import logging
 import os.path as osp
 import secrets
 import socket
@@ -38,6 +39,39 @@ if True:  # isort formatting
 
 import src as ectec
 from src import client
+
+
+class ErrorDetectionHandler(logging.Handler):
+
+    def __init__(self, level):
+        super().__init__(level)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+        return True
+
+    def has_record(self, **kwargs):
+        for rec in self.records:
+            for kw, value in kwargs.items():
+                if getattr(rec, kw) is not value:
+                    break
+            else:
+                return True
+
+        return False
+
+    def check_exception(self):
+        for rec in self.records:
+            if rec.exc_info:
+                return rec
+
+        return False
+
+    def clear(self):
+        self.acquire()
+        self.records = []
+        self.release()
 
 # ---- Asset Test
 
@@ -895,11 +929,82 @@ class ClientTestCase(unittest.TestCase):
             self.assertEqual(ans, expected)
 
 
+class UserClientThreadTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.client: client.UserClient = client.UserClient('somename')
+
+        self.client.socket, self.server_socket = socket.socketpair()
+
+        self.thread = client.UserClientThread(self.client)
+        self.client._thread = self.thread
+
+        self.handler = ErrorDetectionHandler(logging.WARNING)
+        client.logger.addHandler(self.handler)
+        client.logger.propagate = False
+
+    def test_server_closes(self):
+        """Test closing the server socket during `run`."""
+        self.thread.start()
+        self.server_socket.close()
+
+        time.sleep(0.3)
+
+        self.assertFalse(self.thread.is_alive())
+        self.assertTrue(self.handler.has_record(levelno=logging.WARNING))
+
+        self.thread.join()
+
+        for record in self.handler.records:
+            if record.exc_info:
+                raise record.exc_info[1]
+            if record.levelno != logging.WARNING:
+                raise Exception(record.message)
+
+    def test_client_closes(self):
+        """Test calling `client.disconnect` during `run`."""
+        self.thread.start()
+        self.client.disconnect()
+
+        time.sleep(0.3)
+
+        self.assertFalse(self.thread.is_alive())
+
+        self.thread.join()
+
+        for record in self.handler.records:
+            if record.exc_info:
+                raise record.exc_info[1]
+            raise Exception(record.message)
+
+    def test_bad_command(self):
+        pass  # TODO test_bad_command
+
+    def test_package(self):
+        pass  # TODO test_package
+
+    def test_update(self):
+        pass  # TODO test_update
+
+    def test_error(self):
+        pass  # TODO test_error
+
+    def test_all_commands(self):
+        pass  # TODO test_all_commands
+
+
+class UserClientTestCase(unittest.TestCase):
+    # TODO implement `UserClientTestCase`
+    pass
+
+
 def getModuleSuite():
     suite = unittest.TestSuite([])
     suite.addTest(loader.loadTestsFromTestCase(PackageTestCase))
     suite.addTest(loader.loadTestsFromTestCase(PackageStorageTestCase))
     suite.addTest(loader.loadTestsFromTestCase(ClientTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(UserClientTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(UserClientThreadTestCase))
 
     return suite
 
@@ -910,7 +1015,7 @@ if __name__ == '__main__':
     runner = unittest.TextTestRunner(verbosity=3, buffer=False)
 
     # suite = unittest.TestSuite([])
-    # suite.addTest(loader.loadTestsFromTestCase(ClientTestCase))
+    # suite.addTest(loader.loadTestsFromTestCase(UserClientThreadTestCase))
     # runner.run(suite)
 
     runner.run(getModuleSuite())

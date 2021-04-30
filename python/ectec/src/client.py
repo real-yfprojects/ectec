@@ -76,7 +76,8 @@ class ClientAdapter(logs.logging.LoggerAdapter):
 
 
         """
-        super().__init__(logger, extra if extra else {})
+        super().__init__(logger,
+                         (extra if extra else {}).update({'ct': client_type}))
         self.client_type = client_type
 
     def process(self, msg, kwargs):
@@ -1066,7 +1067,7 @@ class UserClientThread(threading.Thread):
                 try:
                     # Recv a command
                     raw_cmd = self.client.recv_command(
-                        4096, 0.5, self.client.COMMAND_TIMEOUT)
+                        4096, 0.2, self.client.COMMAND_TIMEOUT)
                     cmd = raw_cmd.decode(
                         encoding='utf-8', errors='backslashreplace')
 
@@ -1095,9 +1096,11 @@ class UserClientThread(threading.Thread):
 
                     # Unkown command
                     self.log.error("Server sent unkown command: " +
-                                   min(6, len(cmd)) + "...")
+                                   cmd[:min(6, len(cmd))] + "...")
 
-                except (CommandError, CommandTimeout) as error:
+                except CommandTimeout:
+                    pass
+                except (CommandError) as error:
                     self.log.error("CommandError: " + str(error))
 
         except (ConnectionClosed, OSError) as error:
