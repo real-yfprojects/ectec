@@ -484,11 +484,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 # wait for next command
                 self.send_error(error)
 
-            command = "PACKAGE {} FROM {} TO {} WITH {}"
+            command = "PACKAGE {} FROM {} TO {} WITH {} [{}]"
             self.log.info(command.format(package.type,
                                          package.sender,
                                          package.recipient,
-                                         len(package.content)
+                                         len(package.content),
+                                         id(package)
                                          ))
 
             # forward package
@@ -498,6 +499,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
                         continue
                     try:
                         client.handler.send_pkg(package)
+                        self.log.debug(
+                            "Forward package {} to {}.".format(id(package),
+                                                               client.name))
                     except OSError:
                         # client already disconnected
                         self.log.debug("Couldn't forward package to " +
@@ -1191,10 +1195,6 @@ class Server(AbstractServer):
 
         self.requesthandler_class = requesthandler
 
-        self.__ip = None
-        self.__port = None
-        self.__users = None
-
         # Holds the thread running TCPServer.serve_forever
         self._serve_thread = None
 
@@ -1270,7 +1270,7 @@ class Server(AbstractServer):
             # wether to raise the Exception or suppress
             return False  # do not suppress
 
-    def start(self, port: str, address: str = ""):
+    def start(self, port: int, address: str = ""):
         """
         Start the server at the given port and address.
 
@@ -1280,7 +1280,7 @@ class Server(AbstractServer):
 
         Parameters
         ----------
-        port : str
+        port : int
             the port.
         address : str
             The address. Defaults to an empty string.
@@ -1306,7 +1306,7 @@ class Server(AbstractServer):
         self._serve_thread = threading.Thread(target=server.serve_forever)
         self._serve_thread.start()
 
-        return self.ServerRunningContextManager(server)
+        return self.ServerRunningContextManager(self)
 
     def stop(self):
         """
