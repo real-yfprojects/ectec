@@ -524,7 +524,7 @@ class Client:
 
     def __init__(self):
         self.socket: socket.SocketType = None
-        self.buffer = b""
+        self._buffer = b""
 
     def recv_bytes(self, length, start_timeout=None, timeout=None) -> bytes:
         """
@@ -555,8 +555,8 @@ class Client:
         if length < 1:
             return b''
 
-        msg = self.buffer
-        self.buffer = bytes(0)
+        msg = self._buffer
+        self._buffer = bytes(0)
         bufsize = self.SOCKET_BUFSIZE
 
         if len(msg) < 1:
@@ -576,7 +576,7 @@ class Client:
 
         if len(msg) >= length:  # separator found
             data = msg[:length]
-            self.buffer = msg[length:]
+            self._buffer = msg[length:]
 
             return data
 
@@ -608,7 +608,7 @@ class Client:
 
             if part_length >= needed:
                 data = msg + part[:needed]
-                self.buffer = part[needed:]
+                self._buffer = part[needed:]
                 return data
 
             # check time
@@ -663,8 +663,8 @@ class Client:
             The command.
 
         """
-        msg = self.buffer
-        self.buffer = bytes(0)
+        msg = self._buffer
+        self._buffer = bytes(0)
         seperator = self.COMMAND_SEPERATOR
         bufsize = self.SOCKET_BUFSIZE
 
@@ -690,7 +690,7 @@ class Client:
 
         if i >= 0:  # separator found
             command = msg[:i]
-            self.buffer = msg[i + len(seperator):]  # seperator is removed
+            self._buffer = msg[i + len(seperator):]  # seperator is removed
 
             # for expected behavoir check length of command
             cmd_length = len(command)
@@ -729,7 +729,8 @@ class Client:
             i = part.find(seperator)  # end of command?
             if i >= 0:  # separator found
                 command = msg + part[:i]
-                self.buffer = part[i + len(seperator):]  # seperator is removed
+                # seperator is removed
+                self._buffer = part[i + len(seperator):]
 
                 # for expected behavoir check length of command
                 cmd_length = len(command)
@@ -1058,6 +1059,7 @@ class UserClientThread(threading.Thread):
         super().__init__(name="Ectec-UserClientThread")
         self.client: 'UserClient' = userclient
         self.end = threading.Event()
+        self.idle = threading.Event()
 
         self.log = ClientAdapter(logger, userclient.role)
 
@@ -1070,6 +1072,8 @@ class UserClientThread(threading.Thread):
                         4096, 0.2, self.client.COMMAND_TIMEOUT)
                     cmd = raw_cmd.decode(
                         encoding='utf-8', errors='backslashreplace')
+
+                    self.idle.clear()
 
                     # Handle PACKAGE command
                     res = self.client.parse_package(cmd)
@@ -1099,7 +1103,7 @@ class UserClientThread(threading.Thread):
                                    cmd[:min(6, len(cmd))] + "...")
 
                 except CommandTimeout:
-                    pass
+                    self.idle.set()
                 except (CommandError) as error:
                     self.log.error("CommandError: " + str(error))
 
@@ -1108,6 +1112,8 @@ class UserClientThread(threading.Thread):
             self.client._handle_closed()
         except Exception as error:
             self.log.exception("Local Exception in UserClientThread.")
+
+        self.idle.set()
 
 
 class UserClient(Client, AbstractUserClient):
@@ -1211,6 +1217,7 @@ class UserClient(Client, AbstractUserClient):
 
     def _add_package(self, package: Package):
         self.buffer.append(package)
+        self.packages.add(package)
 
     def _update_users(self, user_list: List[str]):
         self.users = user_list
@@ -1377,6 +1384,24 @@ class UserClient(Client, AbstractUserClient):
         """
         self.send_package(package)
 
+    def _update(self):
+        """
+        Block until background thread is idle.
+
+        The background thread sets a threading.Event if it considers itself
+        as idle. This is normally the case if a timeout is reached when waiting
+        for a new command from the server. This command should be used with
+        care. It can (nearly) dead-lock the calling thread. This can happen if
+        the server doesn't really stop sending.
+
+        Returns
+        -------
+        None.
+
+        """
+        if self._thread and self._thread.is_alive():
+            self._thread.idle.wait()
+
     def receive(self, n: int = None) -> Union[AbstractPackage,
                                               List[AbstractPackage]]:
         """
@@ -1398,11 +1423,16 @@ class UserClient(Client, AbstractUserClient):
         Package or list of Package.
 
         """
+        if not n:
+            packages = self.buffer
+            self.buffer = []
+            return packages
+
         if n > 1:
             packages = self.buffer[:n]
             self.buffer = self.buffer[n:]
-
             return packages
+
         if n == 1:
             package = self.buffer[0]
             self.buffer = self.buffer[1:]
