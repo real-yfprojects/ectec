@@ -16,6 +16,18 @@
 - [ ] S: Forward messages
 - [ ] S: Tell users to update users list
 
+<br>
+
+- [ ] *About*
+
+
+# Version 1.1.0
+
+- [ ] S: Unbound (free) port detection
+- [ ] S: Kicking clients
+- [ ] S: Blocking any new clients option
+
+
 # Planned
 
 - [ ] UR: Encryption using RSA
@@ -28,9 +40,6 @@
 - [ ] Detection of servers in the network
 - [ ] Client Person in the Middle Role (MR)
 
-- [ ] S: Unbound (free) port detection
-- [ ] S: Kicking clients
-- [ ] S: Blocking any new clients option
 - [ ] S: Displaying server logs in the GUI
 
 - [ ] Context help (F1 key)
@@ -39,4 +48,3 @@
 - [ ] Developer docs connected to the GUI and context help
 - [ ] Reporting assistant
 - [ ] Information for getting in touch
-- [ ] *About*
