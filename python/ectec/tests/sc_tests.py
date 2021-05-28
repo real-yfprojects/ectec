@@ -28,7 +28,9 @@ import threading
 import time
 import unittest
 
-from __init__ import ErrorDetectionHandler, ectec
+from __init__ import ErrorDetectionHandler, _import_ectec
+
+ectec = _import_ectec('client', 'server', 'logs')
 
 
 class SimpleClientServerTests(unittest.TestCase):
@@ -143,7 +145,8 @@ class SimpleClientServerTests(unittest.TestCase):
                     self.assertFalse(len(client1.packages))
 
                     # client2 should receive something
-                    self.assertTrue(client2.receive(block=True))
+                    client2._update()
+                    self.assertTrue(client2.receive())
                     self.assertEqual(len(client2.packages), 1)
 
             time.sleep(0.1)
@@ -189,13 +192,14 @@ class SimpleClientServerTests(unittest.TestCase):
 
                 # ---- receive package
                 # sender shouldn't receive anything
-                self.assertFalse(clients[0].receive(block=True))
+                clients[0]._update()
+                self.assertFalse(clients[0].receive())
                 self.assertEqual(len(clients[0].packages), 0)
 
                 time.sleep(0.01)
                 for client in clients[1:]:
-                    self.assertTrue(client.receive(
-                        block=True), client.username)
+                    client._update()
+                    self.assertTrue(client.receive(), client.username)
                     self.assertEqual(len(client.packages), 1, client.username)
 
                 # ---- send multiple packages at once
@@ -222,8 +226,8 @@ class SimpleClientServerTests(unittest.TestCase):
                 # ---- receive the many packages
                 time.sleep(0.05)
                 for client in clients:
-                    self.assertEqual(
-                        len(client.receive(block=True)), len(clients)-1)
+                    client._update()
+                    self.assertEqual(len(client.receive()), len(clients)-1)
 
                 # ---- disconnect
                 for i in range(len(clients)):
