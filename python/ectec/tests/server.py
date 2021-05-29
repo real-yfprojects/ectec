@@ -23,43 +23,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-import cProfile
-import importlib
+import copy
 import logging
-import os.path as osp
 import secrets
 import socket
 import socketserver
-import sys
-import threading
 import time
 import unittest
 from unittest import mock
-import copy
 
-if True:  # isort formatting
-    PATH = sys.path
-    sys.path.append(osp.abspath(osp.join(__file__, '../../')))
+from . import ErrorDetectionHandler, FunctionThread, _import_ectec
 
-import src as ectec
-import src.server as ectecserver
-import src.version as ectecversion
-
-
-# ---- Helper
-
-
-class FunctionThread(threading.Thread):
-
-    def run(self):
-        self.return_value = None
-        try:
-            if self._target:
-                self.return_value = self._target(*self._args, **self._kwargs)
-        finally:
-            # Avoid a refcycle if the thread is running a function with
-            # an argument that has a member that points to the thread.
-            del self._target, self._args, self._kwargs
+ectec = _import_ectec('server', 'version')
+ectecserver = ectec.server
+ectecversion = ectec.version
 
 
 # ---- TestCases
@@ -620,7 +597,7 @@ class ClientHandlerAdvancedTestCase(unittest.TestCase):
             time.sleep(1)
             self.assertFalse(thread.is_alive())
 
-
+    @unittest.skip("Not implemented yet.")
     def test_handling_two_clients(self):
         """Test the handling of two clients."""
         # TODO

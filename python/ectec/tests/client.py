@@ -25,53 +25,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import datetime
 import logging
-import os.path as osp
 import secrets
 import socket
-import sys
-import threading
 import time
 import unittest
 
-if True:  # isort formatting
-    PATH = sys.path
-    sys.path.append(osp.abspath(osp.join(__file__, '../../')))
+from . import ErrorDetectionHandler, FunctionThread, _import_ectec
 
-import src as ectec
-from src import client
-
-
-class ErrorDetectionHandler(logging.Handler):
-
-    def __init__(self, level):
-        super().__init__(level)
-        self.records = []
-
-    def emit(self, record):
-        self.records.append(record)
-        return True
-
-    def has_record(self, **kwargs):
-        for rec in self.records:
-            for kw, value in kwargs.items():
-                if getattr(rec, kw) is not value:
-                    break
-            else:
-                return True
-
-        return False
-
-    def check_exception(self):
-        for rec in self.records:
-            if rec.exc_info:
-                return rec
-
-        return False
-
-    def clear(self):
-        self.acquire()
-        self.records = []
-        self.release()
+ectec = _import_ectec('client', 'logs')
+client = ectec.client
 
 # ---- Asset Test
 
@@ -485,18 +447,6 @@ class PackageStorageTestCase(unittest.TestCase):
 
 
 # ---- Client Tests
-
-class FunctionThread(threading.Thread):
-
-    def run(self):
-        self.return_value = None
-        try:
-            if self._target:
-                self.return_value = self._target(*self._args, **self._kwargs)
-        finally:
-            # Avoid a refcycle if the thread is running a function with
-            # an argument that has a member that points to the thread.
-            del self._target, self._args, self._kwargs
 
 
 class ClientTestCase(unittest.TestCase):
@@ -977,18 +927,23 @@ class UserClientThreadTestCase(unittest.TestCase):
                 raise record.exc_info[1]
             raise Exception(record.message)
 
+    @unittest.skip("Not implemented yet.")
     def test_bad_command(self):
         pass  # TODO test_bad_command
 
+    @unittest.skip("Not implemented yet.")
     def test_package(self):
         pass  # TODO test_package
 
+    @unittest.skip("Not implemented yet.")
     def test_update(self):
         pass  # TODO test_update
 
+    @unittest.skip("Not implemented yet.")
     def test_error(self):
         pass  # TODO test_error
 
+    @unittest.skip("Not implemented yet.")
     def test_all_commands(self):
         pass  # TODO test_all_commands
 

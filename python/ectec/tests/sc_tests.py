@@ -28,7 +28,7 @@ import threading
 import time
 import unittest
 
-from __init__ import ErrorDetectionHandler, _import_ectec
+from . import ErrorDetectionHandler, _import_ectec
 
 ectec = _import_ectec('client', 'server', 'logs')
 

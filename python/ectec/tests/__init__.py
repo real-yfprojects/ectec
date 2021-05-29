@@ -58,6 +58,19 @@ def _import_ectec(*submodules):
     return ectec
 
 
+class FunctionThread(threading.Thread):
+
+    def run(self):
+        self.return_value = None
+        try:
+            if self._target:
+                self.return_value = self._target(*self._args, **self._kwargs)
+        finally:
+            # Avoid a refcycle if the thread is running a function with
+            # an argument that has a member that points to the thread.
+            del self._target, self._args, self._kwargs
+
+
 class ErrorDetectionHandler(logging.Handler):
 
     def __init__(self, level):
