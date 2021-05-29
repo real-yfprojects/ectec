@@ -1,0 +1,5 @@
+# This TOML document specifies the build system for package managers.
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
