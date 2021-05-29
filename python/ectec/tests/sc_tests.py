@@ -125,6 +125,8 @@ class SimpleClientServerTests(unittest.TestCase):
 
             with client1.connect("0.0.0.0", server.port):
                 with client2.connect("0.0.0.0", server.port):
+                    time.sleep(0.01)
+                    client1._update()
                     # some client1 attribute tests
                     self.assertEqual(client1.users, ["user_1", "user_2"])
 
@@ -141,11 +143,13 @@ class SimpleClientServerTests(unittest.TestCase):
                         'client1', 'client2', 'text/plain')
                     client1.send(package)
 
+                    time.sleep(0.05)
+                    client2._update()
+
                     # client1 shouldn't receive anything
                     self.assertFalse(len(client1.packages))
 
                     # client2 should receive something
-                    client2._update()
                     self.assertTrue(client2.receive())
                     self.assertEqual(len(client2.packages), 1)
 

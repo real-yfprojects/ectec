@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import os.path as osp
 import sys
+import threading
 import time
 import unittest
 import warnings
@@ -47,8 +48,11 @@ def _import_ectec(*submodules):
         for sbm in submodules:
             __import__('ectec.'+sbm)
     except:
-        PATH = sys.path
-        sys.path.append(osp.abspath(osp.join(__file__, '../../')))
+        # PATH = sys.path
+        path = osp.abspath(osp.join(osp.dirname(__file__), '../'))
+        # print(path)
+        if not path in sys.path:
+            sys.path.append(path)
 
         ectec = __import__('src')
 
@@ -237,16 +241,3 @@ class EctecTestRunner(unittest.TextTestRunner):
         else:
             self.stream.write("\n")
         return result
-
-
-if __name__ == '__main__':
-    loader = unittest.TestLoader()
-    runner = EctecTestRunner(verbosity=3, buffer=True,
-                             resultclass=EctecTestResult)
-    suite = suite = unittest.TestSuite([])
-
-    # load
-    suite.addTest(loader.discover(osp.dirname(osp.abspath(__file__)), "*.py"))
-
-    # run
-    runner.run(suite)
