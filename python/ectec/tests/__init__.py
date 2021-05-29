@@ -49,15 +49,15 @@ def _import_ectec(*submodules):
             __import__('ectec.'+sbm)
     except:
         # PATH = sys.path
-        path = osp.abspath(osp.join(osp.dirname(__file__), '../'))
+        path = osp.abspath(osp.join(osp.dirname(__file__), '../src/'))
         # print(path)
         if not path in sys.path:
             sys.path.append(path)
 
-        ectec = __import__('src')
+        ectec = __import__('ectec')
 
         for sbm in submodules:
-            __import__('src.'+sbm)
+            __import__('ectec.'+sbm)
 
     return ectec
 
