@@ -1152,6 +1152,30 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
 
 class EctecTCPServer(socketserver.ThreadingTCPServer):
+    """
+    A ThreadingTCPServer with some extra functions.
+
+    When the server is closed, the request sockets connected to clients
+    are closed to. This class also adds the ablity to block all incoming
+    requests from clients.
+    """
+
+    def __init__(self, server_address, RequestHandlerClass,
+                 bind_and_activate=True):
+        super().__init__(server_address,
+                         RequestHandlerClass,
+                         bind_and_activate)
+
+        # Define some extra attributes
+        self.block_new_connections = False
+
+    def verify_request(self, request, client_address):
+        """
+        Verify the request.
+
+        Return True if we should proceed with this request.
+        """
+        return not bool(self.block_new_connections)
 
     def shutdown_request(self, request):
         """Called to shutdown and close an individual request."""
@@ -1393,6 +1417,26 @@ class Server(AbstractServer):
         self._serve_thread.start()
 
         return self.ServerRunningContextManager(self)
+
+    @property
+    def reject(self) -> bool:
+        """
+        Whether the server rejects new clients.
+
+        Returns
+        -------
+        bool
+            True, if yes, in any other cases False.
+        """
+        if self.running:
+            return self._server.block_new_connections
+        return False
+
+    @reject.setter
+    def reject(self, value: bool):
+        if self.running:
+            self._server.block_new_connections = bool(value)
+
 
     def stop(self):
         """

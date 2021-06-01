@@ -143,6 +143,41 @@ class SimpleClientServerTests(unittest.TestCase):
             if client:
                 client.disconnect()
 
+    def test_rejecting_clients(self):
+        """Test the server rejecting a client."""
+        server = ectec.server.Server()
+
+        with server.start(0):
+            client1 = ectec.client.UserClient('user_1')
+            client2 = ectec.client.UserClient('user_2')
+
+            self.assertFalse(server.reject)
+
+            with client1.connect("0.0.0.0", server.port):
+                self.assertTrue(client1.connected)
+
+                server.reject = True
+
+                self.assertTrue(server.reject)
+
+                self.assertTrue(client1.connected)
+
+                with self.assertRaises(ectec.client.ConnectException):
+                    with client2.connect("0.0.0.0", server.port):
+                        self.assertFalse(client2.connected)
+
+                self.assertFalse(client2.connected)
+                self.assertTrue(client1.connected)
+
+                self.assertTrue(server.reject)
+
+                server.reject = False
+
+                self.assertFalse(server.reject)
+
+                with client2.connect("0.0.0.0", server.port):
+                        self.assertTrue(client2.connected)
+
     # @unittest.skip("")
     def test_two_clients(self):
         """Test two clients using the server."""
