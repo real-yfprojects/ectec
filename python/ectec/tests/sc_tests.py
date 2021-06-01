@@ -114,6 +114,35 @@ class SimpleClientServerTests(unittest.TestCase):
 
             self.check_logs()
 
+    def test_stopping_server(self):
+        """Test the server closing although clients are still connected."""
+        server = ectec.server.Server()
+
+        client = None
+
+        try:
+            server.start(0)
+
+            client = ectec.client.UserClient('Testuser')
+
+            client.connect("0.0.0.0", server.port)
+
+            self.assertTrue(server.running)
+            self.assertTrue(client.connected)
+
+            server.stop()
+
+            time.sleep(0.05)
+
+            self.assertFalse(server.running)
+            self.assertFalse(client.connected)
+
+        finally:
+            server.stop()
+
+            if client:
+                client.disconnect()
+
     # @unittest.skip("")
     def test_two_clients(self):
         """Test two clients using the server."""

@@ -231,6 +231,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
         Run the protocoll until the client is registered.
     handle_XXX
         Handle client with a specific role.
+    disconnect()
+        Close connection to client and terminate handling.
     recv_bytes(length, start_timeout=None, timeout=None)
         Receive a specified number of bytes.
     recv_command(start_timeout=None, timeout=None)
@@ -343,8 +345,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
         except Exception as error:
             self.log.exception("Critical Error while handling client.")
             self.send_error('Critical Error.')
-        finally:
-            self.request.close()
 
     # ---- Functionalities
 
@@ -1151,6 +1151,55 @@ class ClientHandler(socketserver.BaseRequestHandler):
         return clientl
 
 
+class EctecTCPServer(socketserver.ThreadingTCPServer):
+
+    def shutdown_request(self, request):
+        """Called to shutdown and close an individual request."""
+        # Changed from socketserver.TCPServer
+        try:
+            # explicitly shutdown.  socket.close() merely releases
+            # the socket and waits for GC to perform the actual close.
+            request.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass  # some platforms may raise ENOTCONN here
+        self.close_request(request)
+
+    def process_request(self, request, client_address):
+        """Start a new thread to process the request."""
+        # 'Inherited' from socketserver.ThreadingMixIn
+        t = threading.Thread(target=self.process_request_thread,
+                             args=(request, client_address))
+        t.daemon = self.daemon_threads
+        if not t.daemon and self.block_on_close:
+            if self._threads is None:
+                self._threads = []
+            self._threads.append(t)
+        t.start()
+
+        # Extra part
+        t.name = str(client_address[0])  # name thread after ip
+        t.request_socket = request  # add attribute
+
+    def server_close(self):
+        """Cleanup the server."""
+        # 'Inherited' from socketserver.TCPServer
+        self.socket.close()
+
+        # Changed from socketserver.ThreadingMixIn
+        if self.block_on_close:
+            threads = self._threads
+            self._threads = None
+            if threads:
+                for thread in threads:
+                    self.shutdown_request(thread.request_socket)
+
+                for thread in threads:
+                    thread.join()
+
+
+# ---- Ectec API Implementation
+
+
 class Server(AbstractServer):
     """
     A Server ectec clients can connect to.
@@ -1235,7 +1284,7 @@ class Server(AbstractServer):
         # Holds the thread running TCPServer.serve_forever
         self._serve_thread = None
 
-        # Holds the ThreadingTCPServer
+        # Holds the EctecTCPServer
         self._server = None
 
     @property
@@ -1313,7 +1362,7 @@ class Server(AbstractServer):
 
         A new `TheadingTCPServer` is created every time start is called.
         It is important to call the `stop` method after this one so that
-        the `ThreadingTCPServer` is teared down and cleaned up.
+        the `EctecTCPServer` is teared down and cleaned up.
 
         Parameters
         ----------
@@ -1336,8 +1385,8 @@ class Server(AbstractServer):
         if self.running:
             raise EctecException('Server is already running.')
 
-        server = socketserver.ThreadingTCPServer((address, port),
-                                                 self.requesthandler_class)
+        server = EctecTCPServer((address, port),
+                                self.requesthandler_class)
         self._server = server
 
         self._serve_thread = threading.Thread(target=server.serve_forever)
