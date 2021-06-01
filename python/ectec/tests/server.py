@@ -51,6 +51,9 @@ class ClientHandlerTestCase(unittest.TestCase):
         # add a cleanup method that is always called
         self.addCleanup(self.do_cleanup)
 
+        # fix logs displaying
+        ectecserver.logger.propagate = False
+
         # set up server socket
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(("", 0))
@@ -506,6 +509,19 @@ class ClientHandlerTestCase(unittest.TestCase):
             except OSError as e:
                 raise AssertionError(f'{e.__class__.__name__} raised.')
 
+    def test_disconnect(self):
+        """Test the `disconnect` method."""
+        # start thread
+        thread = FunctionThread(target=self.handler.handle)
+        thread.start()
+
+        self.assertTrue(thread.is_alive())
+
+        self.handler.disconnect()
+
+        time.sleep(0.01)
+        self.assertFalse(thread.is_alive())
+
     # ---- Cleanup
 
     def do_cleanup(self):
@@ -609,6 +625,6 @@ if __name__ == '__main__':
     suite = unittest.TestSuite([])
 
     suite.addTest(loader.loadTestsFromTestCase(ClientHandlerTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(ClientHandlerAdvancedTestCase))
+    # suite.addTest(loader.loadTestsFromTestCase(ClientHandlerAdvancedTestCase))
 
     unittest.TextTestRunner(verbosity=3, buffer=False).run(suite)

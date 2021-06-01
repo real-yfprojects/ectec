@@ -50,6 +50,7 @@ import socket
 import socketserver
 import threading
 import time
+import traceback
 from collections import namedtuple
 
 from . import (VERSION, AbstractServer, Address, EctecException, Role, logs,
@@ -330,6 +331,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
         except RequestRefusedError as error:
             self.log.exception("Connection refused: {msg}", msg=str(error))
             self.send_error(error)
+        except ConnectionClosed as error:
+            frame = traceback.extract_tb(error.__traceback__, 1)[0]
+            msg = "Connection closed. File \"{f}\", line {line}, in {context}."
+            self.log.error(msg.format(f=frame.filename,
+                                      line=frame.lineno,
+                                      context=frame.name))
         except OSError as error:
             self.log.exception("OSError: {msg}", msg=str(error))
             self.send_error('Critical Error.')
@@ -340,6 +347,36 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.request.close()
 
     # ---- Functionalities
+
+    def disconnect(self, reason=""):
+        """
+        Close connection to client and terminate handling.
+
+        The handling will propably run in another thread. This method
+        shutdowns the socket, so that the handling thread will see an exception
+        and terminate. This process can take a little bit but is faster and
+        easier than other ways to terminate.
+
+        Parameters
+        ----------
+        reason : str, optional
+            The reason to disconnect. The client is told this.
+            The default is "".
+
+        Returns
+        -------
+        None.
+
+        """
+        self.log.warning("Closing connection to client. " + reason)
+
+        self.request.shutdown(socket.SHUT_RD)
+
+        msg = "Server closed connection."
+        if reason:
+            msg += "Reason: " + reason
+        self.send_error(msg)
+        self.request.shutdown(socket.SHUT_WR)
 
     #: The regex defining the characters of a clients name
     regex_name = re.compile(r"\w+")
