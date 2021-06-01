@@ -1358,11 +1358,14 @@ class UserClient(Client, AbstractUserClient):
         None.
 
         """
-        self._thread.end.set()
-        self._thread.join()
+        if self._thread:
+            self._thread.end.set()
+            self._thread.join()
+
+        if self.socket:
+            self.socket.close()
 
         self.users = []
-        self.socket.close()
 
     def send(self, package: Package):
         """
