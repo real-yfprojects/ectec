@@ -370,14 +370,15 @@ class ClientHandler(socketserver.BaseRequestHandler):
         """
         self.log.warning("Closing connection to client. " + reason)
 
-        self.request.shutdown(socket.SHUT_RD)
-
         msg = "Server closed connection."
         if reason:
             msg += "Reason: " + reason
-        self.send_error(msg)
-        self.request.shutdown(socket.SHUT_WR)
-        self.request.close()
+            self.send_error(msg)
+
+        try:
+            self.request.shutdown(socket.SHUT_RDWR)
+        finally:
+            self.request.close()
 
     #: The regex defining the characters of a clients name
     regex_name = re.compile(r"\w+")
