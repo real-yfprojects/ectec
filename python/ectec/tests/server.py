@@ -161,7 +161,7 @@ class ClientHandlerTestCase(unittest.TestCase):
                 t1 = time.perf_counter()
                 self.handler.recv_bytes(100, start_timeout=timeout)
             t2 = time.perf_counter()
-            if t2-t1 > timeout+0.100:
+            if t2-t1 > timeout+0.200:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
         # test end timeout
@@ -186,7 +186,7 @@ class ClientHandlerTestCase(unittest.TestCase):
             t2 = time.perf_counter()
             thread.join()
 
-            if t2-t1 > timeout+self.handler.COMMAND_TIMEOUT:
+            if t2-t1 > timeout+self.handler.COMMAND_TIMEOUT+0.2:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
     def test_recv_command(self):
@@ -249,7 +249,7 @@ class ClientHandlerTestCase(unittest.TestCase):
                 t1 = time.perf_counter()
                 self.handler.recv_command(100, start_timeout=timeout)
             t2 = time.perf_counter()
-            if t2-t1 > timeout+0.100:
+            if t2-t1 > timeout+0.200:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
         # test end timeout
@@ -276,7 +276,7 @@ class ClientHandlerTestCase(unittest.TestCase):
             t2 = time.perf_counter()
             thread.join()
 
-            if t2-t1 > timeout+self.handler.COMMAND_TIMEOUT:
+            if t2-t1 > timeout+self.handler.COMMAND_TIMEOUT+0.200:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
     def test_recv_info(self):
@@ -519,7 +519,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
         self.handler.disconnect()
 
-        time.sleep(0.01)
+        time.sleep(0.1)
         self.assertFalse(thread.is_alive())
 
     # ---- Cleanup

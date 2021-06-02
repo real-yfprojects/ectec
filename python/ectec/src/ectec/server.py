@@ -377,6 +377,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             msg += "Reason: " + reason
         self.send_error(msg)
         self.request.shutdown(socket.SHUT_WR)
+        self.request.close()
 
     #: The regex defining the characters of a clients name
     regex_name = re.compile(r"\w+")
