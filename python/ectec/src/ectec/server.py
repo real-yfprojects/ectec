@@ -331,7 +331,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         try:
             self.run()
         except RequestRefusedError as error:
-            self.log.exception("Connection refused: {msg}", msg=str(error))
+            self.log.exception("Connection refused: {}".format(str(error)))
             self.send_error(error)
         except ConnectionClosed as error:
             frame = traceback.extract_tb(error.__traceback__, 1)[0]
@@ -340,7 +340,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                                       line=frame.lineno,
                                       context=frame.name))
         except OSError as error:
-            self.log.exception("OSError: {msg}", msg=str(error))
+            self.log.exception("OSError: {}".format(str(error)))
             self.send_error('Critical Error.')
         except Exception as error:
             self.log.exception("Critical Error while handling client.")
@@ -1151,14 +1151,28 @@ class ClientHandler(socketserver.BaseRequestHandler):
         return clientl
 
 
-class EctecTCPServer(socketserver.ThreadingTCPServer):
+class EctecTCPMixIn():
     """
-    A ThreadingTCPServer with some extra functions.
+    A ThreadingMixIn for the TCPServer with some extra functions.
 
+    Most code is from `socketserver.ThreadingMixIn`.
     When the server is closed, the request sockets connected to clients
     are closed to. This class also adds the ablity to block all incoming
     requests from clients.
+    This MixIn should be combined with `socketserver.TCPServer` so that it
+    overrides the methods.
     """
+
+    # Decides how threads will act upon termination of the
+    # main process
+    daemon_threads = False
+
+    # If true, server_close() waits until all non-daemonic threads terminate.
+    block_on_close = True
+
+    # For non-daemonic threads, list of threading.Threading objects
+    # used by server_close() to wait for all threads completion.
+    _threads = None
 
     def __init__(self, server_address, RequestHandlerClass,
                  bind_and_activate=True):
@@ -1188,6 +1202,19 @@ class EctecTCPServer(socketserver.ThreadingTCPServer):
             pass  # some platforms may raise ENOTCONN here
         self.close_request(request)
 
+    def process_request_thread(self, request, client_address):
+        """Same as in BaseServer but as a thread.
+
+        In addition, exception handling is done here.
+
+        """
+        try:
+            self.finish_request(request, client_address)
+        except Exception:
+            self.handle_error(request, client_address)
+        finally:
+            self.shutdown_request(request)
+
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
         # 'Inherited' from socketserver.ThreadingMixIn
@@ -1206,8 +1233,7 @@ class EctecTCPServer(socketserver.ThreadingTCPServer):
 
     def server_close(self):
         """Cleanup the server."""
-        # 'Inherited' from socketserver.TCPServer
-        self.socket.close()
+        super().server_close()  # should call socketserver.TCPServer's method
 
         # Changed from socketserver.ThreadingMixIn
         if self.block_on_close:
@@ -1219,6 +1245,16 @@ class EctecTCPServer(socketserver.ThreadingTCPServer):
 
                 for thread in threads:
                     thread.join()
+
+
+class EctecTCPServer(EctecTCPMixIn, socketserver.TCPServer):
+    """
+    An enhanced ThreadingTCPServer using an own MixIn.
+
+    When the server is closed, the request sockets connected to clients
+    are closed to. This class also adds the ablity to block all incoming
+    requests from clients.
+    """
 
 
 # ---- Ectec API Implementation
@@ -1436,7 +1472,6 @@ class Server(AbstractServer):
     def reject(self, value: bool):
         if self.running:
             self._server.block_new_connections = bool(value)
-
 
     def stop(self):
         """
