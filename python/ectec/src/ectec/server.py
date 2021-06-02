@@ -1384,11 +1384,23 @@ class Server(AbstractServer):
     @property
     def users(self):
         """
-        list of ClientData
-            namedtuple for each client connected to the server.
+        list of Tuple[name: str, role: Role, address: Address]
+            Datatuple for each client connected to the server.
 
         """
-        return self.requesthandler_class.get_client_list()
+        if not self.running:
+            return []
+
+        client_datas = self.requesthandler_class.get_client_list()
+
+        clients = []
+        for client_data in client_datas:
+            # client is namedtuple (`ClientData`)
+            clients.append((client_data.name,
+                            client_data.role,
+                            Address._make(client_data.address)))
+
+        return clients
 
     @property
     def running(self):
@@ -1473,6 +1485,36 @@ class Server(AbstractServer):
     def reject(self, value: bool):
         if self.running:
             self._server.block_new_connections = bool(value)
+
+    def get_handler(self, client_id):
+        """
+        Get the `ClientHandler` of the client with the given id.
+
+        Parameters
+        ----------
+        client_id : str
+            Currently the client's name serves as id.
+
+        Raises
+        ------
+        AttributeError
+            The Server is not running.
+
+        Returns
+        -------
+        ClientHandler or None
+            The client's handler or None if the client wasn't found.
+
+        """
+        if not self.running:
+            raise AttributeError("Server not running.")
+
+        for client in self.requesthandler_class.get_client_list():
+            # client is namedtuple (`ClientData`)
+            if client.name == client_id:
+                return client.handler
+
+        return None
 
     def stop(self):
         """

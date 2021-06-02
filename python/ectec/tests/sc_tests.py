@@ -94,8 +94,8 @@ class SimpleClientServerTests(unittest.TestCase):
 
                 # some server attribute tests
                 self.assertEqual(len(server.users), 1)
-                self.assertEqual(server.users[0].name, "Testuser")
-                self.assertEqual(server.users[0].role, ectec.Role.USER)
+                self.assertEqual(server.users[0][0], "Testuser")
+                self.assertEqual(server.users[0][1], ectec.Role.USER)
 
                 # send package
                 package = ectec.client.Package(
@@ -199,8 +199,8 @@ class SimpleClientServerTests(unittest.TestCase):
 
                     # some server attributes tests
                     self.assertEqual(len(server.users), 2)
-                    self.assertEqual(server.users[0].name, "user_1")
-                    self.assertEqual(server.users[0].role, ectec.Role.USER)
+                    self.assertEqual(server.users[0][0], "user_1")
+                    self.assertEqual(server.users[0][1], ectec.Role.USER)
 
                     # send package
                     package = ectec.client.Package(
