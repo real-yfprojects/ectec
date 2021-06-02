@@ -79,11 +79,9 @@ class EctecFormatter(logging.Formatter):
     def __init__(self,
                  fmt="{asctime}  {levelname:<8} [{name}]  {message}",
                  datefmt=None,
-                 style='{',
-                 validate=True):
+                 style='{'):
 
-        super().__init__(fmt=fmt, datefmt=datefmt, style=style,
-                         validate=validate)
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style)
 
     def formatException(self, exc_info):
         """
