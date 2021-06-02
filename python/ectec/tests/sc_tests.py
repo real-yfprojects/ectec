@@ -38,7 +38,10 @@ class SimpleClientServerTests(unittest.TestCase):
     def setUp(self):
         self.handler = ErrorDetectionHandler(logging.WARNING)
         ectec.client.logger.addHandler(self.handler)
+        ectec.server.logger.addHandler(self.handler)
+
         ectec.client.logger.propagate = False
+        ectec.server.logger.propagate = False
 
         # stream_handler = logging.StreamHandler()
         # stream_handler.setLevel(logging.DEBUG)
@@ -51,7 +54,7 @@ class SimpleClientServerTests(unittest.TestCase):
             if record.exc_info:
                 raise record.exc_info[1]
             if record.levelno > - logging.WARNING:
-                raise Exception(record.message)
+                raise Exception(record.msg)
 
     # @unittest.skip("")
     def test_one_server(self):
@@ -113,6 +116,33 @@ class SimpleClientServerTests(unittest.TestCase):
             self.assertEqual(len(server.users), 0)
 
             self.check_logs()
+
+    def test_kicking_client(self):
+        """Test the server kicking a client."""
+        server = ectec.server.Server()
+
+        with server.start(0):
+            client1 = ectec.client.UserClient('user_1')
+            client2 = ectec.client.UserClient('user_2')
+
+            with client1.connect("127.0.0.1", server.port):
+                with client2.connect("127.0.0.1", server.port):
+
+                    # some server attributes tests
+                    self.assertEqual(len(server.users), 2)
+
+                    # kick client
+                    server.kick(client2.username)
+
+                    # test number of users
+                    time.sleep(0.1)
+                    self.assertEqual(len(server.users), 1)
+
+                    # test client connected.
+                    self.assertFalse(client2.connected)
+
+            time.sleep(0.1)
+            self.assertEqual(len(server.users), 0)
 
     def test_stopping_server(self):
         """Test the server closing although clients are still connected."""
@@ -176,7 +206,7 @@ class SimpleClientServerTests(unittest.TestCase):
                 self.assertFalse(server.reject)
 
                 with client2.connect("127.0.0.1", server.port):
-                        self.assertTrue(client2.connected)
+                    self.assertTrue(client2.connected)
 
     # @unittest.skip("")
     def test_two_clients(self):

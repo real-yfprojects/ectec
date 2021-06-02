@@ -1516,6 +1516,39 @@ class Server(AbstractServer):
 
         return None
 
+    def kick(self, client_id):
+        """
+        Kick the client with the given id from the server.
+
+        This searches for the client's handler and tells it to close the
+        connection to the client. That is *disconnecting*.
+
+        Parameters
+        ----------
+        client_id : str
+            The client's name currently serves as id.
+
+        Raises
+        ------
+        AttributeError
+            The Server is not running.
+
+        Returns
+        -------
+        None.
+
+        """
+        if not self.running:
+            raise AttributeError("Server not running.")
+
+        for client in self.requesthandler_class.get_client_list():
+            # client is namedtuple (`ClientData`)
+            if client.name == client_id:
+                client.handler.disconnect()
+
+                # there should only be one client, a break safes CPU time
+                break
+
     def stop(self):
         """
         Stops the server.
