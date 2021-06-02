@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import os.path as osp
 import unittest
+import sys
 
 from . import EctecTestResult, EctecTestRunner
 
@@ -40,4 +41,10 @@ if __name__ == '__main__':
     suite.addTest(loader.discover(start_dir, "*.py", top_level))
 
     # run
-    runner.run(suite)
+    result = runner.run(suite)
+
+    # exit
+    if result.wasSuccessful():
+        sys.exit(0)
+    else:
+        sys.exit(1)
