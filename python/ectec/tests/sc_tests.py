@@ -84,7 +84,7 @@ class SimpleClientServerTests(unittest.TestCase):
             self.assertFalse(client.connected)
             self.assertFalse(client.server)
 
-            with client.connect("0.0.0.0", server.port):
+            with client.connect("127.0.0.1", server.port):
                 # some client attribute tests
                 self.assertTrue(client.connected)
                 self.assertTrue(client.server.ip)
@@ -125,7 +125,7 @@ class SimpleClientServerTests(unittest.TestCase):
 
             client = ectec.client.UserClient('Testuser')
 
-            client.connect("0.0.0.0", server.port)
+            client.connect("127.0.0.1", server.port)
 
             self.assertTrue(server.running)
             self.assertTrue(client.connected)
@@ -153,7 +153,7 @@ class SimpleClientServerTests(unittest.TestCase):
 
             self.assertFalse(server.reject)
 
-            with client1.connect("0.0.0.0", server.port):
+            with client1.connect("127.0.0.1", server.port):
                 self.assertTrue(client1.connected)
 
                 server.reject = True
@@ -163,7 +163,7 @@ class SimpleClientServerTests(unittest.TestCase):
                 self.assertTrue(client1.connected)
 
                 with self.assertRaises(ectec.client.ConnectException):
-                    with client2.connect("0.0.0.0", server.port):
+                    with client2.connect("127.0.0.1", server.port):
                         self.assertFalse(client2.connected)
 
                 self.assertFalse(client2.connected)
@@ -175,7 +175,7 @@ class SimpleClientServerTests(unittest.TestCase):
 
                 self.assertFalse(server.reject)
 
-                with client2.connect("0.0.0.0", server.port):
+                with client2.connect("127.0.0.1", server.port):
                         self.assertTrue(client2.connected)
 
     # @unittest.skip("")
@@ -187,8 +187,8 @@ class SimpleClientServerTests(unittest.TestCase):
             client1 = ectec.client.UserClient('user_1')
             client2 = ectec.client.UserClient('user_2')
 
-            with client1.connect("0.0.0.0", server.port):
-                with client2.connect("0.0.0.0", server.port):
+            with client1.connect("127.0.0.1", server.port):
+                with client2.connect("127.0.0.1", server.port):
                     time.sleep(0.01)
                     client1._update()
                     # some client1 attribute tests
@@ -237,7 +237,7 @@ class SimpleClientServerTests(unittest.TestCase):
                 # ---- connect clients
                 for i in range(N):
                     client = ectec.client.UserClient(f'userclient_{i}')
-                    client.connect('0.0.0.0', server.port)
+                    client.connect('127.0.0.1', server.port)
 
                     clients.append(client)
 
