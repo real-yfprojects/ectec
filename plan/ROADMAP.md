@@ -36,6 +36,7 @@
 - [ ] UR: Hashing
 - [ ] UR: Signing
 - [ ] Displaying client logs in the GUI
+- [ ] Prevent client from memory overflow by a too long history.
 
 - [ ] Detection of servers in the network
 - [ ] Client Person in the Middle Role (MR)
