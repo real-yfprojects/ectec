@@ -12,9 +12,9 @@ and add own on top.
 
 3. Run:
 
-```bash
-pip install -e .
-```
+    ```bash
+    pip install -e .
+    ```
 
 4. This module will be installed in development mode in the current python environment.
     Changes to the source code will automatically take affect for the package in this
@@ -26,9 +26,9 @@ pip install -e .
 
 2. Run:
 
-```bash
-python -m build -w -s
-```
+    ```bash
+    python -m build -w -s
+    ```
 
 3. You can find a `.tar.gz` file as source code distribution and a `.wheel` file as a build python
     package in `./dist/`.
