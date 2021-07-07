@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# PYTHON_ARGCOMPLETE_OK
 """
 Automate parts of the development process regarding PyQt5.
 
@@ -9,14 +10,23 @@ make_pro_file
     Generate and write the .pro project file of the PyQt project.
 pyuic5
     Generate the configured from python modules from the .ui form files.
+pyrcc5
+    Generate the qt resource module from .qrc files.
+pylupdate5
+    Update the translation files using `pylupdate5`.
 
 
 files_recursive
     Make a list of files from a list of directories and files.
 
+
 Notes
 -----
-run pylupdate5
+This script can be used with `argcomplete` which is a python package providing
+bash completion for compatible python programs that use argparse.
+
+More information on argcomplete can be found on
+it's `Github page <https://github.com/kislyuk/argcomplete>`_.
 
 ***********************************
 
@@ -43,6 +53,11 @@ import subprocess
 import sys
 from pathlib import Path, PurePath
 from typing import List
+
+try:
+    import argcomplete
+except:
+    argcomplete = None
 
 VERSION_TUPLE = (1, 0)
 VERSION = '.'.join(map(str, VERSION_TUPLE))
@@ -452,19 +467,21 @@ def pylupdate5(drop_obsolete: bool = False):
 if __name__ == "__main__":
     # ---- Define and configure the arg parser ------------------------------
 
+    vinfo = "%(prog)s " + VERSION
+    if argcomplete:
+        vinfo += " completion"
+
     description = "A helper program automating common tasks" \
         " for PyQt5 projects."
     epilog = "The subcommands can be configured in the first section" \
-        "of the `%(prog)s` script file. \n%(prog)s " + VERSION
+        "of the `%(prog)s` script file. \n" + vinfo
 
     parser = argparse.ArgumentParser(
         description=description,
         epilog=epilog,
         allow_abbrev=True,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--version',
-                        action='version',
-                        version='%(prog)s ' + VERSION)
+    parser.add_argument('--version', action='version', version=vinfo)
     subparser = parser.add_subparsers(
         required=True,
         help="The subcommands running the different tasks",
@@ -578,6 +595,11 @@ if __name__ == "__main__":
     parser_pyuic5.set_defaults(func=command_pyuic5)
     parser_pyrcc5.set_defaults(func=command_pyrcc5)
     parser_pylupdate5.set_defaults(func=command_pylupdate5)
+
+    # ---- Completion --------------------------------------------------------
+
+    if argcomplete:
+        argcomplete.autocomplete(parser)
 
     # Handle args
     args = parser.parse_args()
