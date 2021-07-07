@@ -18,8 +18,6 @@ Notes
 -----
 run pylupdate5
 
-run pyrcc5
-
 ***********************************
 
 Created on 2021/07/01 at 20:06:38
@@ -78,7 +76,7 @@ RESOURCE_SUFFIX = "_res"
 FORMS = {"res/server.ui": "src/ectecgui/server/ui_main.py"}
 
 #: List of paths for translation files relative to this script.
-TRANSLATIONS = ["res/ectecgui.en.ts", "ectecgui.de.ts"]
+TRANSLATIONS = ["res/ectecgui.en.ts", "res/ectecgui.de.ts"]
 
 #: The default verbosity.
 VERBOSITY = 2
@@ -301,7 +299,7 @@ def make_pro_file():
         file.write(content)
 
 
-# ---- Generate from .ui files ---------------------------------------------------
+# ---- Generate from .ui files -----------------------------------------------
 
 
 def pyuic5():
@@ -424,6 +422,33 @@ def pyrcc5(root: str = None,
         subprocess.run(pyrcc5_cmd, stdout=stdout, stderr=sys.stderr)
 
 
+def pylupdate5(drop_obsolete: bool = False):
+    """
+    Update the translation files using `pylupdate5`.
+
+    Parameters
+    ----------
+    drop_obsolete : bool, optional
+        Whether to drop all obsolete strings, by default False
+    """
+    stdout = sys.stdout if VERBOSITY > 1 else subprocess.DEVNULL
+
+    cmd = ["pylupdate5", "-translate-function", "_tr", PROJECT_FILE]
+
+    if drop_obsolete:
+        cmd.append("-noobsolete")
+
+    if VERBOSITY > 2:
+        cmd.append("-verbose")
+
+    if VERBOSITY > 3:
+        print("Running \"", ' '.join(cmd), '"', sep='')
+    elif VERBOSITY > 0:
+        print("Running pylupdate5.")
+
+    subprocess.run(cmd, stdout=stdout, stderr=sys.stderr)
+
+
 if __name__ == "__main__":
     # ---- Define and configure the arg parser ------------------------------
 
@@ -447,7 +472,9 @@ if __name__ == "__main__":
 
     # the make_pro_file command
     parser_make_pro_file = subparser.add_parser(
-        "projectfile", help="Automate the creation of the PyQt project file.")
+        "projectfile",
+        aliases=["pro", "make"],
+        help="Automate the creation of the PyQt project file.")
     parser_make_pro_file.add_argument(
         "-d",
         "--dest",
@@ -457,12 +484,15 @@ if __name__ == "__main__":
 
     # the pyuic5 command
     parser_pyuic5 = subparser.add_parser(
-        "pyuic5", help="Automate running `pyuic5` for each .ui form file.")
+        "pyuic5",
+        aliases=["uic"],
+        help="Automate running `pyuic5` for each .ui form file.")
 
     # the pyrcc5 command
     parser_pyrcc5 = subparser.add_parser(
         "pyrcc5",
-        help="Automate running `pyrccc5` for each .qrc resource file.")
+        aliases=["rcc"],
+        help="Automate running `pyrcc5` for each .qrc resource file.")
     parser_pyrcc5.add_argument(
         "-c",
         "--compress",
@@ -484,6 +514,29 @@ if __name__ == "__main__":
         dest="threshold",
         metavar="LEVEL",
         help="Set the threshold above which files should be compressed.")
+
+    # The pylupdate5 command
+    parser_pylupdate5 = subparser.add_parser(
+        "pylupdate5",
+        aliases=["lupdate", "lu", "tfu"],
+        help="Automate updating the translation files using `pylupdate5`.")
+    parser_pylupdate5.add_argument(
+        "--nogenerate",
+        "--noregenerate",
+        "--noremake",
+        "--nomake",
+        "--no",
+        action="store_false",
+        dest="remake",
+        help=
+        "Whether to regenerate the project file that is used by `pylupdate5`.")
+    parser_pylupdate5.add_argument("--noobsolete", "--no-obsolete"
+                                   "--drop",
+                                   "--dropobsolete",
+                                   "--drop-obsolete",
+                                   action="store_true",
+                                   dest="drop",
+                                   help="Drop all obsolete strings.")
 
     # verbosity
     verbosity_group = parser.add_mutually_exclusive_group()
@@ -516,9 +569,15 @@ if __name__ == "__main__":
                compression=args.compression,
                nocompression=args.nocompress)
 
+    def command_pylupdate5(args: argparse.Namespace):
+        if args.remake:
+            make_pro_file()
+        pylupdate5(drop_obsolete=args.drop)
+
     parser_make_pro_file.set_defaults(func=command_projectfile)
     parser_pyuic5.set_defaults(func=command_pyuic5)
     parser_pyrcc5.set_defaults(func=command_pyrcc5)
+    parser_pylupdate5.set_defaults(func=command_pylupdate5)
 
     # Handle args
     args = parser.parse_args()
