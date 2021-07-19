@@ -555,6 +555,10 @@ if __name__ == "__main__":
                                    dest="drop",
                                    help="Drop all obsolete strings.")
 
+    # the all command
+    parser_all = subparser.add_parser("all",
+                                      help="Automate almost everything.")
+
     # verbosity
     verbosity_group = parser.add_mutually_exclusive_group()
     verbosity_group.add_argument(
@@ -591,10 +595,17 @@ if __name__ == "__main__":
             make_pro_file()
         pylupdate5(drop_obsolete=args.drop)
 
+    def all(args: argparse.Namespace):
+        make_pro_file()
+        pyuic5()
+        pyrcc5()
+        pylupdate5()
+
     parser_make_pro_file.set_defaults(func=command_projectfile)
     parser_pyuic5.set_defaults(func=command_pyuic5)
     parser_pyrcc5.set_defaults(func=command_pyrcc5)
     parser_pylupdate5.set_defaults(func=command_pylupdate5)
+    parser_all.set_defaults(func=all)
 
     # ---- Completion --------------------------------------------------------
 
