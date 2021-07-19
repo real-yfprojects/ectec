@@ -49,3 +49,4 @@
 - [ ] Developer docs connected to the GUI and context help
 - [ ] Reporting assistant
 - [ ] Information for getting in touch
+- [ ] Settings for default values
