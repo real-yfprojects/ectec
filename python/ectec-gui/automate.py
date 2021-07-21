@@ -109,7 +109,7 @@ def pwd() -> Path:
     -------
     Path
     """
-    return Path(__file__).parent
+    return Path(__file__).parent.absolute()
 
 
 def solve_relative_path(path) -> Path:
@@ -128,7 +128,7 @@ def solve_relative_path(path) -> Path:
     Path
         The absolute path.
     """
-    return Path(pwd(), path)
+    return Path(pwd(), path).absolute()
 
 
 # ---- Generate .pro File ----------------------------------------------------
@@ -231,11 +231,11 @@ def files_recursive(paths: List[Path],
     directories_left: List[Path] = []
 
     for element in paths:
-        element = Path(pwd(), element)
+        element = solve_relative_path(element)
         if element.is_dir():
-            directories_left.append(Path(pwd(), element))
+            directories_left.append(solve_relative_path(element))
         else:
-            files.append(Path(pwd(), element))
+            files.append(solve_relative_path(element))
 
     while directories_left:
         dir = directories_left.pop()
@@ -272,7 +272,7 @@ def make_pro_file():
     form_files = []
 
     for file in FORMS:
-        file = Path(pwd(), file)
+        file = solve_relative_path(file)
         if not file.is_dir():
             form_files.append(file)
 
@@ -280,7 +280,7 @@ def make_pro_file():
     trans_files = []
 
     for file in TRANSLATIONS:
-        file = Path(pwd(), file)
+        file = solve_relative_path(file)
         if not file.is_dir():
             trans_files.append(file)
 
@@ -305,7 +305,7 @@ def make_pro_file():
         print()
 
     # write file
-    filepath = Path(pwd(), PROJECT_FILE)
+    filepath = solve_relative_path(PROJECT_FILE)
 
     if VERBOSITY > 0:
         print("Writing to", filepath.absolute(), '...')
@@ -332,13 +332,13 @@ def pyuic5():
     stdout = sys.stdout if VERBOSITY > 3 else subprocess.DEVNULL
 
     for form, pymod in FORMS.items():
-        form_file = Path(pwd(), form)
-        pyui_file = Path(pwd(), pymod)
+        form_file = solve_relative_path(form)
+        pyui_file = solve_relative_path(pymod)
         if not form_file.is_dir() and not pyui_file.is_dir():
             # generate to file
             pyuic5_cmd = [
                 "pyuic5",
-                str(form_file.absolute()),
+                str(form_file.absolute().as_posix()),
                 '-i',
                 str(4),
                 '--import-from',
@@ -346,7 +346,7 @@ def pyuic5():
                 '--resource-suffix',
                 RESOURCE_SUFFIX,
                 "-o",
-                str(pyui_file.absolute()),
+                str(pyui_file.absolute().as_posix()),
             ]
             if VERBOSITY > 3:
                 print("Running \"", ' '.join(pyuic5_cmd), '"', sep='')
@@ -397,10 +397,10 @@ def pyrcc5(root: str = None,
     stdout = sys.stdout if VERBOSITY > 3 else subprocess.DEVNULL
 
     for qrc, pymod in RESOURCES.items():
-        res_file = Path(pwd(), qrc)
-        pyres_file = Path(pwd(), pymod)
+        res_file = solve_relative_path(qrc)
+        pyres_file = solve_relative_path(pymod)
 
-        if res_file.is_dir():
+        if res_file.is_dir() or not res_file.exists():
             continue
 
         if pyres_file.is_dir():
@@ -409,9 +409,9 @@ def pyrcc5(root: str = None,
         # generate to file
         pyrcc5_cmd = [
             "pyrcc5",
-            str(res_file.absolute()), "-o",
-            str(pyres_file.absolute()), "-root",
-            str(res_file.parent.absolute())
+            str(res_file.as_posix()), "-o",
+            str(pyres_file.as_posix()), "-root",
+            str(res_file.parent.absolute().as_posix())
         ]
 
         if threshold:
@@ -448,7 +448,10 @@ def pylupdate5(drop_obsolete: bool = False):
     """
     stdout = sys.stdout if VERBOSITY > 1 else subprocess.DEVNULL
 
-    cmd = ["pylupdate5", "-translate-function", "_tr", PROJECT_FILE]
+    cmd = [
+        "pylupdate5", "-translate-function", "_tr",
+        str(solve_relative_path(PROJECT_FILE).as_posix())
+    ]
 
     if drop_obsolete:
         cmd.append("-noobsolete")
