@@ -109,7 +109,7 @@ def pwd() -> Path:
     -------
     Path
     """
-    return Path(__file__).parent.absolute()
+    return Path(__file__).parent.resolve()
 
 
 def solve_relative_path(path) -> Path:
@@ -128,7 +128,7 @@ def solve_relative_path(path) -> Path:
     Path
         The absolute path.
     """
-    return Path(pwd(), path).absolute()
+    return Path(pwd(), path).resolve()
 
 
 # ---- Generate .pro File ----------------------------------------------------
@@ -233,17 +233,17 @@ def files_recursive(paths: List[Path],
     for element in paths:
         element = solve_relative_path(element)
         if element.is_dir():
-            directories_left.append(solve_relative_path(element))
+            directories_left.append(element)
         else:
-            files.append(solve_relative_path(element))
+            files.append(element)
 
     while directories_left:
         dir = directories_left.pop()
         for element in dir.iterdir():
             if element.is_dir() and element.name not in dir_filter:
-                directories_left.append(element)
+                directories_left.append(element.resolve())
             elif element.suffix in file_endings:
-                files.append(element)
+                files.append(element.resolve())
 
     return files
 
@@ -308,7 +308,7 @@ def make_pro_file():
     filepath = solve_relative_path(PROJECT_FILE)
 
     if VERBOSITY > 0:
-        print("Writing to", filepath.absolute(), '...')
+        print("Writing to", filepath.resolve(), '...')
 
     with filepath.open('w') as file:
         file.write(content)
@@ -338,7 +338,7 @@ def pyuic5():
             # generate to file
             pyuic5_cmd = [
                 "pyuic5",
-                str(form_file.absolute().as_posix()),
+                str(form_file),
                 '-i',
                 str(4),
                 '--import-from',
@@ -346,7 +346,7 @@ def pyuic5():
                 '--resource-suffix',
                 RESOURCE_SUFFIX,
                 "-o",
-                str(pyui_file.absolute().as_posix()),
+                str(pyui_file),
             ]
             if VERBOSITY > 3:
                 print("Running \"", ' '.join(pyuic5_cmd), '"', sep='')
@@ -407,12 +407,7 @@ def pyrcc5(root: str = None,
             pyres_file /= get_module_filename(res_file.name)
 
         # generate to file
-        pyrcc5_cmd = [
-            "pyrcc5",
-            str(res_file.as_posix()), "-o",
-            str(pyres_file.as_posix()), "-root",
-            str(res_file.parent.absolute().as_posix())
-        ]
+        pyrcc5_cmd = ["pyrcc5", str(res_file), "-o", str(pyres_file)]
 
         if threshold:
             pyrcc5_cmd += ["-theshold", str(threshold)]
