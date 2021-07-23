@@ -26,46 +26,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from typing import List
 
 from ectec.version import SemanticVersion
-from PyQt5.QtCore import QDir, QLocale, QTranslator
+
+from . import logs
 
 VERSION = SemanticVersion(1, 0, 0)
 
-# ---- Constants
+# ---- Constants -------------------------------------------------------------
 
 TRANSLATION_DIR = ':/i18n'
 
-# ---- Helpers
 
 
-def get_languages(cls) -> List[QLocale]:
-    """
-    Return a list of languages that the server GUI can be translated to.
-
-    This function queries the directory `TRANSLATION_DIR` for
-    translation files that match the pattern `ectecgui.<locale>.qm`
-
-    Returns
-    -------
-    list of QLocale
-        The list of supported languages.
-    """
-    # check whether directory for translation files exists.
-    tfile_dir = QDir(TRANSLATION_DIR)
-
-    if not tfile_dir.exists():
-        return []
-
-    # get translation files in directory.
-    tfiles = tfile_dir.entryList(['ectecgui.*.qm'])
-
-    # query the files and make a list of locales that will be returned.
-    locale_list = []
-    for file in tfiles:
-        # extract locale id from filename
-        locale_id = file.split('.')[-2]
-
-        # create locale and append to list
-        locale = QLocale(locale_id)
-        locale_list.append(locale)
-
-    return locale_list
