@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The core package of the ectec chattool.
 
@@ -38,22 +37,14 @@ from .version import SemanticVersion, Version
 
 VERSION: Version = SemanticVersion(1, 1, 0)
 
-
 # ---- Logging
 
 logger = logs.getLogger(__name__)  # Parent logger for the module
 logger.setLevel(logs.DEBUG)
 
+# Disable logging output sot that users of this lib can log as desired.
 nullhandler = logs.NullHandler()  # Bin for logs
-
-handler = logs.StreamHandler()  # Output to console
-handler.setLevel(logs.WARNING)  # Log everything with equal or greater level
-formatter = logs.EctecFormatter()  # Control format of output
-handler.setFormatter(formatter)  # Add formatter to handler
-
-# Add Handlers to logger
 logger.addHandler(nullhandler)
-logger.addHandler(handler)
 
 # ---- Exceptions Client Side
 
@@ -81,11 +72,10 @@ class IncompatibleVersion(ConnectException):
     The client and the server have incompatible version numbers.
     """
 
+
 # ---- Exceptions Server Side
 
-
 # ---- Assets
-
 
 Address = namedtuple('Address', ['ip', 'port'])
 Address.__doc__ += ": A namedtuple representing a socket address."
@@ -127,7 +117,9 @@ class AbstractPackage:
 
     __slots__ = ['sender', 'recipient', 'type', 'time', 'content']
 
-    def __init__(self, sender: str, recipient: Union[str, List[str]],
+    def __init__(self,
+                 sender: str,
+                 recipient: Union[str, List[str]],
                  type: str,
                  time: float = None):
         """
@@ -169,12 +161,13 @@ class Role(enum.Enum):
 
 # ---- Client API / Standard User
 
+
 class AbstractPackageStorage:
     """
     Stores and manages packages.
     """
-
-    def remove(self, *packages: AbstractPackage,
+    def remove(self,
+               *packages: AbstractPackage,
                func: Optional[Callable[[AbstractPackage], bool]] = None):
         """
         Remove packages from the storage.
@@ -226,7 +219,8 @@ class AbstractPackageStorage:
 
         return []
 
-    def filter(self, func: Callable[[AbstractPackage], bool] = None,
+    def filter(self,
+               func: Callable[[AbstractPackage], bool] = None,
                **kwargs) -> Iterable[AbstractPackage]:
         """
         Return a filtered list of the packages in the PackageStorage.
@@ -342,8 +336,9 @@ class AbstractUserClient:
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
-    def receive(self, n: int = None) -> Union[AbstractPackage,
-                                              List[AbstractPackage]]:
+    def receive(
+            self,
+            n: int = None) -> Union[AbstractPackage, List[AbstractPackage]]:
         """
         Read out the buffer of Packages.
 
@@ -367,6 +362,7 @@ class AbstractUserClient:
 
 
 # ---- Server API
+
 
 class AbstractServer:
     """
