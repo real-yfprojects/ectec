@@ -44,10 +44,11 @@ import logging
 import os
 from logging import (CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING,
                      NullHandler, StreamHandler, getLogger, handlers)
-from pathlib import Path, PurePath
-from posixpath import basename
 
 import ectec
+from PyQt5.QtCore import QMessageLogContext, QtMsgType
+
+from .reverse_traceback import TracebackInfo
 
 # ---- Remove handler from ectec ---------------------------------------------
 
@@ -142,6 +143,13 @@ class EctecGuiFormatter(logging.Formatter):
         result = super().formatException(exc_info)  # Super formats for us.
         return indent(result, 2, prefix="| >>>")  # Indent output
 
+    def formatStack(self, stack_info):
+        """
+        Format an exception so that it prints on a single line.
+        """
+        result = super().formatStack(stack_info)  # Super formats for us.
+        return indent(result, 2, prefix="| >>>")  # Indent output
+
 
 class SessionRotatingFileHandler(handlers.BaseRotatingHandler):
     def __init__(self,
@@ -215,3 +223,108 @@ class SessionRotatingFileHandler(handlers.BaseRotatingHandler):
             False.
         """
         return False  # Only rollover when session changes
+
+
+# ---- QtMessageHandling -----------------------------------------------------
+
+
+class QtMessageHander:
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
+
+    def __call__(self, type: QtMsgType, context: QMessageLogContext,
+                 msg: str) -> None:
+        """
+        Handle a message.
+
+        This handler is passed to `qInstallMessageHandler`. This function
+        expects a callable with the signature
+        `Callable[[QtMsgType, QMessageLogContext, str]` that is called when a
+        message is reported inside Qt using `qDebug()`, `qInfo()`,
+        `qWarning()`, `qCritical()` or `qFatal()`.
+
+        Parameters
+        ----------
+        type : QtMsgType or int
+            The type/level of the log message.
+        context : QMessageLogContext
+            The context the message was produced in.
+        msg : str
+            The message.
+
+        Notes
+        -----
+        By default, the context information is recorded only in debug builds.
+        You can overwrite this explicitly by defining QT_MESSAGELOGCONTEXT or
+        QT_NO_MESSAGELOGCONTEXT.
+
+        The QMessageLogContext class provides additional information about
+        a log message. The class provides information about the source code
+        location a qDebug(), qInfo(), qWarning(), qCritical() or qFatal()
+        message was generated.
+
+        An instance has these attributes:
+
+        category : str
+        file : str
+        function : str
+        line : int
+
+        While these attributes are usually `None` the same information can be
+        obtained differently. When an error arises in slot for example, Qt will
+        send the traceback as a message. The traceback can then be parsed using
+        the tools from `reverse_traceback` to get detailed context information.
+
+        """
+        # Switch level
+        if type == QtMsgType.QtDebugMsg:
+            level = DEBUG
+        elif type == QtMsgType.QtInfoMsg:
+            level = INFO
+        elif type == QtMsgType.QtWarningMsg:
+            level = WARNING
+        elif type == QtMsgType.QtCriticalMsg:
+            level = ERROR
+        elif type == QtMsgType.QtFatalMsg:
+            level = CRITICAL
+        else:
+            level = NOTSET
+
+        # Context information
+        pathname = context.file
+        line = context.line
+        function = context.function
+
+        # Other LogRecord attributes
+        name = self.logger.name
+        sinfo = None
+
+        # Reverse traceback str
+        info = TracebackInfo.extract(msg)
+
+        if info:
+            sinfo = msg
+            if info.name: function = info.name
+            if info.path: pathname = info.path
+            if info.line: line = info.line
+
+            if info.exception:
+                if info.msg:
+                    msg = info.exception + ': ' + info.msg
+                else:
+                    msg = info.exception
+            else:
+                msg = info.msg
+
+        # Create log record
+        record = self.logger.makeRecord(name,
+                                        level,
+                                        pathname,
+                                        line,
+                                        msg, {},
+                                        None,
+                                        func=function,
+                                        sinfo=sinfo)
+
+        # Publish record
+        self.logger.handle(record)

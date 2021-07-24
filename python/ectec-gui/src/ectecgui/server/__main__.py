@@ -27,7 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtCore import QFile, QLocale, QTextStream, QTranslator
+from PyQt5.QtCore import (QFile, QLocale, QTextStream, QTranslator,
+                          qInstallMessageHandler)
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 
 from . import logger, logs
@@ -38,6 +39,9 @@ handler = logs.StreamHandler()
 handler.setFormatter(logs.EctecGuiFormatter('Server'))
 handler.setLevel(logs.DEBUG)
 logger.addHandler(handler)
+
+# convert Qt messages (from the qt logging system) to python LogRecords.
+qInstallMessageHandler(logs.QtMessageHander(logger))
 
 # ---- Qt App ----------------------------------------------------------------
 
