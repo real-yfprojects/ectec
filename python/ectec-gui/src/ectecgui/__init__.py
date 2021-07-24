@@ -35,6 +35,8 @@ VERSION = SemanticVersion(1, 0, 0)
 
 TRANSLATION_DIR = ':/i18n'
 
+DEFAULT_PORT = 50234
+
 # ---- Logging ---------------------------------------------------------------
 
 logger = logs.getLogger(__name__)  # Parent logger for the module

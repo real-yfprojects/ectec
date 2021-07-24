@@ -27,18 +27,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtCore import QLocale, QTranslator
+from PyQt5.QtCore import QFile, QLocale, QTextStream, QTranslator
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 
+from . import logger, logs
 from .window import MainWindow
 
-if __name__ == "__main__":
-    QApplication.setDesktopSettingsAware(True)
-    app = QtWidgets.QApplication(sys.argv)
+# ---- Logging ---------------------------------------------------------------
+handler = logs.StreamHandler()
+handler.setFormatter(logs.EctecGuiFormatter('Server'))
+handler.setLevel(logs.DEBUG)
+logger.addHandler(handler)
 
-    dialog = MainWindow()
-    QApplication.setStyle(QStyleFactory.create("Breeze"))
+# ---- Qt App ----------------------------------------------------------------
 
-    dialog.show()
+QApplication.setDesktopSettingsAware(True)
+app = QtWidgets.QApplication(sys.argv)
 
-    sys.exit(app.exec_())
+dialog = MainWindow()
+
+dialog.show()
+
+sys.exit(app.exec_())

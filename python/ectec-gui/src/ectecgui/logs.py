@@ -47,6 +47,14 @@ from logging import (CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING,
 from pathlib import Path, PurePath
 from posixpath import basename
 
+import ectec
+
+# ---- Remove handler from ectec ---------------------------------------------
+
+ectec.logger.removeHandler(ectec.nullhandler)
+
+# ---- Helpers ---------------------------------------------------------------
+
 
 def indent(text, by, space=" ", prefix="", suffix=""):
     """
@@ -82,13 +90,14 @@ def indent(text, by, space=" ", prefix="", suffix=""):
     t = ""  # Stores the indented lines and will be returned
 
     # Iterate of the lines of the text
-    for l in text.splitlines(True):
+    for line in text.splitlines(True):
         # The indented line is added to the result
-        t += prefix + by * space + suffix + l
+        t += prefix + by * space + suffix + line
 
     return t
 
 
+# ---- Logging stuff ---------------------------------------------------------
 class EctecGuiFormatter(logging.Formatter):
     """
     A formatter creates a string from a LogRecord.
