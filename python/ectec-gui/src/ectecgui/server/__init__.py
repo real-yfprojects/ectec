@@ -24,4 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
-from .. import ectec_res
+from .. import ectec_res, logs
+
+# ---- Logging ---------------------------------------------------------------
+
+logger = logs.getLogger(__name__)
+logger.setLevel(logs.DEBUG)

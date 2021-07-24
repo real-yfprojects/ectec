@@ -35,5 +35,11 @@ VERSION = SemanticVersion(1, 0, 0)
 
 TRANSLATION_DIR = ':/i18n'
 
+# ---- Logging ---------------------------------------------------------------
 
+logger = logs.getLogger(__name__)  # Parent logger for the module
+logger.setLevel(logs.DEBUG)
 
+# Disable default logging behaviour by creating bin for log events
+nullhandler = logs.NullHandler()
+logger.addHandler(nullhandler)
