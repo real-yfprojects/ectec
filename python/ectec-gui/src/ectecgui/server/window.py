@@ -31,9 +31,10 @@ from typing import List
 from ectec import server as ecse
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication
 
 from .. import DEFAULT_PORT, ectec_res
+from . import logger
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
 
@@ -64,8 +65,9 @@ def list_local_hosts() -> List[str]:
 
             addr_list = output.strip().split()
             return addr_list
-        except (OSError, subprocess.CalledProcessError):
-            pass
+        except (OSError, subprocess.CalledProcessError) as e:
+            logger.warning("Linux - Couldn't run `hostname -I` because '" +
+                           str(e) + "'")
 
     hostname = socket.gethostname()
     *dummy, ipaddr_list = socket.gethostbyname_ex(hostname)
@@ -268,6 +270,8 @@ class MainWindow(QtWidgets.QDialog):
         # start server
         self.server.start(self.port, address)
 
+        logger.info("Start server on ({}, {}).".format(address, self.port))
+
         # update GUI
         self.init_pRunning()
 
@@ -282,6 +286,9 @@ class MainWindow(QtWidgets.QDialog):
     @pyqtSlot(bool)
     def slotStop(self, checked=False):
         self.server.stop()
+
+        logger.info("Stopped server.")
+
         self.init_pStart()
 
     def changeEvent(self, event: QtCore.QEvent):
@@ -309,6 +316,8 @@ class MainWindow(QtWidgets.QDialog):
             # The GUI has to be retranslated.
             self.ui.retranslateUi(self)
 
+            logger.debug("Retranslated ui.")
+
         # Pass the event to the parent class for its handling.
         super().changeEvent(event)
 
@@ -331,4 +340,7 @@ class MainWindow(QtWidgets.QDialog):
 
         """
         self.server.stop()
+
+        logger.debug('App closed.')
+
         return super().closeEvent(event)
