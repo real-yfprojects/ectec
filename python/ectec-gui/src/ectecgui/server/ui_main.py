@@ -25,7 +25,7 @@ class Ui_dStartServer(object):
         self.frameMenuBar.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frameMenuBar.setObjectName("frameMenuBar")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.frameMenuBar)
-        self.horizontalLayout_2.setContentsMargins(6, 6, 6, 6)
+        self.horizontalLayout_2.setContentsMargins(6, 3, 6, 3)
         self.horizontalLayout_2.setSpacing(6)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -37,10 +37,10 @@ class Ui_dStartServer(object):
         sizePolicy.setHeightForWidth(self.toolButtonMenu.sizePolicy().hasHeightForWidth())
         self.toolButtonMenu.setSizePolicy(sizePolicy)
         self.toolButtonMenu.setMinimumSize(QtCore.QSize(0, 0))
-        icon = QtGui.QIcon.fromTheme("application-menu")
+        icon = QtGui.QIcon.fromTheme("settings-configure")
         self.toolButtonMenu.setIcon(icon)
-        self.toolButtonMenu.setIconSize(QtCore.QSize(16, 16))
         self.toolButtonMenu.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.toolButtonMenu.setAutoRaise(True)
         self.toolButtonMenu.setObjectName("toolButtonMenu")
         self.horizontalLayout_2.addWidget(self.toolButtonMenu)
         self.vboxlayout.addWidget(self.frameMenuBar)
@@ -131,7 +131,6 @@ class Ui_dStartServer(object):
         dStartServer.setTabOrder(self.comboBoxAddress, self.spinBoxPort)
         dStartServer.setTabOrder(self.spinBoxPort, self.buttonStart)
         dStartServer.setTabOrder(self.buttonStart, self.tableClients)
-        dStartServer.setTabOrder(self.tableClients, self.toolButtonMenu)
 
     def retranslateUi(self, dStartServer):
         _translate = QtCore.QCoreApplication.translate

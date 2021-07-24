@@ -34,13 +34,13 @@
        <number>6</number>
       </property>
       <property name="topMargin">
-       <number>6</number>
+       <number>3</number>
       </property>
       <property name="rightMargin">
        <number>6</number>
       </property>
       <property name="bottomMargin">
-       <number>6</number>
+       <number>3</number>
       </property>
       <item>
        <spacer name="horizontalSpacer_2">
@@ -73,17 +73,13 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Menu&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="icon">
-         <iconset theme="application-menu">
-          <normaloff>.</normaloff>.</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
+         <iconset theme="settings-configure"/>
         </property>
         <property name="popupMode">
          <enum>QToolButton::InstantPopup</enum>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -311,7 +307,6 @@
   <tabstop>spinBoxPort</tabstop>
   <tabstop>buttonStart</tabstop>
   <tabstop>tableClients</tabstop>
-  <tabstop>toolButtonMenu</tabstop>
  </tabstops>
  <resources>
   <include location="ectec.qrc"/>
