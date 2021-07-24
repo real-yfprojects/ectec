@@ -27,7 +27,8 @@ from typing import List
 
 from PyQt5.QtCore import QDir, QLocale
 
-from . import TRANSLATION_DIR
+from . import TRANSLATION_DIR, logs
+from .logs import indent
 
 
 def get_languages(cls) -> List[QLocale]:
@@ -62,44 +63,3 @@ def get_languages(cls) -> List[QLocale]:
         locale_list.append(locale)
 
     return locale_list
-
-
-def indent(text, by, space=" ", prefix="", suffix=""):
-    """
-    Indent a multiline string.
-
-    Each line of `text` will be appended to prefix plus `by` times `space`
-    plus the `suffix`.
-
-    ::
-
-        line = prefix + by * space + suffix + original_line
-
-
-    Parameters
-    ----------
-    text : str
-        the multiline string.
-    by : int
-        the amount of indent.
-    space : str, optional
-        The spacing character. The default is " ".
-    prefix : str, optional
-        The prefix of the spacing. The default is "".
-    suffix : str, optional
-        The suffix of the spacing. The default is "".
-
-    Returns
-    -------
-    text : str
-        The indented text.
-
-    """
-    t = ""  # Stores the indented lines and will be returned
-
-    # Iterate of the lines of the text
-    for l in text.splitlines(True):
-        # The indented line is added to the result
-        t += prefix + by * space + suffix + l
-
-    return t

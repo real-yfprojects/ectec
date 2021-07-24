@@ -10,13 +10,13 @@ How to set up logging in ectec-gui:
 
     streamhandler = logs.StreamHandler()
     streamhandler.setLevel(logs.WARNING)
-    streamhandler.setFormatter(logs.EctecGuiFormatter())
+    streamhandler.setFormatter(logs.EctecGuiFormatter('proc'))
     logger.addHandler(streamhandler)
 
     filehandler = logs.SessionRotatingFileHandler(filename,
                                                 sessionCount=3)
     filehandler.setLevel(logs.DEBUG)
-    filehandler.setFormatter(logs.EctecGuiFormatter())
+    filehandler.setFormatter(logs.EctecGuiFormatter('proc'))
     logger.addHandler(filehandler)
 
 
@@ -47,7 +47,46 @@ from logging import (CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING,
 from pathlib import Path, PurePath
 from posixpath import basename
 
-from .helpers import indent
+
+def indent(text, by, space=" ", prefix="", suffix=""):
+    """
+    Indent a multiline string.
+
+    Each line of `text` will be appended to prefix plus `by` times `space`
+    plus the `suffix`.
+
+    ::
+
+        line = prefix + by * space + suffix + original_line
+
+
+    Parameters
+    ----------
+    text : str
+        the multiline string.
+    by : int
+        the amount of indent.
+    space : str, optional
+        The spacing character. The default is " ".
+    prefix : str, optional
+        The prefix of the spacing. The default is "".
+    suffix : str, optional
+        The suffix of the spacing. The default is "".
+
+    Returns
+    -------
+    text : str
+        The indented text.
+
+    """
+    t = ""  # Stores the indented lines and will be returned
+
+    # Iterate of the lines of the text
+    for l in text.splitlines(True):
+        # The indented line is added to the result
+        t += prefix + by * space + suffix + l
+
+    return t
 
 
 class EctecGuiFormatter(logging.Formatter):
