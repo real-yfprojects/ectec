@@ -52,7 +52,9 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path, PurePath
-from typing import List
+from typing import List, Tuple
+from xml.dom import minidom
+from xml.etree import ElementTree
 
 try:
     import argcomplete
@@ -76,12 +78,15 @@ SOURCES_TEMP_DIRS = ["__pycache__"]
 #: List of endings for source files.
 SOURCE_ENDINGS = [".py", ".pyw"]
 
+#: Generate resource files from a dictionary.
+RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons")}
+
 #: Dictionary matching paths to resource files (.qrc)
 #: to the directories for or to the path of the generated python modules.
-RESOURCES = {
+RESOURCE_FILES = {
     "res/ectec.qrc": "src/ectecgui/",
-    "res/server.qrc": "src/ectecgui/server",
-    "res/client.qrc": "src/ectecgui/client"
+    "res/client.qrc": "src/ectecgui/client",
+    "res/breeze.qrc": "src/ectecgui"
 }
 
 #: The suffix for python modules part of the qt resource system.
@@ -266,7 +271,7 @@ def make_pro_file():
     source_files = files_recursive(SOURCES, SOURCES_TEMP_DIRS, SOURCE_ENDINGS)
 
     # Make list of resource files
-    resource_files = files_recursive(RESOURCES)
+    resource_files = files_recursive(RESOURCE_FILES)
 
     # Make list of form files
     form_files = []
@@ -359,6 +364,72 @@ def pyuic5():
             subprocess.run(pyuic5_cmd, stdout=stdout, stderr=sys.stderr)
 
 
+# ---- Generate .qrc files --------------------------------------------------
+
+
+def qrc_prefix(super_element: ElementTree.Element,
+               prefix: str) -> ElementTree.SubElement:
+    qresource = ElementTree.SubElement(super_element, "qresource",
+                                       {'prefix': prefix})
+    return qresource
+
+
+def qrc_file(super_element: ElementTree.Element,
+             path: str,
+             alias: str = None) -> ElementTree.SubElement:
+    attrib = {'alias': alias} if alias else {}
+    file = ElementTree.SubElement(super_element, "file", attrib)
+    file.text = path
+    return file
+
+
+def generate_qrc(data: Tuple[str, str]) -> str:
+    # Main structure
+    main_element = ElementTree.Element("RCC")
+
+    prefix = ('/' if not data[0].startswith('/') else '') + data[0]
+    str_path = data[1]
+
+    dir_path = Path(str_path)
+    if not dir_path.is_dir():
+        return ''
+
+    qresource = qrc_prefix(main_element, prefix)
+
+    dirs = [dir_path]
+
+    while dirs:
+        dir_path = dirs.pop()
+
+        for path in dir_path.iterdir():
+            if path.is_dir():
+                dirs.append(path)
+
+            qrc_file(qresource, str(path))
+
+    string_tree = ElementTree.tostring(
+        main_element,
+        encoding='utf-8',
+    ).decode('utf-8')
+    pretty_tree = minidom.parseString(string_tree).toprettyxml(indent=' ' * 4)
+
+    return pretty_tree
+
+
+def make_qrc_files():
+    for file, data in RESOURCES.items():
+
+        if VERBOSITY > 0:
+            print("Generating \"{}\" ...".format(file))
+
+        file = solve_relative_path(file)
+
+        contents = generate_qrc(data)
+
+        with open(file, 'w') as f:
+            f.write(contents)
+
+
 # ---- Generate from .qrc files ---------------------------------------------
 
 
@@ -388,7 +459,7 @@ def pyrcc5(root: str = None,
     nocompression : bool, optional
         Whether to compress nothing, by default False
     """
-    if not RESOURCES:
+    if not RESOURCE_FILES:
         if VERBOSITY > 0:
             print("No resource files specified.")
 
@@ -396,7 +467,7 @@ def pyrcc5(root: str = None,
 
     stdout = sys.stdout if VERBOSITY > 3 else subprocess.DEVNULL
 
-    for qrc, pymod in RESOURCES.items():
+    for qrc, pymod in RESOURCE_FILES.items():
         res_file = solve_relative_path(qrc)
         pyres_file = solve_relative_path(pymod)
 
@@ -503,6 +574,12 @@ if __name__ == "__main__":
         aliases=["uic"],
         help="Automate running `pyuic5` for each .ui form file.")
 
+    # the make_qrc command
+    parser_qrc = subparser.add_parser(
+        'makeres',
+        aliases=['makeqrc', 'qrc'],
+        help="Automate the creation of (some) qrc files.")
+
     # the pyrcc5 command
     parser_pyrcc5 = subparser.add_parser(
         "pyrcc5",
@@ -529,6 +606,13 @@ if __name__ == "__main__":
         dest="threshold",
         metavar="LEVEL",
         help="Set the threshold above which files should be compressed.")
+    parser_pyrcc5.add_argument(
+        '--nomake',
+        '--no_make',
+        '--nm',
+        action='store_false',
+        dest='make',
+        help="Whether to regenerate the generated resource files.")
 
     # The pylupdate5 command
     parser_pylupdate5 = subparser.add_parser(
@@ -582,7 +666,13 @@ if __name__ == "__main__":
     def command_pyuic5(args: argparse.Namespace):
         pyuic5()
 
+    def command_qrcfile(args: argparse.Namespace):
+        make_qrc_files()
+
     def command_pyrcc5(args: argparse.Namespace):
+        if args.make:
+            make_qrc_files()
+
         pyrcc5(root=args.root,
                threshold=args.threshold,
                compression=args.compression,
@@ -601,6 +691,7 @@ if __name__ == "__main__":
 
     parser_make_pro_file.set_defaults(func=command_projectfile)
     parser_pyuic5.set_defaults(func=command_pyuic5)
+    parser_qrc.set_defaults(func=command_qrcfile)
     parser_pyrcc5.set_defaults(func=command_pyrcc5)
     parser_pylupdate5.set_defaults(func=command_pylupdate5)
     parser_all.set_defaults(func=all)
