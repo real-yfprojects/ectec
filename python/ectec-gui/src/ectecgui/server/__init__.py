@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
-from .. import ectec_res, logs
+from .. import breeze_res, ectec_res, logs
 
 # ---- Logging ---------------------------------------------------------------
 

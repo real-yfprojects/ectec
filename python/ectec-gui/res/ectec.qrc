@@ -2,7 +2,4 @@
   <qresource prefix="/">
     <file alias="ectec-icon.svg">EctecIcon.svg</file>
   </qresource>
-  <qresource prefix="/fallback_icons">
-      <file alias="application-menu.svg">application-menu.svg</file>
-  </qresource>
 </RCC>

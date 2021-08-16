@@ -37,7 +37,7 @@ from .window import MainWindow
 # ---- Logging ---------------------------------------------------------------
 handler = logs.StreamHandler()
 handler.setFormatter(logs.EctecGuiFormatter('Server'))
-handler.setLevel(logs.DEBUG)
+handler.setLevel(logs.WARNING)
 logger.addHandler(handler)
 
 # convert Qt messages (from the qt logging system) to python LogRecords.
@@ -45,7 +45,15 @@ qInstallMessageHandler(logs.QtMessageHander(logger))
 
 # ---- Qt App ----------------------------------------------------------------
 
+# some global settings
 QApplication.setDesktopSettingsAware(True)
+QApplication.setAttribute(20)  # Qt::AA_EnableHighDpiScaling
+QApplication.setAttribute(13)  # Qt::AA_UseHighDpiPixmaps
+
+# icon theme
+QtGui.QIcon.setFallbackThemeName('breeze')
+
+# start app
 app = QtWidgets.QApplication(sys.argv)
 
 dialog = MainWindow()
