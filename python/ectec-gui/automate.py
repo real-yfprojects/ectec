@@ -79,7 +79,7 @@ SOURCES_TEMP_DIRS = ["__pycache__"]
 SOURCE_ENDINGS = [".py", ".pyw"]
 
 #: Generate resource files from a dictionary.
-RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons")}
+RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons", '')}
 
 #: Dictionary matching paths to resource files (.qrc)
 #: to the directories for or to the path of the generated python modules.
@@ -367,6 +367,12 @@ def pyuic5():
 # ---- Generate .qrc files --------------------------------------------------
 
 
+def get_alias(file: Path, root: Path, alias_prefix: str) -> str:
+    relative = file.relative_to(root)
+
+    return str(alias_prefix / relative)
+
+
 def qrc_prefix(super_element: ElementTree.Element,
                prefix: str) -> ElementTree.SubElement:
     qresource = ElementTree.SubElement(super_element, "qresource",
@@ -383,20 +389,22 @@ def qrc_file(super_element: ElementTree.Element,
     return file
 
 
-def generate_qrc(data: Tuple[str, str]) -> str:
+def generate_qrc(data: Tuple[str, str, str], root: str) -> str:
     # Main structure
     main_element = ElementTree.Element("RCC")
 
     prefix = ('/' if not data[0].startswith('/') else '') + data[0]
     str_path = data[1]
+    root = Path(root)
+    alias_prefix = data[2]
 
-    dir_path = Path(str_path)
-    if not dir_path.is_dir():
+    root_path = solve_relative_path(Path(str_path))
+    if not root_path.is_dir():
         return ''
 
     qresource = qrc_prefix(main_element, prefix)
 
-    dirs = [dir_path]
+    dirs = [root_path]
 
     while dirs:
         dir_path = dirs.pop()
@@ -404,14 +412,19 @@ def generate_qrc(data: Tuple[str, str]) -> str:
         for path in dir_path.iterdir():
             if path.is_dir():
                 dirs.append(path)
+                continue
 
-            qrc_file(qresource, str(path))
+            abs_path = solve_relative_path(path)
+            path = path.relative_to(root)
 
-    string_tree = ElementTree.tostring(
-        main_element,
-        encoding='utf-8',
-    ).decode('utf-8')
+            qrc_file(qresource, str(path),
+                     get_alias(abs_path, root_path, alias_prefix))
+
+    string_tree: str = ElementTree.tostring(
+        main_element, encoding='utf-8', xml_declaration=False).decode('utf-8')
     pretty_tree = minidom.parseString(string_tree).toprettyxml(indent=' ' * 4)
+
+    pretty_tree = pretty_tree.split('\n', 1)[1]
 
     return pretty_tree
 
@@ -424,7 +437,7 @@ def make_qrc_files():
 
         file = solve_relative_path(file)
 
-        contents = generate_qrc(data)
+        contents = generate_qrc(data, str(file.parent))
 
         with open(file, 'w') as f:
             f.write(contents)
@@ -686,6 +699,7 @@ if __name__ == "__main__":
     def all(args: argparse.Namespace):
         make_pro_file()
         pyuic5()
+        make_qrc_files()
         pyrcc5()
         pylupdate5()
 
