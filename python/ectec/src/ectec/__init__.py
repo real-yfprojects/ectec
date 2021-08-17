@@ -35,7 +35,7 @@ from typing import Callable, Iterable, List, Optional, Union
 from . import logs
 from .version import SemanticVersion, Version
 
-VERSION: Version = SemanticVersion(1, 1, 0)
+VERSION: Version = SemanticVersion(1, 1, 1)
 
 # ---- Logging
 

@@ -80,7 +80,6 @@ class ConnectionAdapter(logging.LoggerAdapter):
         More context. The default is {}.
 
     """
-
     def __init__(self, logger, remote, extra=None):
         """
         Adapter to add connection context information.
@@ -120,6 +119,7 @@ class ConnectionAdapter(logging.LoggerAdapter):
         """
         msg = "|{ip:>15}| {msg}".format(ip=self.remote.ip, msg=msg)
         return super().process(msg, kwargs)
+
 
 # ---- Exceptions for this implementation
 
@@ -168,7 +168,6 @@ class UnexpectedCommand(UnexpectedData):
 
 # ---- Helpers
 
-
 ClientData = namedtuple('ClientData', ['name', 'role', 'address', 'handler'])
 """
 Namedtuple that holds information about a client.
@@ -185,8 +184,7 @@ handler : ClientHandler
     The ClientHandler handling this client.
 """
 
-Package = namedtuple('Package', ['sender', 'recipient',
-                                 'type', 'content'])
+Package = namedtuple('Package', ['sender', 'recipient', 'type', 'content'])
 """
 Namedtuple holding the data of a package.
 
@@ -202,8 +200,8 @@ content : bytes
     The content/body of the package.
 """
 
-
 # ---- Socketserver Implementation
+
 
 class ClientHandler(socketserver.BaseRequestHandler):
     """
@@ -296,6 +294,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
     # ---- BaseRequestHandler API
 
+    def __init__(self, request, client_address, server) -> None:
+        super().__init__(request, client_address, server)
+
     def setup(self):
         """
         Setups the Handler.
@@ -336,9 +337,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
         except ConnectionClosed as error:
             frame = traceback.extract_tb(error.__traceback__, 1)[0]
             msg = "Connection closed. File \"{f}\", line {line}, in {context}."
-            self.log.error(msg.format(f=frame.filename,
-                                      line=frame.lineno,
-                                      context=frame.name))
+            self.log.error(
+                msg.format(f=frame.filename,
+                           line=frame.lineno,
+                           context=frame.name))
         except OSError as error:
             self.log.exception("OSError: {}".format(str(error)))
             self.send_error('Critical Error.')
@@ -411,8 +413,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         try:
             client_version = self.recv_info()
         except (OSError, CommandError, CommandTimeout) as error:
-            self.log.debug("Error while receiving client info: " +
-                           str(error))
+            self.log.debug("Error while receiving client info: " + str(error))
             return
 
         # Check if version number is compatible
@@ -495,6 +496,22 @@ class ClientHandler(socketserver.BaseRequestHandler):
             # It always needs an update
             self.send_update()
 
+        self.handle_client(role)
+
+    def handle_client(self, role: Role):
+        """
+        Handle a connected client with specified role.
+
+        Parameters
+        ----------
+        role : Role
+            The role of the client that should be handled.
+
+        Raises
+        ------
+        NotImplementedError
+            The role is not supported.
+        """
         if role == Role.USER:
             self.handle_user()
         else:
@@ -524,12 +541,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 self.send_error(error)
 
             command = "PACKAGE {} FROM {} TO {} WITH {} [{}]"
-            self.log.info(command.format(package.type,
-                                         package.sender,
-                                         package.recipient,
-                                         len(package.content),
-                                         id(package)
-                                         ))
+            self.log.info(
+                command.format(package.type, package.sender, package.recipient,
+                               len(package.content), id(package)))
 
             # forward package
             with self.Locks.clients:
@@ -538,9 +552,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
                         continue
                     try:
                         client.handler.send_pkg(package)
-                        self.log.debug(
-                            "Forward package {} to {}.".format(id(package),
-                                                               client.name))
+                        self.log.debug("Forward package {} to {}.".format(
+                            id(package), client.name))
                     except OSError:
                         # client already disconnected
                         self.log.debug("Couldn't forward package to " +
@@ -620,7 +633,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 raise ConnectionClosed(
                     "The connection was closed by the client.")
 
-            time_elapsed = time.perf_counter_ns()-start_time
+            time_elapsed = time.perf_counter_ns() - start_time
 
             part_length = len(part)
 
@@ -643,8 +656,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
             # add part to local buffer
             msg += part
 
-    def recv_command(self, max_length,
-                     start_timeout=None, timeout=None) -> bytes:
+    def recv_command(self,
+                     max_length,
+                     start_timeout=None,
+                     timeout=None) -> bytes:
         """
         Receive a command and return it.
 
@@ -703,14 +718,13 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         if i >= 0:  # separator found
             command = msg[:i]
-            self.buffer = msg[i+len(seperator):]  # seperator is removed
+            self.buffer = msg[i + len(seperator):]  # seperator is removed
 
             # for expected behavoir check length of command
             cmd_length = len(command)
             if cmd_length > max_length:
-                raise CommandError(
-                    f"Command too long: {cmd_length} bytes" +
-                    f" from {max_length}")
+                raise CommandError(f"Command too long: {cmd_length} bytes" +
+                                   f" from {max_length}")
 
             return command
 
@@ -736,12 +750,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 raise ConnectionClosed(
                     "The connection was closed by the client.")
 
-            time_elapsed = time.perf_counter_ns()-start_time
+            time_elapsed = time.perf_counter_ns() - start_time
 
             i = part.find(seperator)  # end of command?
             if i >= 0:  # separator found
                 command = msg + part[:i]
-                self.buffer = part[i+len(seperator):]  # seperator is removed
+                self.buffer = part[i + len(seperator):]  # seperator is removed
 
                 # for expected behavoir check length of command
                 cmd_length = len(command)
@@ -921,8 +935,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         template = 'INFO {ok} {version}'
         ok = 'True' if accepted else 'False'
 
-        command = template.format(ok=ok,
-                                  version=str(VERSION))
+        command = template.format(ok=ok, version=str(VERSION))
         msg = command.encode('utf-8', errors='backslashreplace') + \
             self.COMMAND_SEPERATOR
 
@@ -1041,8 +1054,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         if isinstance(error, Exception):
             name = type(error).__name__
-            text = str(error).replace(
-                str(self.COMMAND_SEPERATOR), '')
+            text = str(error).replace(str(self.COMMAND_SEPERATOR), '')
 
             message = name + ': ' + text
         else:
@@ -1127,8 +1139,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         try:
             vers = version.SemanticVersion.parse(version_str)
         except:
-            raise ValueError(
-                f"Invalid version number {version_str}") from None
+            raise ValueError(f"Invalid version number {version_str}") from None
 
         if vers.major != VERSION.major or vers.minor != VERSION.minor:
             return False
@@ -1176,10 +1187,11 @@ class EctecTCPMixIn():
     # used by server_close() to wait for all threads completion.
     _threads = None
 
-    def __init__(self, server_address, RequestHandlerClass,
+    def __init__(self,
+                 server_address,
+                 RequestHandlerClass,
                  bind_and_activate=True):
-        super().__init__(server_address,
-                         RequestHandlerClass,
+        super().__init__(server_address, RequestHandlerClass,
                          bind_and_activate)
 
         # Define some extra attributes
@@ -1378,8 +1390,7 @@ class Server(AbstractServer):
 
         """
         if not self._server:
-            raise AttributeError(
-                "Server not runnning.")
+            raise AttributeError("Server not runnning.")
         return self._server.server_address[1]
 
     @property
@@ -1397,8 +1408,7 @@ class Server(AbstractServer):
         clients = []
         for client_data in client_datas:
             # client is namedtuple (`ClientData`)
-            clients.append((client_data.name,
-                            client_data.role,
+            clients.append((client_data.name, client_data.role,
                             Address._make(client_data.address)))
 
         return clients
@@ -1414,7 +1424,6 @@ class Server(AbstractServer):
 
     class ServerRunningContextManager:
         """The ContextManager for a running server."""
-
         def __init__(self, server):
             """Init the ContextManager"""
             self.server = server
@@ -1459,8 +1468,7 @@ class Server(AbstractServer):
         if self.running:
             raise EctecException('Server is already running.')
 
-        server = EctecTCPServer((address, port),
-                                self.requesthandler_class)
+        server = EctecTCPServer((address, port), self.requesthandler_class)
         self._server = server
 
         self._serve_thread = threading.Thread(target=server.serve_forever)
