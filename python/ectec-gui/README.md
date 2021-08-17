@@ -5,12 +5,21 @@ The GUI uses the ectec package as a back-end.
 
 - [Ectec GUI](#ectec-gui)
   - [Development](#development)
+    - [Testing](#testing)
     - [QT Resource System](#qt-resource-system)
     - [QT Designer and `.ui` files](#qt-designer-and-ui-files)
     - [QT Internationalization](#qt-internationalization)
 
 ## Development
 
+### Testing
+
+Before running the code you should make sure all resources are compiled.
+Usually a simply running the following command should be sufficient.
+
+```bash
+$ ./automate.py all
+```
 ### QT Resource System
 
 The qt resource system allows resources which are files used by the application to be embedded inside a python module.
