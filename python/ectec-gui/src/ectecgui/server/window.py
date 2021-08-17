@@ -34,6 +34,7 @@ from PyQt5.QtCore import QLocale, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication
 
 from .. import DEFAULT_PORT, ectec_res
+from ..ectecQt.server import Server
 from . import logger
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
@@ -157,7 +158,7 @@ class MainWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
-        self.server = ecse.Server()
+        self.server = Server()
         self.port = DEFAULT_PORT
 
         # =================================================================
@@ -177,6 +178,8 @@ class MainWindow(QtWidgets.QDialog):
         # Connect signals.
         #
         # =================================================================
+
+        self.server.usersChanged.connect(self.model_clients.listChanged)
 
         # TODO About menu
 

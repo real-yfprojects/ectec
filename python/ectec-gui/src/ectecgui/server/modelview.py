@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import ectec.server as ecse
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication
 
 #: The function that provides internationalization by translation.
@@ -34,11 +34,21 @@ _tr = QApplication.translate
 
 
 class ClientsTableModel(QtCore.QAbstractTableModel):
+
+    listChanged = pyqtSignal()
+
     def __init__(self, server: ecse.Server, parent=None):
         super().__init__(parent)
         self.server = server
 
         self.headings = ["Client Name (ID)", "Role", "IP address"]
+
+        self.listChanged.connect(self.allDataChange)
+
+    @pyqtSlot()
+    def allDataChange(self):
+        self.beginResetModel()
+        self.endResetModel()
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         """
@@ -72,7 +82,9 @@ class ClientsTableModel(QtCore.QAbstractTableModel):
         """
         return len(self.headings)
 
-    def data(self, index: QtCore.QModelIndex, role=Qt.DisplayRole):
+    def data(self,
+             index: QtCore.QModelIndex,
+             role=Qt.ItemDataRole.DisplayRole):
         """
         Returns the data for the table cells.
 
@@ -88,7 +100,7 @@ class ClientsTableModel(QtCore.QAbstractTableModel):
         QVariant
             Depends on the role.
         """
-        if role != Qt.DisplayRole:
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
 
         users = self.server.users
@@ -96,12 +108,17 @@ class ClientsTableModel(QtCore.QAbstractTableModel):
         if index.row() >= len(users):
             return 'UnDeFinEd'
 
-        return users[index.row()][index.column()]
+        if index.column() == 1:
+            return str(users[index.row()][1].value.capitalize())
+        elif index.column() == 2:
+            return str(users[index.row()][2].ip)
+        else:
+            return str(users[index.row()][index.column()])
 
     def headerData(self,
                    section: int,
                    orientation: Qt.Orientation,
-                   role: int = Qt.DisplayRole):
+                   role=Qt.ItemDataRole.DisplayRole):
         """
         Returns the data of the header with the specified orientation.
 
@@ -115,7 +132,7 @@ class ClientsTableModel(QtCore.QAbstractTableModel):
             The role of the data requested.
             The text to display has the DisplayRole.
         """
-        if role != Qt.DisplayRole:
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
 
         return self.headings[section]
