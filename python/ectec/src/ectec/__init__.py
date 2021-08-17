@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 The core package of the ectec chattool.
 
@@ -36,8 +35,7 @@ from typing import Callable, Iterable, List, Optional, Union
 from . import logs
 from .version import SemanticVersion, Version
 
-VERSION: Version = SemanticVersion(1, 1, 0)
-
+VERSION: Version = SemanticVersion(1, 1, 1)
 
 # ---- Logging
 
@@ -81,11 +79,10 @@ class IncompatibleVersion(ConnectException):
     The client and the server have incompatible version numbers.
     """
 
+
 # ---- Exceptions Server Side
 
-
 # ---- Assets
-
 
 Address = namedtuple('Address', ['ip', 'port'])
 Address.__doc__ += ": A namedtuple representing a socket address."
@@ -127,7 +124,9 @@ class AbstractPackage:
 
     __slots__ = ['sender', 'recipient', 'type', 'time', 'content']
 
-    def __init__(self, sender: str, recipient: Union[str, List[str]],
+    def __init__(self,
+                 sender: str,
+                 recipient: Union[str, List[str]],
                  type: str,
                  time: float = None):
         """
@@ -169,12 +168,13 @@ class Role(enum.Enum):
 
 # ---- Client API / Standard User
 
+
 class AbstractPackageStorage:
     """
     Stores and manages packages.
     """
-
-    def remove(self, *packages: AbstractPackage,
+    def remove(self,
+               *packages: AbstractPackage,
                func: Optional[Callable[[AbstractPackage], bool]] = None):
         """
         Remove packages from the storage.
@@ -226,7 +226,8 @@ class AbstractPackageStorage:
 
         return []
 
-    def filter(self, func: Callable[[AbstractPackage], bool] = None,
+    def filter(self,
+               func: Callable[[AbstractPackage], bool] = None,
                **kwargs) -> Iterable[AbstractPackage]:
         """
         Return a filtered list of the packages in the PackageStorage.
@@ -342,8 +343,9 @@ class AbstractUserClient:
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
-    def receive(self, n: int = None) -> Union[AbstractPackage,
-                                              List[AbstractPackage]]:
+    def receive(
+            self,
+            n: int = None) -> Union[AbstractPackage, List[AbstractPackage]]:
         """
         Read out the buffer of Packages.
 
@@ -367,6 +369,7 @@ class AbstractUserClient:
 
 
 # ---- Server API
+
 
 class AbstractServer:
     """
