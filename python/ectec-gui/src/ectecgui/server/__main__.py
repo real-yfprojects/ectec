@@ -27,14 +27,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import sys
 
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtCore import (QFile, QLocale, QTextStream, QTranslator,
+from PyQt5.QtCore import (QFile, QLocale, Qt, QTextStream, QTranslator,
                           qInstallMessageHandler)
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 
-from . import logger, logs
+from .. import logs
 from .window import MainWindow
 
 # ---- Logging ---------------------------------------------------------------
+
+logger = logs.getLogger()  # root logger
+
 handler = logs.StreamHandler()
 handler.setFormatter(logs.EctecGuiFormatter('Server'))
 handler.setLevel(logs.WARNING)
@@ -47,8 +50,8 @@ qInstallMessageHandler(logs.QtMessageHander(logger))
 
 # some global settings
 QApplication.setDesktopSettingsAware(True)
-QApplication.setAttribute(20)  # Qt::AA_EnableHighDpiScaling
-QApplication.setAttribute(13)  # Qt::AA_UseHighDpiPixmaps
+QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
+QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
 
 # icon theme
 QtGui.QIcon.setFallbackThemeName('breeze')
