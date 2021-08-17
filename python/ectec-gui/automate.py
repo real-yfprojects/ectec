@@ -93,7 +93,10 @@ RESOURCE_FILES = {
 RESOURCE_SUFFIX = "_res"
 
 #: Dictionary matching paths to form files (.ui) to generated python modules.
-FORMS = {"res/server.ui": "src/ectecgui/server/ui_main.py"}
+FORMS = {
+    "res/server.ui": "src/ectecgui/server/ui_main.py",
+    "res/clientConnect.ui": 'src/ectecgui/client/ui_connect.py'
+}
 
 #: List of paths for translation files relative to this script.
 TRANSLATIONS = ["res/ectecgui.en.ts", "res/ectecgui.de.ts"]
