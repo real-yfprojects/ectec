@@ -73,7 +73,8 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Menu&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="icon">
-         <iconset theme="settings-configure"/>
+         <iconset theme="settings-configure">
+          <normaloff>.</normaloff>.</iconset>
         </property>
         <property name="popupMode">
          <enum>QToolButton::InstantPopup</enum>
@@ -252,6 +253,9 @@
        <horstretch>0</horstretch>
        <verstretch>2</verstretch>
       </sizepolicy>
+     </property>
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
      </property>
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of connected clients.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

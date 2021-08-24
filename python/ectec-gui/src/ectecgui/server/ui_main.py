@@ -106,6 +106,7 @@ class Ui_dStartServer(object):
         sizePolicy.setVerticalStretch(2)
         sizePolicy.setHeightForWidth(self.tableClients.sizePolicy().hasHeightForWidth())
         self.tableClients.setSizePolicy(sizePolicy)
+        self.tableClients.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.tableClients.setFrameShadow(QtWidgets.QFrame.Raised)
         self.tableClients.setMidLineWidth(1)
         self.tableClients.setEditTriggers(QtWidgets.QAbstractItemView.AnyKeyPressed|QtWidgets.QAbstractItemView.DoubleClicked)

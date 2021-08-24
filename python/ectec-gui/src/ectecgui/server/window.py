@@ -30,8 +30,8 @@ from typing import List
 
 from ectec import server as ecse
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtCore import QLocale, QPoint, Qt, QTranslator, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMessageBox
 
 from .. import DEFAULT_PORT, ectec_res
 from ..ectecQt.server import Server
@@ -106,11 +106,11 @@ class Ui_mainWindow(Ui_dStartServer):
         #
         # =================================================================
 
-        self.menu_main = QtWidgets.QMenu(dStartServer)
+        self.menu_main = QMenu(dStartServer)
 
         # Add 'About' action
-        self.action_about = QtWidgets.QAction(
-            _tr('dStartServer', "About", "menu"), self.menu_main)
+        self.action_about = QAction(_tr('dStartServer', "About", "menu"),
+                                    self.menu_main)
         self.menu_main.addAction(self.action_about)
 
         # Add menu to toolbutton
@@ -180,6 +180,10 @@ class MainWindow(QtWidgets.QDialog):
         # =================================================================
 
         self.server.usersChanged.connect(self.model_clients.listChanged)
+
+        # context menu for tableview.
+        self.ui.tableClients.customContextMenuRequested.connect(
+            self.slotTableContextMenu)
 
         # TODO About menu
 
@@ -321,6 +325,42 @@ class MainWindow(QtWidgets.QDialog):
         logger.info("Stopped server.")
 
         self.init_pStart()
+
+    @pyqtSlot(QPoint)
+    def slotTableContextMenu(self, pos: QPoint):
+        # construct context menu
+        menu = QMenu(self)
+        action_kick = QAction(_tr('dStartServer', 'Kick', 'client'), menu)
+        action_kick.triggered.connect(self.slotKick)
+        menu.addAction(action_kick)
+
+        # show menu
+        coords = self.ui.tableClients.viewport().mapToGlobal(pos)
+        menu.popup(coords)
+
+    @pyqtSlot()
+    def slotKick(self):
+        if not self.server.running:
+            return
+
+        # get selected items
+        selected = self.ui.tableClients.selectionModel().selectedRows()
+        model = self.ui.tableClients.model()
+
+        names = []
+        for index in selected:
+            row = index.row()
+            row_index = model.index(row, 0)
+            name = model.data(row_index, Qt.ItemDataRole.DisplayRole)
+            names.append(name)
+
+        # This solution is not optimal. When the model changes while this is
+        # running it won't work as expected. The model will most of the time
+        # change when the clients are immediately kicked. That's why there are
+        # two loops here.
+
+        for name in names:
+            self.server.kick(name)
 
     def changeEvent(self, event: QtCore.QEvent):
         """
