@@ -31,7 +31,7 @@ from typing import List
 from ectec import server as ecse
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from .. import DEFAULT_PORT, ectec_res
 from ..ectecQt.server import Server
@@ -271,7 +271,31 @@ class MainWindow(QtWidgets.QDialog):
         self.port = self.ui.spinBoxPort.value()
 
         # start server
-        self.server.start(self.port, address)
+        try:
+            self.server.start(self.port, address)
+        except ecse.EctecException as e:
+            logger.debug("Server is already running.")
+            return
+        except OSError as e:
+            logger.warning(
+                "Starting the server on ({}, {}) failed: {}; {}".format(
+                    address, self.port, e.__class__.__name__, str(e)))
+
+            # show error dialog
+            msgBox = QMessageBox(self)
+            msgBox.setWindowTitle(_tr('dStartServer',
+                                      "Couldn't start server."))
+            msgBox.setText(_tr('dStartServer', "Starting the server failed."))
+            msgBox.setInformativeText(
+                '<i><span style="color: firebrick">{}</span></i> {}'.format(
+                    str(e.__class__.__name__), str(e)))
+            msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msgBox.setIcon(QMessageBox.Icon.Critical)
+
+            msgBox.exec()
+
+            self.init_pStart()
+            return
 
         logger.info("Start server on ({}, {}).".format(address, self.port))
 
