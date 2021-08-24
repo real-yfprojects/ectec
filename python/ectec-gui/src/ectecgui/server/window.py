@@ -180,6 +180,8 @@ class MainWindow(QtWidgets.QDialog):
         # =================================================================
 
         self.server.usersChanged.connect(self.model_clients.listChanged)
+        self.ui.checkBoxBlocking.stateChanged.connect(
+            self.slotBlockingStateChanged)
 
         # context menu for tableview.
         self.ui.tableClients.customContextMenuRequested.connect(
@@ -242,6 +244,8 @@ class MainWindow(QtWidgets.QDialog):
         self.ui.tableClients.setEnabled(False)
         self.ui.comboBoxAddress.setEnabled(True)
         self.ui.spinBoxPort.setEnabled(True)
+        self.ui.checkBoxBlocking.setEnabled(False)
+        self.ui.checkBoxBlocking.setChecked(False)
 
     def init_pRunning(self):
         """
@@ -267,6 +271,9 @@ class MainWindow(QtWidgets.QDialog):
         self.ui.tableClients.setEnabled(True)
         self.ui.comboBoxAddress.setEnabled(False)
         self.ui.spinBoxPort.setEnabled(False)
+
+        self.ui.checkBoxBlocking.setEnabled(True)
+        self.ui.checkBoxBlocking.setChecked(False)
 
     @pyqtSlot(bool)
     def slotStart(self, checked=False):
@@ -361,6 +368,15 @@ class MainWindow(QtWidgets.QDialog):
 
         for name in names:
             self.server.kick(name)
+
+    @pyqtSlot(int)
+    def slotBlockingStateChanged(self, state: Qt.CheckState):
+        if state == Qt.CheckState.Checked:
+            # blocking
+            self.server.reject = True
+        else:
+            # not blocked
+            self.server.reject = False
 
     def changeEvent(self, event: QtCore.QEvent):
         """
