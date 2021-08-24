@@ -272,7 +272,9 @@ class MainWindow(QtWidgets.QDialog):
 
         # start server
         try:
-            self.server.start(self.port, address)
+            # the address '' will bind the socket to every interface
+            # allowing it to be reachable by `localhost`.
+            self.server.start(self.port, '')
         except ecse.EctecException as e:
             logger.debug("Server is already running.")
             return
@@ -303,7 +305,9 @@ class MainWindow(QtWidgets.QDialog):
         self.init_pRunning()
 
         port = self.server.port
-        address = self.server.address
+
+        # commented 'cause it won't be the real ip address on linux
+        # address = self.server.address
 
         self.ui.comboBoxAddress.insertItem(0, address)
         self.ui.comboBoxAddress.setCurrentIndex(0)
