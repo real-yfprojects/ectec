@@ -30,7 +30,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from ectec.client import Package, PackageStorage
 from PyQt5.QtCore import (QAbstractListModel, QModelIndex, QObject, QRect,
                           QSize, Qt)
-from PyQt5.QtGui import QFontMetrics, QPainter, QPen
+from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QResizeEvent
 from PyQt5.QtWidgets import (QListView, QStyledItemDelegate,
                              QStyleOptionViewItem)
 
@@ -202,9 +202,6 @@ class ChatViewDelegate(QStyledItemDelegate):
         QSize
             The size needed.
         """
-        # config
-        LENGTH = 15
-
         # obtain paint data
         paint_frame = option.rect
         font = option.font
@@ -217,12 +214,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         package: Package = index.data()
         sender_text = textwrap.shorten(package.sender, width=10)
 
-        if isinstance(package.content, bytes):
-            text = package.content.decode('utf-8', errors='replace')
-        else:
-            text = str(package.content)
-
-        # calculate width
+        # calculate minimum width for sender field
         font.setBold(True)
         metrics = QFontMetrics(font)
         sender_width = metrics.boundingRect(
@@ -232,29 +224,33 @@ class ChatViewDelegate(QStyledItemDelegate):
         sender_height = metrics.height()
         font.setBold(False)
 
-        inner_width = sender_width * 2
+        # calculate minimum width of item when two sender fields should fit in
+        # the bubble
+        min_width = int((sender_width * 2 + self.padding * 2) / self.rel_size)
+        min_width += self.padding * 2 + self.line_width * 2 + self.margin * 2
 
-        # frame for package content.
-        metrics = QFontMetrics(font)
-        content_frame = metrics.boundingRect(
-            0, 0, inner_width,
-            metrics.lineSpacing() * len(text),
-            Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignLeft, text)
+        # adjust width for calling `calculate`
+        option.rect.setWidth(max(min_width, option.rect.width()))
 
-        # bubble dimensions
-        bubble_width = max(content_frame.width(), inner_width)
-        bubble_width += self.padding * 2
+        # do some more calculations
+        dummy1, title_rect, content_rect, *dummy2 = self.calculate(
+            option, index)
 
-        bubble_height = content_frame.height() + self.header_padding
-        bubble_height += sender_height + self.padding * 2
+        # calculate size of the elements combined
+        bubble = QRect(
+            0, 0,
+            max(title_rect.width(), content_rect.width()) + self.padding * 2,
+            title_rect.height() + self.header_padding + content_rect.height() +
+            self.padding * 2)
 
-        # combined dimenensions
-        width = int(bubble_width /
-                    self.rel_size) + self.line_width * 2 + self.margin * 2
+        frame = QRect(
+            0, 0,
+            int(bubble.width() / self.rel_size) + self.line_width * 2 +
+            self.margin * 2,
+            bubble.height() + self.line_width * 2 + self.margin * 2)
 
-        height = bubble_height + self.line_width * 2 + self.margin * 2
-
-        return QSize(width, height)
+        # return combined size
+        return QSize(frame.width(), frame.height())
 
     def calculate(
             self, option: QStyleOptionViewItem, index: QModelIndex
@@ -488,7 +484,6 @@ class ChatView(QListView):
         self.local_name = local_name
 
         self.setItemDelegate(ChatViewDelegate(local_name, self))
-        self.setWordWrap(True)
 
     def setModel(self, model: EctecPackageModel):
         """
@@ -508,6 +503,53 @@ class ChatView(QListView):
             raise TypeError("Model must be of type EctecPackageModel.")
 
         super().setModel(model)
+
+    def viewOptions(self) -> QStyleOptionViewItem:
+        """
+        Construct a class holding information about drawing items.
+
+        Returns a QStyleOptionViewItem structure populated with the view's
+        palette, font, state, alignments etc. This subclass adds information
+        about the view's geometry to the `rect` option of the structure.
+
+        Returns
+        -------
+        QStyleOptionViewItem
+            The data structure with style options.
+        """
+        option = super().viewOptions()
+
+        # the viewport is the widget displaying the items
+        # and beeing painted on by the itemdelegate.
+        option.rect.setWidth(self.viewport().width())
+        option.rect.setHeight(self.viewport().height())
+
+        return option
+
+    def resizeEvent(self, e: QResizeEvent) -> None:
+        """
+        React to a resize event.
+
+        the widget already has its new geometry.
+        The old size is accessible through QResizeEvent::oldSize().
+        The widget will be erased and receive a paint event immediately after
+        processing the resize event. No drawing need be (or should be)
+        done inside this handler.
+
+        Parameters
+        ----------
+        e : QtGui.QResizeEvent
+            The resize event.
+
+        """
+        r = super().resizeEvent(e)
+
+        # this tells the view's using the delegate that it's size changed.
+        # I think the `index` parameter is not used by the `QAbstractItemView`
+        # at the moment.
+        self.itemDelegate().sizeHintChanged.emit(QModelIndex())
+
+        return r
 
 
 if __name__ == '__main__':
