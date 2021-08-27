@@ -179,7 +179,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         self.header_padding = 3
         self.roundRadius = 3
 
-        self.line_width = 1
+        self.line_width: int = 1
 
     def sizeHint(self, option: QStyleOptionViewItem,
                  index: QModelIndex) -> QSize:
@@ -211,8 +211,10 @@ class ChatViewDelegate(QStyledItemDelegate):
         palette = option.palette
 
         # obtain package data
-        package: Package = index.data()
-        sender_text = textwrap.shorten(package.sender, width=10)
+        package_data = self.process_package(index)
+        dummy, local, sender_text, receiver_text, text = package_data
+
+        sender_text = textwrap.shorten(sender_text, width=10)
 
         # calculate minimum width for sender field
         font.setBold(True)
@@ -252,110 +254,6 @@ class ChatViewDelegate(QStyledItemDelegate):
         # return combined size
         return QSize(frame.width(), frame.height())
 
-    def calculate(
-            self, option: QStyleOptionViewItem, index: QModelIndex
-    ) -> Tuple[QRect, QRect, QRect, Optional[str], str]:
-        """
-        Make the calculations needed for painting the item.
-
-        This method should simplify the `paint` method.
-        It returns the rectangular frame for the message bubble,
-        the (rectangular) frame for the header of the bubble, the frame for the
-        content of the bubble, the text for the sender and the text for the
-        receiver field.
-
-        Parameters
-        ----------
-        option : QStyleOptionViewItem
-            The stylistic options for drawing the item.
-        index : QModelIndex
-            The index of the item in the model.
-
-        Returns
-        -------
-        Tuple[QRect, QRect, QRect, Optional[str], str]
-            The calculated frames and texts.
-        """
-        # obtain paint data
-        paint_frame: QRect = option.rect
-        font = option.font
-        alignment = option.displayAlignment
-        layout_direction = option.direction
-        bg_brush = option.backgroundBrush
-        palette = option.palette
-
-        # obtain package data
-        package: Package = index.data()
-        if isinstance(package.content, bytes):
-            text = package.content.decode('utf-8', errors='replace')
-        else:
-            text = str(package.content)
-        receiver_text = ', '.join(package.recipient)
-        local = package.sender == self.local_name
-
-        # helper frame's
-        # bubble is on the right if send by local client otherwise on left
-        bubble_frame = paint_frame.adjusted(self.margin, self.margin,
-                                            -self.margin, -self.margin)
-        indent = int(bubble_frame.width() * (1 - self.rel_size))
-        if local:  # message by local client
-            bubble_frame.adjust(indent, 0, 0, 0)
-        else:
-            bubble_frame.adjust(0, 0, -indent, 0)
-
-        inner_frame = bubble_frame.adjusted(self.padding, self.padding,
-                                            -self.padding, -self.padding)
-
-        # title line
-        font.setItalic(True)
-        metrics = QFontMetrics(font)
-        width = inner_frame.width() // 2
-        receiver_text = metrics.elidedText(receiver_text,
-                                           Qt.TextElideMode.ElideRight, width)
-        receiver_rect = metrics.boundingRect(
-            0, 0, width,
-            metrics.lineSpacing() * 2,
-            Qt.TextFlag.TextSingleLine | Qt.AlignmentFlag.AlignRight,
-            receiver_text)
-        font.setItalic(False)
-
-        if local:  # message by local client
-            title_rect = QRect(0, 0, inner_frame.width(),
-                               receiver_rect.height())
-            title_rect.translate(inner_frame.topLeft())
-            sender_text = None
-        else:
-            font.setBold(True)
-            metrics = QFontMetrics(font)
-            sender_text = metrics.elidedText(package.sender,
-                                             Qt.TextElideMode.ElideRight,
-                                             width)
-            sender_rect = metrics.boundingRect(
-                0, 0, width,
-                metrics.lineSpacing() * 2,
-                Qt.TextFlag.TextSingleLine | Qt.AlignmentFlag.AlignLeft,
-                sender_text)
-            font.setBold(False)
-
-            title_rect = QRect(
-                0, 0, inner_frame.width(),
-                max(sender_rect.height(), receiver_rect.height()))
-            title_rect.translate(inner_frame.topLeft())
-
-        # frame for package content.
-        metrics = QFontMetrics(font)
-        content_rect = metrics.boundingRect(
-            0, 0, inner_frame.width(),
-            metrics.lineSpacing() * len(text),
-            Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignLeft, text)
-        content_rect.translate(title_rect.bottomLeft())
-        content_rect.translate(0, self.header_padding)
-
-        # return frames needed
-        frames = bubble_frame, title_rect, content_rect
-
-        return frames + (sender_text, receiver_text)
-
     def paint(self, painter: QPainter, option: QStyleOptionViewItem,
               index: QModelIndex):
         """
@@ -390,14 +288,8 @@ class ChatViewDelegate(QStyledItemDelegate):
         palette = option.palette
 
         # obtain package data
-        package: Package = index.data()
-        receiver_text = ', '.join(package.recipient)
-        local = package.sender == self.local_name
-
-        if isinstance(package.content, bytes):
-            text = package.content.decode('utf-8', errors='replace')
-        else:
-            text = str(package.content)
+        package_data = self.process_package(index)
+        dummy, local, sender_text, receiver_text, text = package_data
 
         # calculate frames needed
         frames = self.calculate(option, index)
@@ -410,7 +302,9 @@ class ChatViewDelegate(QStyledItemDelegate):
         painter.drawRect(paint_frame)
 
         # draw bubble
-        painter.setPen(QPen(palette.color(palette.ColorRole.Text)))
+        pen_bubble = QPen(palette.color(palette.ColorRole.Text))
+        pen_bubble.setWidth(self.line_width)
+        painter.setPen(pen_bubble)
         painter.drawRoundedRect(bubble_frame, self.roundRadius,
                                 self.roundRadius, Qt.SizeMode.AbsoluteSize)
 
@@ -441,6 +335,153 @@ class ChatViewDelegate(QStyledItemDelegate):
 
         # pull painter state
         painter.restore()
+
+    def calculate(
+            self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> Tuple[QRect, QRect, QRect, Optional[str], str]:
+        """
+        Make the calculations needed for painting the item.
+
+        This method should simplify the `paint` method.
+        It returns the rectangular frame for the message bubble,
+        the (rectangular) frame for the header of the bubble, the frame for the
+        content of the bubble, the text for the sender and the text for the
+        receiver field.
+
+        Parameters
+        ----------
+        option : QStyleOptionViewItem
+            The stylistic options for drawing the item.
+        index : QModelIndex
+            The index of the item in the model.
+
+        Returns
+        -------
+        Tuple[QRect, QRect, QRect, Optional[str], str]
+            The calculated frames and texts.
+        """
+        # obtain paint data
+        paint_frame: QRect = option.rect
+        font = option.font
+        alignment = option.displayAlignment
+        layout_direction = option.direction
+        bg_brush = option.backgroundBrush
+        palette = option.palette
+
+        # obtain package data
+        package_data = self.process_package(index)
+        dummy, local, sender_text, receiver_text, text = package_data
+
+        # helper frame's
+        # bubble is on the right if send by local client otherwise on left
+        bubble_frame = paint_frame.adjusted(self.margin + self.line_width,
+                                            self.margin + self.line_width,
+                                            -self.margin - self.line_width,
+                                            -self.margin - self.line_width)
+        indent = int(bubble_frame.width() * (1 - self.rel_size))
+        if local:  # message by local client
+            bubble_frame.adjust(indent, 0, 0, 0)
+        else:
+            bubble_frame.adjust(0, 0, -indent, 0)
+
+        inner_frame = bubble_frame.adjusted(self.padding, self.padding,
+                                            -self.padding, -self.padding)
+
+        # title line
+        font.setItalic(True)
+        metrics = QFontMetrics(font)
+        width = inner_frame.width() // 2
+        receiver_text = metrics.elidedText(receiver_text,
+                                           Qt.TextElideMode.ElideRight, width)
+        receiver_rect = metrics.boundingRect(
+            0, 0, width,
+            metrics.lineSpacing() * 2,
+            Qt.TextFlag.TextSingleLine | Qt.AlignmentFlag.AlignRight,
+            receiver_text)
+        font.setItalic(False)
+
+        if local:  # message by local client
+            title_rect = QRect(0, 0, inner_frame.width(),
+                               receiver_rect.height())
+            title_rect.translate(inner_frame.topLeft())
+            sender_text = None
+        else:
+            font.setBold(True)
+            metrics = QFontMetrics(font)
+            sender_text = metrics.elidedText(sender_text,
+                                             Qt.TextElideMode.ElideRight,
+                                             width)
+            sender_rect = metrics.boundingRect(
+                0, 0, width,
+                metrics.lineSpacing() * 2,
+                Qt.TextFlag.TextSingleLine | Qt.AlignmentFlag.AlignLeft,
+                sender_text)
+            font.setBold(False)
+
+            title_rect = QRect(
+                0, 0, inner_frame.width(),
+                max(sender_rect.height(), receiver_rect.height()))
+            title_rect.translate(inner_frame.topLeft())
+
+        # frame for package content.
+        metrics = QFontMetrics(font)
+        content_rect = metrics.boundingRect(
+            0, 0, inner_frame.width(),
+            metrics.lineSpacing() * len(text),
+            Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignLeft, text)
+        content_rect.translate(title_rect.bottomLeft())
+        content_rect.translate(0, self.header_padding)
+
+        # return frames needed
+        frames = bubble_frame, title_rect, content_rect
+
+        return frames + (sender_text, receiver_text)
+
+    def process_package(
+            self, index: QModelIndex) -> Tuple[Package, bool, str, str, str]:
+        """
+        Process and clean the package data of a given index.
+
+        This method sorts the receiver's.
+
+        Parameters
+        ----------
+        index : QModelIndex
+            The index in the model for the package.
+
+        Returns
+        -------
+        Tuple[Package, bool, str, str, str]
+            The data: package, local, sender_text, receiver_text, content_text
+        """
+        # obtain package data
+        package: Package = index.data()
+
+        # handle package content
+        if isinstance(package.content, bytes):
+            text = package.content.decode('utf-8', errors='replace')
+        else:
+            text = str(package.content)
+
+        # handle sender
+        sender_text = package.sender
+
+        # handle receiver
+        def rw(rec: str):
+            if rec == self.local_name:
+                return 0
+
+            return len(rec)
+
+        recipients = list(package.recipient)
+        recipients.sort(key=rw)
+        receiver_text = ', '.join(recipients)
+
+        # msg by local client?
+        local = package.sender == self.local_name
+
+        # return data
+        return package, local, sender_text, receiver_text, text
 
 
 class ChatView(QListView):
@@ -572,7 +613,7 @@ if __name__ == '__main__':
     p2 = Package('Person B', 'Person A', 'text')
     p2.content = 'This ChatView is currently only capable of displaying raw'
     p2.content += 'text but his might change in the future.'
-    p3 = Package('Person B', ('Person A', 'Person C'), 'text')
+    p3 = Package('Person B', ('short', 'Person A', 'Person C'), 'text')
     p3.content = 'Hello!\nHow are you?'
 
     storage.add(p1, p2, p3)
