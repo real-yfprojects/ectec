@@ -28,11 +28,15 @@ import textwrap
 from typing import Callable, List, Optional, Tuple, Union
 
 from ectec.client import Package, PackageStorage
-from PyQt5.QtCore import (QAbstractListModel, QModelIndex, QObject, QRect,
-                          QSize, Qt)
-from PyQt5.QtGui import QFontMetrics, QPainter, QPen, QResizeEvent
-from PyQt5.QtWidgets import (QListView, QStyledItemDelegate,
-                             QStyleOptionViewItem)
+from PyQt5.QtCore import (QAbstractListModel, QEvent, QModelIndex, QObject,
+                          QRect, QSize, Qt)
+from PyQt5.QtGui import QFontMetrics, QHelpEvent, QPainter, QPen, QResizeEvent
+from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QListView,
+                             QStyledItemDelegate, QStyleOptionViewItem,
+                             QToolTip)
+
+#: The function that provides internationalization by translation.
+_tr = QApplication.translate
 
 
 class ModelPackageStorage(PackageStorage):
@@ -158,6 +162,21 @@ class EctecPackageModel(QAbstractListModel):
 
 
 class ChatViewDelegate(QStyledItemDelegate):
+    """
+    A Item Delegate for ectec Chat packages.
+
+    This delegate should only be used with instances of `ChatView` and one
+    view per instance of this delegate. The delegate draws a bubble with
+    sender, receiver and content but it currently only supports raw
+    text content.
+
+    Parameters
+    ----------
+    local_name : str
+        The name to treat as the local client's name.
+    parent : QObject, optional
+        The parent of this delegate, by default None.
+    """
     def __init__(self, local_name: str, parent: Optional[QObject] = None):
         """
         Init the delegate.
@@ -204,6 +223,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         """
         # obtain paint data
         paint_frame = option.rect
+        state = option.state
         font = option.font
         alignment = option.displayAlignment
         layout_direction = option.direction
@@ -237,8 +257,9 @@ class ChatViewDelegate(QStyledItemDelegate):
                 option.styleObject.viewport().width()))
 
         # do some more calculations
-        dummy1, title_rect, content_rect, *dummy2 = self.calculate(
+        dummy1, title_rects, content_rect, *dummy2 = self.calculate(
             option, index)
+        title_rect, *dummy3 = title_rects
 
         # calculate size of the elements combined
         bubble = QRect(
@@ -283,6 +304,7 @@ class ChatViewDelegate(QStyledItemDelegate):
 
         # obtain paint data
         paint_frame = option.rect
+        state = option.state
         font = option.font
         alignment = option.displayAlignment
         layout_direction = option.direction
@@ -295,7 +317,8 @@ class ChatViewDelegate(QStyledItemDelegate):
 
         # calculate frames needed
         frames = self.calculate(option, index)
-        bubble_frame, title_rect, content_rect, *texts = frames
+        bubble_frame, title_rects, content_rect, *texts = frames
+        title_rect, *dummy = title_rects
         sender_text, receiver_text = texts
 
         # draw bg
@@ -307,6 +330,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         pen_bubble = QPen(palette.color(palette.ColorRole.Text))
         pen_bubble.setWidth(self.line_width)
         painter.setPen(pen_bubble)
+
         painter.drawRoundedRect(bubble_frame, self.roundRadius,
                                 self.roundRadius, Qt.SizeMode.AbsoluteSize)
 
@@ -338,9 +362,87 @@ class ChatViewDelegate(QStyledItemDelegate):
         # pull painter state
         painter.restore()
 
+    def helpEvent(self, event: QHelpEvent, view: QAbstractItemView,
+                  option: QStyleOptionViewItem, index: QModelIndex) -> bool:
+        """
+        Handle a help event.
+
+        Whenever a help event occurs, this function is called with the event
+        view option and the index that corresponds to the item where the event
+        occurs. Returns true if the delegate can handle the event; otherwise
+        returns false. A return value of true indicates that the data obtained
+        using the index had the required role.
+        For `QEvent::ToolTip` and `QEvent::WhatsThis` events that were handled
+        successfully, the relevant popup may be shown depending
+        on the user's system configuration.
+
+        `QHelpEvent` can only be of type `ToolTip` or `WhatsThis`. Currently
+        tooltips for the fields in the item's bubble are shown in case of type
+        `ToolTip`. The event is passed to the superclass.
+
+        Parameters
+        ----------
+        event : QHelpEvent
+            The help event to handler.
+        view : QAbstractItemView
+            The view the event occurred in.
+        option : QStyleOptionViewItem
+            The style options for this item.
+        index : QModelIndex
+            The index of this item in the model.
+
+        Returns
+        -------
+        bool
+            Whether the event could be handled.
+        """
+        # only handle tooltip request's
+        if event.type() != QEvent.Type.ToolTip:
+            return super().helpEvent(event, view, option, index)
+
+        # check index
+        # (mouse cursor could be in blank space
+        # when list widget is larger than the items)
+        if not index.isValid():
+            return False
+
+        # obtain package data
+        package_data = self.process_package(index)
+        dummy, local, sender_text, receiver_text, text = package_data
+
+        # calculate frames needed
+        frames = self.calculate(option, index)
+        bubble_frame, title_rects, content_rect, *texts = frames
+        title_rect, sender_rect, receiver_rect = title_rects
+
+        # switch item the cursor is in
+        pos = event.pos()
+        if content_rect.contains(pos):
+            tooltipText = text
+            tooltipRect = content_rect
+        elif sender_rect and sender_rect.contains(pos):
+            tooltipText = _tr('ChatView', 'From: ', 'letter') + sender_text
+            tooltipRect = sender_rect
+        elif receiver_rect.contains(pos):
+            tooltipText = _tr('ChatView', 'To: ', 'letter') + receiver_text
+            tooltipRect = receiver_rect
+        else:
+            # no tooltip available
+            QToolTip.hideText()  # hiding the tooltip isn't done automatically
+            event.ignore()  # necessary after hiding the tooltip
+            return False
+
+        # pos to global
+        tooltipPos = event.globalPos()  # cursor position on screen\
+
+        # Show tooltip
+        QToolTip.showText(tooltipPos, tooltipText, view, tooltipRect)
+        return True
+
     def calculate(
-            self, option: QStyleOptionViewItem, index: QModelIndex
-    ) -> Tuple[QRect, QRect, QRect, Optional[str], str]:
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> Tuple[QRect, Tuple[QRect, Optional[QRect], QRect], QRect,
+               Optional[str], str]:
         """
         Make the calculations needed for painting the item.
 
@@ -364,6 +466,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         """
         # obtain paint data
         paint_frame: QRect = option.rect
+        state = option.state
         font = option.font
         alignment = option.displayAlignment
         layout_direction = option.direction
@@ -407,6 +510,7 @@ class ChatViewDelegate(QStyledItemDelegate):
                                receiver_rect.height())
             title_rect.translate(inner_frame.topLeft())
             sender_text = None
+            sender_rect = None
         else:
             font.setBold(True)
             metrics = QFontMetrics(font)
@@ -425,6 +529,12 @@ class ChatViewDelegate(QStyledItemDelegate):
                 max(sender_rect.height(), receiver_rect.height()))
             title_rect.translate(inner_frame.topLeft())
 
+            # set location of sender rect
+            sender_rect.translate(title_rect.topLeft())
+
+        # set location of receiver rect
+        receiver_rect.moveTopRight(title_rect.topRight())
+
         # frame for package content.
         metrics = QFontMetrics(font)
         content_rect = metrics.boundingRect(
@@ -435,7 +545,8 @@ class ChatViewDelegate(QStyledItemDelegate):
         content_rect.translate(0, self.header_padding)
 
         # return frames needed
-        frames = bubble_frame, title_rect, content_rect
+        frames = bubble_frame, (title_rect, sender_rect,
+                                receiver_rect), content_rect
 
         return frames + (sender_text, receiver_text)
 
