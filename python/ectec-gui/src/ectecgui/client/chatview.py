@@ -232,7 +232,9 @@ class ChatViewDelegate(QStyledItemDelegate):
         min_width += self.padding * 2 + self.line_width * 2 + self.margin * 2
 
         # adjust width for calling `calculate`
-        option.rect.setWidth(max(min_width, option.rect.width()))
+        option.rect.setWidth(
+            max(min_width,
+                option.styleObject.viewport().width()))
 
         # do some more calculations
         dummy1, title_rect, content_rect, *dummy2 = self.calculate(
@@ -544,28 +546,6 @@ class ChatView(QListView):
             raise TypeError("Model must be of type EctecPackageModel.")
 
         super().setModel(model)
-
-    def viewOptions(self) -> QStyleOptionViewItem:
-        """
-        Construct a class holding information about drawing items.
-
-        Returns a QStyleOptionViewItem structure populated with the view's
-        palette, font, state, alignments etc. This subclass adds information
-        about the view's geometry to the `rect` option of the structure.
-
-        Returns
-        -------
-        QStyleOptionViewItem
-            The data structure with style options.
-        """
-        option = super().viewOptions()
-
-        # the viewport is the widget displaying the items
-        # and beeing painted on by the itemdelegate.
-        option.rect.setWidth(self.viewport().width())
-        option.rect.setHeight(self.viewport().height())
-
-        return option
 
     def resizeEvent(self, e: QResizeEvent) -> None:
         """
