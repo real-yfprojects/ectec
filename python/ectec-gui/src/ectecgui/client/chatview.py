@@ -30,9 +30,10 @@ from typing import Callable, List, Optional, Tuple, Union
 from ectec.client import Package, PackageStorage
 from PyQt5.QtCore import (QAbstractListModel, QEvent, QModelIndex, QObject,
                           QRect, QSize, Qt)
-from PyQt5.QtGui import QFontMetrics, QHelpEvent, QPainter, QPen, QResizeEvent
+from PyQt5.QtGui import (QFontMetrics, QHelpEvent, QPainter, QPalette, QPen,
+                         QResizeEvent)
 from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QListView,
-                             QStyledItemDelegate, QStyleOptionViewItem,
+                             QStyle, QStyledItemDelegate, QStyleOptionViewItem,
                              QToolTip)
 
 #: The function that provides internationalization by translation.
@@ -199,6 +200,8 @@ class ChatViewDelegate(QStyledItemDelegate):
         self.roundRadius = 3
 
         self.line_width: int = 1
+        # factor of the hsv color value
+        self.dimm = 1
 
     def sizeHint(self, option: QStyleOptionViewItem,
                  index: QModelIndex) -> QSize:
@@ -321,18 +324,27 @@ class ChatViewDelegate(QStyledItemDelegate):
         title_rect, *dummy = title_rects
         sender_text, receiver_text = texts
 
-        # draw bg
-        painter.setBrush(palette.base())
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(paint_frame)
+        # determine bubble pen
+        # the pen width may only be an integer but lighter lines look thinner
+        # therefore the color is dimmable
+        if state & QStyle.StateFlag.State_Selected:
+            color = palette.color(palette.ColorRole.Highlight)
+        else:
+            color = palette.color(palette.ColorRole.Mid)
+            color = color.lighter(int(100 * self.dimm))
 
-        # draw bubble
-        pen_bubble = QPen(palette.color(palette.ColorRole.Text))
+        pen_bubble = QPen(color)
         pen_bubble.setWidth(self.line_width)
         painter.setPen(pen_bubble)
 
+        # draw bubble
+        painter.setBrush(palette.base())
         painter.drawRoundedRect(bubble_frame, self.roundRadius,
                                 self.roundRadius, Qt.SizeMode.AbsoluteSize)
+
+        # text pen
+        pen_text = QPen(palette.color(palette.ColorRole.Text))
+        painter.setPen(pen_text)
 
         # draw header - receiver
         font.setItalic(True)
