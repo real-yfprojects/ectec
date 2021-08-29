@@ -386,7 +386,7 @@ class PackageStorage(AbstractPackageStorage):
 
     def add(
         self,
-        *packages: Union[Package, List[Package]],
+        *packages: Package,
         as_list: Optional[List[Package]] = None,
     ) -> None:
         """
