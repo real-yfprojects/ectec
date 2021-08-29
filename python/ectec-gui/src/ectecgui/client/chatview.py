@@ -177,6 +177,28 @@ class ChatViewDelegate(QStyledItemDelegate):
         The name to treat as the local client's name.
     parent : QObject, optional
         The parent of this delegate, by default None.
+
+    Attributes
+    ----------
+    rel_size
+        The width of the bubble relative to the viewport.
+    margin
+        The margin around the bubble.
+    padding
+        The padding inside the bubble.
+    header_padding
+        The padding between the bubble's header and the bubble's content.
+    corner_radius
+        The radius of the bubble's corners.
+    border_width
+        The width of the bubble's border.
+    dimm
+        The dimm factor of the hsv color value of the border.
+    bg_role
+        The color role for the bubble's background/
+    border_role
+        The color role for the bubble's border.
+
     """
     def __init__(self, local_name: str, parent: Optional[QObject] = None):
         """
@@ -192,16 +214,34 @@ class ChatViewDelegate(QStyledItemDelegate):
         super().__init__(parent=parent)
         self.local_name = local_name
 
+        # drawing options
+
+        #: the width of the bubble relative to the viewport
         self.rel_size = 0.75
+
+        #: the margin around the bubble
         self.margin = 6
+
+        #: the padding inside the bubble
         self.padding = 6
 
+        #: the padding between the bubble's header and the bubble's content
         self.header_padding = 3
-        self.roundRadius = 3
 
-        self.line_width: int = 1
-        # factor of the hsv color value
+        #: the radius of the bubble's corners
+        self.corner_radius = 3
+
+        #: the width of the bubble's border
+        self.border_width: int = 1
+
+        #: the dimm factor of the hsv color value of the border
         self.dimm = 1
+
+        #: the color role for the bubble's background
+        self.bg_role = QPalette.ColorRole.Base
+
+        #: the color role for the bubble's border
+        self.border_role = self.bg_role
 
     def sizeHint(self, option: QStyleOptionViewItem,
                  index: QModelIndex) -> QSize:
@@ -252,7 +292,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         # calculate minimum width of item when two sender fields should fit in
         # the bubble
         min_width = int((sender_width * 2 + self.padding * 2) / self.rel_size)
-        min_width += self.padding * 2 + self.line_width * 2 + self.margin * 2
+        min_width += self.padding * 2 + self.border_width * 2 + self.margin * 2
 
         # adjust width for calling `calculate`
         option.rect.setWidth(
@@ -273,9 +313,9 @@ class ChatViewDelegate(QStyledItemDelegate):
 
         frame = QRect(
             0, 0,
-            int(bubble.width() / self.rel_size) + self.line_width * 2 +
+            int(bubble.width() / self.rel_size) + self.border_width * 2 +
             self.margin * 2,
-            bubble.height() + self.line_width * 2 + self.margin * 2)
+            bubble.height() + self.border_width * 2 + self.margin * 2)
 
         # return combined size
         return QSize(frame.width(), frame.height())
@@ -330,17 +370,17 @@ class ChatViewDelegate(QStyledItemDelegate):
         if state & QStyle.StateFlag.State_Selected:
             color = palette.color(palette.ColorRole.Highlight)
         else:
-            color = palette.color(palette.ColorRole.Mid)
+            color = palette.color(self.border_role)
             color = color.lighter(int(100 * self.dimm))
 
         pen_bubble = QPen(color)
-        pen_bubble.setWidth(self.line_width)
+        pen_bubble.setWidth(self.border_width)
         painter.setPen(pen_bubble)
 
         # draw bubble
-        painter.setBrush(palette.base())
-        painter.drawRoundedRect(bubble_frame, self.roundRadius,
-                                self.roundRadius, Qt.SizeMode.AbsoluteSize)
+        painter.setBrush(palette.brush(self.bg_role))
+        painter.drawRoundedRect(bubble_frame, self.corner_radius,
+                                self.corner_radius, Qt.SizeMode.AbsoluteSize)
 
         # text pen
         pen_text = QPen(palette.color(palette.ColorRole.Text))
@@ -491,10 +531,10 @@ class ChatViewDelegate(QStyledItemDelegate):
 
         # helper frame's
         # bubble is on the right if send by local client otherwise on left
-        bubble_frame = paint_frame.adjusted(self.margin + self.line_width,
-                                            self.margin + self.line_width,
-                                            -self.margin - self.line_width,
-                                            -self.margin - self.line_width)
+        bubble_frame = paint_frame.adjusted(self.margin + self.border_width,
+                                            self.margin + self.border_width,
+                                            -self.margin - self.border_width,
+                                            -self.margin - self.border_width)
         indent = int(bubble_frame.width() * (1 - self.rel_size))
         if local:  # message by local client
             bubble_frame.adjust(indent, 0, 0, 0)
@@ -650,6 +690,26 @@ class ChatView(QListView):
         self.local_name = local_name
 
         self.setItemDelegate(ChatViewDelegate(local_name, self))
+
+        # set background color role
+        self.setBackgroundRole(QPalette.ColorRole.AlternateBase)
+
+    def setBackgroundRole(self, role: QPalette.ColorRole) -> None:
+        """
+        Set the background color role of the widget to role.
+
+        The background role defines the brush from the widget's
+        palette that is used to render the background.
+        If role is `QPalette::NoRole`, then the widget inherits its parent's
+        background role.
+
+        Parameters
+        ----------
+        role : QPalette.ColorRole
+            The role from the widget's palette.
+        """
+        super().setBackgroundRole(role)
+        self.viewport().setBackgroundRole(role)
 
     def setModel(self, model: EctecPackageModel):
         """
