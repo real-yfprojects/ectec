@@ -1,20 +1,20 @@
 # Version 1.0.0
 
-- [ ] Client User Role (UR)
-- [ ] Connect to server with role and name
+- [x] Client User Role (UR)
+- [x] Connect to server with role and name
 - [ ] UR: Mantain list of users
 - [ ] UR: Send raw text messages to a one or multiple persons
 - [ ] UR: Receive raw text messages
-- [ ] UR: Chat view
+- [x] UR: Chat view
 - [ ] UR: Filter messages by receiver
 
 <br>
 
-- [ ] Server (S)
-- [ ] S: Let users connect
-- [ ] S: List connected users
-- [ ] S: Forward messages
-- [ ] S: Tell users to update users list
+- [x] Server (S)
+- [x] S: Let users connect
+- [x] S: List connected users
+- [x] S: Forward messages
+- [x] S: Tell users to update users list
 
 <br>
 
@@ -23,25 +23,27 @@
 
 # Version 1.1.0
 
-- [ ] S: Unbound (free) port detection
-- [ ] S: Kicking clients
-- [ ] S: Blocking any new clients option
+- [x] S: Unbound (free) port detection
+- [x] S: Kicking clients
+- [x] S: Blocking any new clients option
 
 
 # Planned
 
 - [ ] UR: Encryption using RSA
 - [ ] UR: Encryption using AES
-- [ ] UR: Formatting of messages (bold, italic, encrypted/plain)
 - [ ] UR: Hashing
 - [ ] UR: Signing
 - [ ] Displaying client logs in the GUI
 - [ ] Prevent client from memory overflow by a too long history.
-
 - [ ] Detection of servers in the network
-- [ ] Client Person in the Middle Role (MR)
-
 - [ ] S: Displaying server logs in the GUI
+
+- [ ] Display of rich text messages
+- [ ] Formatting of messages (bold, italic, encrypted/plain)
+- [ ] Markdown editor, html editor, preview/editor
+
+- [ ] Client Person in the Middle Role (MR)
 
 - [ ] Context help (F1 key)
 - [ ] Help document for students
