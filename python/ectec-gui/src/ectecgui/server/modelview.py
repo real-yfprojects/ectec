@@ -108,10 +108,13 @@ class ClientsTableModel(QtCore.QAbstractTableModel):
         if index.row() >= len(users):
             return 'UnDeFinEd'
 
+        # users[i] has type (name, role, address)
+
         if index.column() == 1:
             return str(users[index.row()][1].value.capitalize())
         elif index.column() == 2:
-            return str(users[index.row()][2].ip)
+            address = users[index.row()][2]
+            return '{}, {}'.format(address.ip, address.port)
         else:
             return str(users[index.row()][index.column()])
 
