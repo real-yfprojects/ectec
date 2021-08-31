@@ -94,6 +94,7 @@ class Ui_mainWindow(Ui_dStartServer):
         dStartServer : QtWidgets.QDialog
             The QDialog to add the widgets to.
         """
+        self.init = True
         super().setupUi(dStartServer)
 
         # =================================================================
@@ -116,7 +117,10 @@ class Ui_mainWindow(Ui_dStartServer):
         # Add menu to toolbutton
         self.toolButtonMenu.setMenu(self.menu_main)
 
-    def retranslateUi(self, dStartServer: QtWidgets.QDialog, init=True):
+        # end init
+        self.init = False
+
+    def retranslateUi(self, dStartServer: QtWidgets.QDialog):
         """
         Retranslate the UI.
 
@@ -132,7 +136,7 @@ class Ui_mainWindow(Ui_dStartServer):
         """
         super().retranslateUi(dStartServer)
 
-        if init:
+        if self.init:
             return
 
         # =================================================================
