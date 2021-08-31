@@ -26,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import ectec
 import ectec.client as eccl
-from ectec import server
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -34,6 +33,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from .. import DEFAULT_PORT
 from . import logger
 from .ui_connect import Ui_dConnect
+from .userclient.window import UserClientWindow
 
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
@@ -59,6 +59,7 @@ class Ui_ConnectWindow(Ui_dConnect):
         dStartServer : QtWidgets.QDialog
             The QDialog to add the widgets to.
         """
+        self.init = True
         super().setupUi(dConnect)
 
         # =================================================================
@@ -81,7 +82,10 @@ class Ui_ConnectWindow(Ui_dConnect):
         # Add menu to toolbutton
         self.toolButtonMenu.setMenu(self.menu_main)
 
-    def retranslateUi(self, dStartServer: QtWidgets.QDialog, init=True):
+        # end init
+        self.init = False
+
+    def retranslateUi(self, dStartServer: QtWidgets.QDialog):
         """
         Retranslate the UI.
 
@@ -97,7 +101,7 @@ class Ui_ConnectWindow(Ui_dConnect):
         """
         super().retranslateUi(dStartServer)
 
-        if init:
+        if self.init:
             return
 
         # =================================================================
@@ -113,7 +117,16 @@ class Ui_ConnectWindow(Ui_dConnect):
 
 
 class ConnectWindow(QtWidgets.QDialog):
+    """
+    The client window to connect to a server.
+
+    This window allows the user to enter a server, a name and a role. Then it
+    tries to connect to the server and start the window for the
+    given user role.
+
+    """
     def __init__(self, parent=None) -> None:
+        """Init."""
         super().__init__(parent=parent)
 
         # load the GUI generated from an .ui file
@@ -127,6 +140,7 @@ class ConnectWindow(QtWidgets.QDialog):
         # =================================================================
 
         self.client = None
+        self.windowRunning: QtWidgets.QDialog = None
 
         # =================================================================
         #
@@ -194,6 +208,12 @@ class ConnectWindow(QtWidgets.QDialog):
 
     @pyqtSlot()
     def slotConnect(self):
+        """
+        Try to connect to a server.
+
+        This method switches to the *connect* phase. After establishing the
+        connection the client window matching to the user role is opened.
+        """
         self.init_pConnect()
 
         address = self.ui.entryAddress.text()
@@ -255,10 +275,55 @@ class ConnectWindow(QtWidgets.QDialog):
 
         logger.info("Connection established. Opening next dialog.")
 
-        # TODO new window and co
+        # select user role and open corresponding window
+        if role == ectec.Role.USER:
+            # user role
+
+            # init window
+            self.windowRunning = UserClientWindow(self.client)
+            self.client = None
+            self.windowRunning.ended.connect(self.slotDisconnected)
+
+            # show on top
+            self.windowRunning.show()
+            self.windowRunning.raise_()
+            self.windowRunning.activateWindow()
+
+            # hide this window
+            # when hiding the window it should be cleaned as in close
+            # because close might not be called.
+            self.hide()
+
+            logger.debug('Started `UserClientWindow`.')
+
+    @pyqtSlot()
+    def slotDisconnected(self):
+        """
+        Handle the disconnecting by the client role specific window.
+
+        This slot is connected to the `closed` signal of the window that
+        is shown while the client is connected.
+
+        Parameters
+        ----------
+        terminate : bool
+            Whether to terminate the client app.
+        """
+        # window should be already closed.
+        # removing reference -> will be garbage collected at some point.
+        self.windowRunning = None
+
+        self.init_pConfig()
+        self.show()
 
     @pyqtSlot()
     def slotClose(self):
+        """
+        Close the window.
+
+        This slot is usually connected to the 'cancel' button that closes
+        the window.
+        """
         self.close()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
@@ -281,6 +346,9 @@ class ConnectWindow(QtWidgets.QDialog):
         """
         if self.client:
             self.client.disconnect()
+
+        if self.windowRunning:
+            self.windowRunning.close()
 
         logger.debug('App closed.')
 
@@ -306,7 +374,7 @@ class ConnectWindow(QtWidgets.QDialog):
         event : QtCore.QEvent
             The event that occurred.
         """
-        if event.type() == QtCore.QEvent.LanguageChange:
+        if event.type() == QtCore.QEvent.Type.LanguageChange:
             # The language of the QApplication was changed.
             # The GUI has to be retranslated.
             self.ui.retranslateUi(self)

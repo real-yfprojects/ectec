@@ -669,7 +669,7 @@ class ChatView(QListView):
         it should be able to cope with data of type `Package`,
         by default ChatViewDelegate.
     """
-    def __init__(self, local_name, parent=None, delegate=None):
+    def __init__(self, parent=None, local_name='', delegate=None):
         """
         Init.
 
@@ -687,12 +687,20 @@ class ChatView(QListView):
             by default ChatViewDelegate.
         """
         super().__init__(parent)
-        self.local_name = local_name
+        self.local_name = str(local_name)
 
         self.setItemDelegate(ChatViewDelegate(local_name, self))
 
         # set background color role
         self.setBackgroundRole(QPalette.ColorRole.AlternateBase)
+
+    def setLocalName(self, local_name: str):
+        """Set `local_name` in qt fashion."""
+        self.local_name = str(local_name)
+
+    def localName(self) -> str:
+        """Get `local_name` in qt fashion."""
+        return self.local_name
 
     def setBackgroundRole(self, role: QPalette.ColorRole) -> None:
         """

@@ -85,7 +85,6 @@ RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons", '')}
 #: to the directories for or to the path of the generated python modules.
 RESOURCE_FILES = {
     "res/ectec.qrc": "src/ectecgui/",
-    "res/client.qrc": "src/ectecgui/client",
     "res/breeze.qrc": "src/ectecgui"
 }
 
@@ -95,7 +94,8 @@ RESOURCE_SUFFIX = "_res"
 #: Dictionary matching paths to form files (.ui) to generated python modules.
 FORMS = {
     "res/server.ui": "src/ectecgui/server/ui_main.py",
-    "res/clientConnect.ui": 'src/ectecgui/client/ui_connect.py'
+    "res/clientConnect.ui": 'src/ectecgui/client/ui_connect.py',
+    "res/clientUser.ui": 'src/ectecgui/client/userclient/ui_main.py'
 }
 
 #: List of paths for translation files relative to this script.
