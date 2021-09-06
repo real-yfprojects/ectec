@@ -34,7 +34,7 @@ from ...ectecQt.client import QUserClient
 from ...helpers import list_local_hosts
 from ..chatview import ChatView
 from . import logger
-from .qobjects import UserListValidator, UsernameValidator
+from .qobjects import UserListLineEdit, UserListValidator, UsernameValidator
 from .ui_main import Ui_dUserClient
 
 #: The function that provides internationalization by translation.
@@ -195,7 +195,8 @@ class UserClientWindow(QtWidgets.QDialog):
         self.ui.comboBoxTo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.slotUsersUpdated()  # add items
 
-        # TODO override deleting of '; ' in comboBoxTo
+        # Override deletion of the user list seperator in `comboBoxTo`
+        self.ui.comboBoxTo.setLineEdit(UserListLineEdit())
 
         # TODO add completer to comboBoxes
 

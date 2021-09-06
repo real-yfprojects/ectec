@@ -24,14 +24,100 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 import re
-from typing import List, Tuple
+from typing import Tuple
 
-from PyQt5.QtCore import (QAbstractItemModel, QAbstractListModel, QModelIndex,
-                          Qt, pyqtSlot)
-from PyQt5.QtGui import QStandardItemModel, QValidator
-from PyQt5.QtWidgets import QCompleter
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QKeyEvent, QValidator
+from PyQt5.QtWidgets import QCompleter, QLineEdit
 
 from ...ectecQt.client import QUserClient
+from . import logger
+
+# ---- Customize comboBox --------------------------------------------
+
+
+class UserListLineEdit(QLineEdit):
+    """
+    A LineEdit to enter a user list into.
+
+    This subclass overrides the backspace and delete key behaviour.
+
+    """
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """
+        Converts the given key press event into a line edit action.
+
+        This method overrides the backspace and delete key behaviour
+        when it would normally delete a space or a semicolon so that it
+        deletes the whole seperator in the user list.
+
+        Parameters
+        ----------
+        event : QKeyEvent
+            The key event to process
+
+        """
+        if not self.hasSelectedText():  # selections are not supported
+            # switch key type
+            key = event.key()
+            if key == Qt.Key.Key_Backspace:
+                # check whether seperator gets deleted
+                pos = self.cursorPosition()
+                text = self.text()
+
+                delete = None  # will hold the index span to delete
+
+                if pos > 1:  # check whether 0 < pos -1
+                    # else it will be a normal delete
+                    if pos > 2 and text[pos - 1] == ' ':
+                        # double backspace
+                        delete = (pos - 2, pos)
+                    elif pos + 1 < len(text) and text[pos - 1] == ';':
+                        # backspace and del
+                        delete = (pos - 1, pos + 1)
+
+                    if delete:  # whether a double deletion should take place
+                        text = text[:delete[0]] + text[delete[1]:]
+                        pos = delete[0]
+
+                        self.setText(text)
+                        self.setCursorPosition(pos)
+
+                        logger.debug(
+                            'UserListLineEdit: Backspace deletes {}'.format(
+                                delete))
+                        return  # no more processing of this event
+            elif key == Qt.Key.Key_Delete:
+                # check whether seperator gets deleted
+                pos = self.cursorPosition()
+                logger.debug(pos)
+                text = self.text()
+
+                delete = None  # will hold the index span to delete
+
+                if pos < len(text):  # check that pos isn't at the end
+                    # else it will be a normal delete
+                    if 1 < pos and text[pos] == ' ':
+                        # del and backspace
+                        delete = (pos - 1, pos + 1)
+                    elif pos + 1 < len(text) and text[pos] == ';':
+                        # double del
+                        delete = (pos, pos + 2)
+
+                    if delete:  # whether a double deletion should take place
+                        text = text[:delete[0]] + text[delete[1]:]
+                        pos = delete[0]
+
+                        self.setText(text)
+                        self.setCursorPosition(pos)
+
+                        logger.debug(
+                            'UserListLineEdit: Delete deletes {}'.format(
+                                delete))
+                        return  # no more processing of this event
+
+        return super().keyPressEvent(event)
+
 
 # ---- Validators ------------------------------------------------------------
 
