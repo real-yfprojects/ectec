@@ -35,44 +35,13 @@ from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMessageBox
 
 from .. import DEFAULT_PORT, ectec_res
 from ..ectecQt.server import Server
+from ..helpers import list_local_hosts
 from . import logger
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
 
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
-
-# ---- Helpers ---------------------------------------------------------------
-
-
-def list_local_hosts() -> List[str]:
-    """
-    Get a list of host identifiers for this machine.
-
-    Currently this returns the ip addresses of the local machine.
-
-    Returns
-    -------
-    List[str]
-        The list.
-    """
-
-    if sys.platform in ('linux'):
-        try:
-            process = subprocess.run(['hostname', '-I'], capture_output=True)
-            process.check_returncode()
-
-            output = process.stdout.decode('utf-8')
-
-            addr_list = output.strip().split()
-            return addr_list
-        except (OSError, subprocess.CalledProcessError) as e:
-            logger.warning("Linux - Couldn't run `hostname -I` because '" +
-                           str(e) + "'")
-
-    hostname = socket.gethostname()
-    *dummy, ipaddr_list = socket.gethostbyname_ex(hostname)
-    return ipaddr_list
 
 
 # ---- Add widgets to the main window form -----------------------------------

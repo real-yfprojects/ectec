@@ -27,10 +27,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import ectec
 import ectec.client as eccl
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QLocale, QTranslator, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QEventLoop, QLocale, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from .. import DEFAULT_PORT
+from ..ectecQt.client import QUserClient
 from . import logger
 from .ui_connect import Ui_dConnect
 from .userclient.window import UserClientWindow
@@ -241,13 +242,15 @@ class ConnectWindow(QtWidgets.QDialog):
 
         # init Client
         if role == ectec.Role.USER:
-            self.client = eccl.UserClient(name)
+            self.client = QUserClient(name)
         else:
             logger.error("Role {} not implemented.".format(str(role)))
             return
 
         # start connecting
         self.ui.labelStatus.setText(_tr('dConnect', 'Connecting...'))
+        QApplication.processEvents(
+            QEventLoop.ExcludeUserInputEvents)  # update label
 
         try:
             self.client.connect(address, port)
@@ -282,6 +285,7 @@ class ConnectWindow(QtWidgets.QDialog):
             # init window
             self.windowRunning = UserClientWindow(self.client)
             self.client = None
+
             self.windowRunning.ended.connect(self.slotDisconnected)
 
             # show on top

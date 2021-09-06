@@ -23,6 +23,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import socket
+import subprocess
+import sys
 from typing import List
 
 from PyQt5.QtCore import QDir, QLocale
@@ -63,3 +66,33 @@ def get_languages(cls) -> List[QLocale]:
         locale_list.append(locale)
 
     return locale_list
+
+
+def list_local_hosts() -> List[str]:
+    """
+    Get a list of host identifiers for this machine.
+
+    Currently this returns the ip addresses of the local machine.
+
+    Returns
+    -------
+    List[str]
+        The list.
+    """
+
+    if sys.platform in ('linux'):
+        try:
+            process = subprocess.run(['hostname', '-I'], capture_output=True)
+            process.check_returncode()
+
+            output = process.stdout.decode('utf-8')
+
+            addr_list = output.strip().split()
+            return addr_list
+        except (OSError, subprocess.CalledProcessError) as e:
+            logger.warning("Linux - Couldn't run `hostname -I` because '" +
+                           str(e) + "'")
+
+    hostname = socket.gethostname()
+    *dummy, ipaddr_list = socket.gethostbyname_ex(hostname)
+    return ipaddr_list

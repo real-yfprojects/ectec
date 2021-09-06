@@ -158,8 +158,6 @@ class EctecPackageModel(QAbstractListModel):
         if role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             return self.storage.all()[row]
-        elif role == Qt.ItemDataRole.SizeHintRole:
-            pass
 
 
 class ChatViewDelegate(QStyledItemDelegate):
