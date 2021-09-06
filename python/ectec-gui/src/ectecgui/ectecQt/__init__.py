@@ -66,9 +66,6 @@ def pyqtClassSignal(*types, name):
     return ClassSignal()
 
 
-# TODO InstanceAttritbute
-
-
 def signal(*args, name=None):
     class Signal(QtCore.QObject):
 

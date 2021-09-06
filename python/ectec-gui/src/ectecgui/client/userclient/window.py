@@ -28,10 +28,13 @@ import ectec.client as eccl
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QCloseEvent
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox
 
+from ...ectecQt.client import QUserClient
+from ...helpers import list_local_hosts
 from ..chatview import ChatView
 from . import logger
+from .modelview import UserListValidator, UsernameValidator
 from .ui_main import Ui_dUserClient
 
 #: The function that provides internationalization by translation.
@@ -153,7 +156,7 @@ class UserClientWindow(QtWidgets.QDialog):
         """Init."""
         super().__init__(parent=parent)
         # type checks
-        if not isinstance(client, eccl.UserClient):
+        if not isinstance(client, QUserClient):
             raise TypeError('The parameter `client` ' +
                             'has to be of type `ectec.client.UserClient`.')
 
@@ -178,11 +181,30 @@ class UserClientWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
-        # TODO init values for comboBoxes
-        # TODO init values for info labels
+        # init values for info labels
+        local_address = list_local_hosts()[0]
+        server_address = self.client.server
 
-        # TODO add completer to `comboBoxes
-        # TODO add validators to comboBoxes
+        self.ui.labelClientAddress.setText(local_address)
+        self.ui.labelClientName.setText(self.client.username)
+        self.ui.labelServerAddress.setText(str(server_address.ip))
+        self.ui.labelServerPort.setText(str(server_address.port))
+
+        # init comboboxes
+        self.ui.comboBoxFrom.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.ui.comboBoxTo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.slotUsersUpdated()  # add items
+
+        # TODO override deleting of '; ' in comboBoxTo
+
+        # TODO add completer to comboBoxes
+
+        #  add validators to comboBoxes
+        self.ui.comboBoxFrom.setValidator(UsernameValidator(max_length=20))
+        self.ui.comboBoxTo.setValidator(
+            UserListValidator(max_user_length=20, max_users=5))
+
+        # TODO Init ChatView
 
         # =================================================================
         #
@@ -191,12 +213,32 @@ class UserClientWindow(QtWidgets.QDialog):
         # =================================================================
 
         self.ui.buttonDisconnect.clicked.connect(self.slotDisconnect)
+        self.client.usersUpdated.connect(self.slotUsersUpdated)
 
         # TODO send button
         # TODO comboBoxes
 
         # TODO About menu
 
+    @pyqtSlot()
+    def slotUsersUpdated(self):
+        """
+        Handle an update of the user list.
+
+        This method updates the items in the comboboxes for sending a package.
+        """
+        # Add special users to list of users
+        users = [''] + self.client.users
+        users.append('all')
+
+        # Update comboBoxes
+        self.ui.comboBoxFrom.clear()
+        self.ui.comboBoxTo.clear()
+
+        self.ui.comboBoxFrom.insertItems(0, users)
+        self.ui.comboBoxTo.insertItems(0, users)
+
+    @pyqtSlot()
     def slotDisconnect(self):
         """
         Disconnect and return to previous window.
