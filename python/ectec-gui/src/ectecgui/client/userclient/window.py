@@ -27,7 +27,7 @@ import ectec
 import ectec.client as eccl
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtGui import QCloseEvent, QPalette
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox
 
 from ...ectecQt.client import QUserClient
@@ -61,7 +61,7 @@ class Ui_UserClientWindow(Ui_dUserClient):
         dStartServer : QtWidgets.QDialog
             The QDialog to add the widgets to.
         """
-        self.init = False
+        self.init = True
         super().setupUi(dUserClient)
 
         # =================================================================
@@ -75,7 +75,13 @@ class Ui_UserClientWindow(Ui_dUserClient):
 
         splitter_index = self.splitterMain.indexOf(self.chatView)
 
-        self.chatView = ChatView(self.splitterMain)
+        # remove placeholder QListView
+        self.chatView.hide()
+        self.chatView.setParent(None)
+        self.chatView.destroy()
+
+        # define real ChatView
+        self.chatView = ChatView()
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                            QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(2)
@@ -89,9 +95,10 @@ class Ui_UserClientWindow(Ui_dUserClient):
             QtWidgets.QAbstractItemView.ScrollPerPixel)
         self.chatView.setObjectName("chatView")
 
-        old_widget = self.splitterMain.replaceWidget(splitter_index,
-                                                     self.chatView)
-        old_widget.destroy()
+        # self.chatView.setBackgroundRole(QPalette.ColorRole.Base)
+
+        # add ChatView to splitter
+        self.splitterMain.insertWidget(splitter_index, self.chatView)
 
         # =================================================================
         #
@@ -164,7 +171,7 @@ class UserClientWindow(QtWidgets.QDialog):
             raise TypeError('The client past as `client` has to be running.')
 
         # load the GUI generated from an .ui file
-        self.ui = Ui_dUserClient()
+        self.ui = Ui_UserClientWindow()
         self.ui.setupUi(self)
 
         # =================================================================
