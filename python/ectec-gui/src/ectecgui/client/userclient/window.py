@@ -34,7 +34,7 @@ from ...ectecQt.client import QUserClient
 from ...helpers import list_local_hosts
 from ..chatview import ChatView
 from . import logger
-from .modelview import UserListValidator, UsernameValidator
+from .qobjects import UserListValidator, UsernameValidator
 from .ui_main import Ui_dUserClient
 
 #: The function that provides internationalization by translation.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-The models for the user client GUI.
+The qt subclasses for the user client GUI.
 
 ***********************************
 
