@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from .. import DEFAULT_PORT
 from ..ectecQt.client import QUserClient
 from . import logger
+from .qobjects import AddressValidator, UsernameValidator
 from .ui_connect import Ui_dConnect
 from .userclient.window import UserClientWindow
 
@@ -155,6 +156,8 @@ class ConnectWindow(QtWidgets.QDialog):
         self.ui.spinBoxPort.setValue(DEFAULT_PORT)
 
         # TODO add validators
+        self.ui.entryAddress.setValidator(AddressValidator(dn_allowed=True))
+        self.ui.entryName.setValidator(UsernameValidator())
 
         # =================================================================
         #
