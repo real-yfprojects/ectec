@@ -229,12 +229,11 @@ class UserClientWindow(QtWidgets.QDialog):
         self.client.usersUpdated.connect(self.slotUsersUpdated)
         self.ui.buttonSend.clicked.connect(self.slotSend)
 
-        # TODO comboBoxes
-
         # TODO About menu
 
     @pyqtSlot()
     def slotSend(self):
+        """Send the package the user put into GUI."""
         # get package meta
         sender = self.ui.comboBoxFrom.currentText()
         raw_receiver = self.ui.comboBoxTo.currentText()
