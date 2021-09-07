@@ -227,11 +227,55 @@ class UserClientWindow(QtWidgets.QDialog):
 
         self.ui.buttonDisconnect.clicked.connect(self.slotDisconnect)
         self.client.usersUpdated.connect(self.slotUsersUpdated)
+        self.ui.buttonSend.clicked.connect(self.slotSend)
 
-        # TODO send button
         # TODO comboBoxes
 
         # TODO About menu
+
+    @pyqtSlot()
+    def slotSend(self):
+        # get package meta
+        sender = self.ui.comboBoxFrom.currentText()
+        raw_receiver = self.ui.comboBoxTo.currentText()
+
+        receiver = raw_receiver.split('; ')
+        if not receiver:
+            logger.debug('Send: No receiver specified.')
+            return  # receiver needed
+        if not receiver[-1]:
+            receiver = receiver[:-1]
+        if not receiver:
+            logger.debug('Send: No receiver specified.')
+            return  # receiver needed
+
+        # content
+        content = self.ui.textEditContent.toPlainText()
+
+        # construct package
+        # the package type is irrelevant at the moment
+        package = eccl.Package(sender, receiver, 'text/plain')
+        package.content = content.encode('utf-8', errors='backslashreplace')
+
+        # send package
+        logger.debug('Sending package {}.'.format(hash(package)))
+        try:
+            self.client.send(package)
+        except (OSError, ectec.EctecException) as e:
+            logger.warning('Sending package failed: ' + str(e))
+
+            # show error dialog
+            msgBox = QMessageBox(self)
+            msgBox.setWindowTitle(_tr('dUserClient', "Sending failed."))
+            msgBox.setText(_tr('dUserClient', "The following error occured."))
+            msgBox.setInformativeText(
+                '<i><span style="color: firebrick">{}</span></i> {}'.format(
+                    str(e.__class__.__name__), str(e)))
+            msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msgBox.setIcon(QMessageBox.Icon.Critical)
+
+            msgBox.exec()
+            return
 
     @pyqtSlot()
     def slotUsersUpdated(self):

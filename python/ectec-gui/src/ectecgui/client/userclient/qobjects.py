@@ -30,7 +30,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent, QValidator
 from PyQt5.QtWidgets import QCompleter, QLineEdit
 
-from ...ectecQt.client import QUserClient
 from . import logger
 
 # ---- Customize comboBox --------------------------------------------
@@ -90,7 +89,6 @@ class UserListLineEdit(QLineEdit):
             elif key == Qt.Key.Key_Delete:
                 # check whether seperator gets deleted
                 pos = self.cursorPosition()
-                logger.debug(pos)
                 text = self.text()
 
                 delete = None  # will hold the index span to delete
@@ -175,6 +173,9 @@ class UsernameValidator(QValidator):
         """
         # no spaces allowed but underscores are.
         input = input.lstrip().replace(' ', '_')
+
+        if not input:
+            return (self.State.Intermediate, input, pos)
 
         # enforce max length
         if self.max_length:
