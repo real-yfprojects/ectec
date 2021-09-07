@@ -29,7 +29,7 @@ from typing import Callable, List, Optional, Tuple, Union, cast
 
 from ectec.client import Package, PackageStorage
 from PyQt5.QtCore import (QAbstractListModel, QEvent, QModelIndex, QObject,
-                          QRect, QSize, Qt)
+                          QRect, QSize, Qt, pyqtSlot)
 from PyQt5.QtGui import (QFontMetrics, QHelpEvent, QPainter, QPalette, QPen,
                          QResizeEvent)
 from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QListView,
@@ -692,6 +692,13 @@ class ChatView(QListView):
         # set background color role
         self.setBackgroundRole(QPalette.ColorRole.AlternateBase)
 
+        # range tracking for autoScrollToBottom
+        self.autoScrollToBottom = True
+        self._min = None
+        self._max = None
+        self.verticalScrollBar().rangeChanged.connect(
+            self.slotHorizontalRangeChanged)
+
     def setLocalName(self, local_name: str):
         """Set `local_name` in qt fashion."""
         self.local_name = str(local_name)
@@ -702,6 +709,29 @@ class ChatView(QListView):
     def localName(self) -> str:
         """Get `local_name` in qt fashion."""
         return self.local_name
+
+    def setAutoScrollToBottom(self, value: bool):
+        """Set the `autoScrollToBottom` attribute."""
+        self.autoScrollToBottom = value
+
+    @pyqtSlot(int, int)
+    def slotHorizontalRangeChanged(self, min: int, max: int):
+        """
+        Handle the horizontal range of the list view beeing changed.
+
+        This slot can be connected to a scrollbar's `rangeChanged` signal.
+        """
+        if self.autoScrollToBottom:
+            if self._max is not None and self._min is not None:
+                # react to size change
+                value_offset = abs(self._max -
+                                   self.verticalScrollBar().value())
+                if value_offset < self._max:
+                    # was at the end before -> scroll to end
+                    self.scrollToBottom()
+
+        self._min = min
+        self._max = max
 
     def setBackgroundRole(self, role: QPalette.ColorRole) -> None:
         """
