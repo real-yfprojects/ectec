@@ -159,7 +159,7 @@ class UserClientWindow(QtWidgets.QDialog):
     #: Return to the calling window. This window is already closed.
     ended = pyqtSignal()
 
-    def __init__(self, client: eccl.UserClient, parent=None) -> None:
+    def __init__(self, client: QUserClient, parent=None) -> None:
         """Init."""
         super().__init__(parent=parent)
         # type checks
@@ -231,6 +231,7 @@ class UserClientWindow(QtWidgets.QDialog):
 
         # connect client
         self.client.usersUpdated.connect(self.slotUsersUpdated)
+        self.client.disconnected.connect(self.slotConnectionClosed)
 
         # TODO About menu
 
@@ -323,6 +324,38 @@ class UserClientWindow(QtWidgets.QDialog):
         self.close()  # Does the disconnecting in `closeEvent`
 
         self.ended.emit()  # tells other's to return to previous window.
+
+    @pyqtSlot()
+    def slotConnectionClosed(self):
+        """
+        Handle the connection beeing closed externally.
+
+        Currently the handling is pretty simple. A message box opens and
+        informs the user that the connection broke. Then the window is closed
+        and the previous window (usually the `ConnectWindow`) is called through
+        emitting the `ended` signal.
+        """
+        if self.client:
+            self.client.disconnect()
+
+        logger.debug('Connection broke.')
+
+        # show message dialog
+        msgBox = QMessageBox(self)
+        msgBox.setWindowTitle(_tr('dUserClient', "Connection broke."))
+        msgBox.setText(
+            _tr(
+                'dUserClient', "The connection to the server broke. " +
+                "The server could have shutdown. " +
+                "You might also be kicked from the server."))
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msgBox.setIcon(QMessageBox.Icon.Critical)
+
+        msgBox.exec()
+
+        # close and return to previous window.
+        self.close()
+        self.ended.emit()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """
