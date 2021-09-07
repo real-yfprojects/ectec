@@ -2,11 +2,10 @@
 
 - [x] Client User Role (UR)
 - [x] Connect to server with role and name
-- [ ] UR: Mantain list of users
-- [ ] UR: Send raw text messages to a one or multiple persons
-- [ ] UR: Receive raw text messages
+- [x] UR: Mantain list of users
+- [x] UR: Send raw text messages to a one or multiple persons
+- [x] UR: Receive raw text messages
 - [x] UR: Chat view
-- [ ] UR: Filter messages by receiver
 
 <br>
 
@@ -27,6 +26,9 @@
 - [x] S: Kicking clients
 - [x] S: Blocking any new clients option
 
+# Version 1.2.0
+
+- [ ] UR: Filter messages by receiver
 
 # Planned
 
