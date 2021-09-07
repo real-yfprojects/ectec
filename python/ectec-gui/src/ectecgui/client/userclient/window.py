@@ -225,9 +225,12 @@ class UserClientWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
+        # connect GUI
         self.ui.buttonDisconnect.clicked.connect(self.slotDisconnect)
-        self.client.usersUpdated.connect(self.slotUsersUpdated)
         self.ui.buttonSend.clicked.connect(self.slotSend)
+
+        # connect client
+        self.client.usersUpdated.connect(self.slotUsersUpdated)
 
         # TODO About menu
 
@@ -287,12 +290,24 @@ class UserClientWindow(QtWidgets.QDialog):
         users = [''] + self.client.users
         users.append('all')
 
-        # Update comboBoxes
-        self.ui.comboBoxFrom.clear()
+        # Update comboBoxTo
         self.ui.comboBoxTo.clear()
-
-        self.ui.comboBoxFrom.insertItems(0, users)
         self.ui.comboBoxTo.insertItems(0, users)
+
+        # Update comboBoxFrom
+        # It doesn't have a default blank item instead the local client name
+        # should be the default. It also doesn't have the `all`.
+        users = self.client.users
+        username = self.client.username
+        if username in users:
+            index = users.index(self.client.username)
+        else:
+            logger.warning(
+                'Local username {} not in user list.'.format(username))
+            index = -1
+        self.ui.comboBoxFrom.clear()
+        self.ui.comboBoxFrom.insertItems(0, users)
+        self.ui.comboBoxFrom.setCurrentIndex(index)
 
     @pyqtSlot()
     def slotDisconnect(self):
