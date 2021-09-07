@@ -60,7 +60,6 @@ class ClientAdapter(logs.logging.LoggerAdapter):
         More context. The default is None.
 
     """
-
     def __init__(self, logger, client_type, extra=None):
         """
         Adapter to add connection context information.
@@ -141,7 +140,10 @@ class Package(AbstractPackage):
 
     __slots__ = ['__time']
 
-    def __init__(self, sender: str, recipient: Union[str, List[str]], typ: str,
+    def __init__(self,
+                 sender: str,
+                 recipient: Union[str, List[str]],
+                 typ: str,
                  time: Optional[Union[float, datetime.datetime]] = None):
         """
         Init.
@@ -166,12 +168,12 @@ class Package(AbstractPackage):
 
         # handle `recipient` types
         if isinstance(recipient, str):
-            self.recipient = (recipient,)
+            self.recipient = (recipient, )
         else:
             self.recipient = tuple(recipient)
 
     @property
-    def time(self):
+    def time(self) -> datetime.datetime:
         """
         Get the `time` property.
 
@@ -210,20 +212,16 @@ class Package(AbstractPackage):
             raise TypeError(f"Unsupported type for `time`: {type(time)}")
 
     def __hash__(self):
-        return hash((self.sender, self.recipient, self.type, self.time,
-                     self.content))
+        return hash(
+            (self.sender, self.recipient, self.type, self.time, self.content))
 
     def __eq__(self, o):
         if not isinstance(o, AbstractPackage):
             return False
 
-        return (
-            self.sender == o.sender
-            and self.recipient == o.recipient
-            and self.type == o.type
-            and self.content == o.content
-            and self.time == o.time
-        )
+        return (self.sender == o.sender and self.recipient == o.recipient
+                and self.type == o.type and self.content == o.content
+                and self.time == o.time)
 
     def __str__(self):
         if not self.time:
@@ -231,10 +229,8 @@ class Package(AbstractPackage):
             return template.format(self.type, self.sender, str(self.recipient))
 
         template = "<Package type={} sender={} recipients={} time={}>"
-        return template.format(
-            self.type, self.sender, str(
-                self.recipient), str(self.time.timestamp())
-        )
+        return template.format(self.type, self.sender, str(self.recipient),
+                               str(self.time.timestamp()))
 
     def __repr__(self):
         return str(self)
@@ -285,7 +281,6 @@ class PackageStorage(AbstractPackageStorage):
     called 'somesender'. In this case that's only `package1`.
 
     """
-
     def __init__(self):
         """
         Init.
@@ -355,9 +350,9 @@ class PackageStorage(AbstractPackageStorage):
         """
         return len(self.package_list)
 
-    def remove(
-        self, *packages: Package, func: Callable[[Package], bool] = None
-    ) -> None:
+    def remove(self,
+               *packages: Package,
+               func: Callable[[Package], bool] = None) -> None:
         """
         Remove packages from the storage.
 
@@ -389,8 +384,11 @@ class PackageStorage(AbstractPackageStorage):
 
         self.package_list = new_list
 
-    def add(self, *packages: Union[Package, List[Package]],
-            as_list: Optional[List[Package]] = None,) -> None:
+    def add(
+        self,
+        *packages: Union[Package, List[Package]],
+        as_list: Optional[List[Package]] = None,
+    ) -> None:
         """
         Add packages to the PackageStorage.
 
@@ -428,7 +426,8 @@ class PackageStorage(AbstractPackageStorage):
 
         return copy.copy(self.package_list)
 
-    def filter(self, func: Optional[Callable[[Package], bool]] = None,
+    def filter(self,
+               func: Optional[Callable[[Package], bool]] = None,
                **kwargs) -> Iterator[Package]:
         """
         Filter the packages in the PackageStorage.
@@ -613,11 +612,9 @@ class Client:
 
             # check time
             if timeout is not None and time_elapsed > timeout:
-                raise CommandTimeout(
-                    "Receiving of a data took too long"
-                    + f". {time_elapsed} nanoseconds"
-                    + " have already past."
-                )
+                raise CommandTimeout("Receiving of a data took too long" +
+                                     f". {time_elapsed} nanoseconds" +
+                                     " have already past.")
 
             # end of command not yet received
             # check length
@@ -627,8 +624,10 @@ class Client:
             # add part to local buffer
             msg += part
 
-    def recv_command(self, max_length,
-                     start_timeout=None, timeout=None) -> bytes:
+    def recv_command(self,
+                     max_length,
+                     start_timeout=None,
+                     timeout=None) -> bytes:
         """
         Receive a command and return it.
 
@@ -677,8 +676,7 @@ class Client:
                 msg = self.socket.recv(bufsize)  # msg was empty
             except socket.timeout as error:
                 raise CommandTimeout(
-                    "The receiving of the command timed out."
-                ) from error
+                    "The receiving of the command timed out.") from error
 
             if not msg:
                 # connection was closed
@@ -695,10 +693,8 @@ class Client:
             # for expected behavoir check length of command
             cmd_length = len(command)
             if cmd_length > max_length:
-                raise CommandError(
-                    f"Command too long: {cmd_length} bytes" +
-                    f" from {max_length}"
-                )
+                raise CommandError(f"Command too long: {cmd_length} bytes" +
+                                   f" from {max_length}")
 
             return command
 
@@ -737,18 +733,15 @@ class Client:
                 if cmd_length > max_length:
                     raise CommandError(
                         f"Command too long: {cmd_length} bytes" +
-                        f" from {max_length}"
-                    )
+                        f" from {max_length}")
 
                 return command
 
             # check time
             if timeout is not None and time_elapsed > timeout:
-                raise CommandTimeout(
-                    "Receiving of a command took too long"
-                    + f". {time_elapsed} nanoseconds"
-                    + " have already past."
-                )
+                raise CommandTimeout("Receiving of a command took too long" +
+                                     f". {time_elapsed} nanoseconds" +
+                                     " have already past.")
 
             # end of command not yet received
             # check length
@@ -945,7 +938,9 @@ class Client:
             return False
         return match.group(1)
 
-    def send_command(self, command: str, data: bytes = b'',
+    def send_command(self,
+                     command: str,
+                     data: bytes = b'',
                      errors='backslashreplace'):
         """
         Send a command containing the given string.
@@ -1050,11 +1045,11 @@ class Client:
 
 # ---- User Client
 
+
 class UserClientThread(threading.Thread):
     """
     Thread to do the UserClient receiving work.
     """
-
     def __init__(self, userclient: 'UserClient'):
         super().__init__(name="Ectec-UserClientThread")
         self.client: 'UserClient' = userclient
@@ -1070,8 +1065,8 @@ class UserClientThread(threading.Thread):
                     # Recv a command
                     raw_cmd = self.client.recv_command(
                         4096, 0.2, self.client.COMMAND_TIMEOUT)
-                    cmd = raw_cmd.decode(
-                        encoding='utf-8', errors='backslashreplace')
+                    cmd = raw_cmd.decode(encoding='utf-8',
+                                         errors='backslashreplace')
 
                     self.idle.clear()
 
@@ -1109,11 +1104,14 @@ class UserClientThread(threading.Thread):
 
         except (ConnectionClosed, OSError) as error:
             self.log.warning(str(error))
-            self.client._handle_closed()
         except Exception as error:
             self.log.exception("Local Exception in UserClientThread.")
 
         self.idle.set()
+
+        # only call if closed by the server.
+        if not self.end.is_set():
+            self.client._handle_closed()
 
 
 class UserClient(Client, AbstractUserClient):
@@ -1153,7 +1151,6 @@ class UserClient(Client, AbstractUserClient):
         Read out the buffer of Packages.
 
     """
-
     def __init__(self, username: str):
         """
         A Client for the normal user role.
@@ -1216,15 +1213,35 @@ class UserClient(Client, AbstractUserClient):
         return Address._make(self.socket.getpeername())
 
     def _add_package(self, package: Package):
+        """
+        Add a newly received package.
+
+        This method is usually called by the `UserClientThread`.
+
+        Parameters
+        ----------
+        package : Package
+            The newly received package.
+        """
         self.buffer.append(package)
         self.packages.add(package)
 
     def _update_users(self, user_list: List[str]):
+        """
+        Update the user list.
+
+        This method is usually called by the `UserClientThread`.
+
+        Parameters
+        ----------
+        user_list : List[str]
+            The list of the user's names.
+        """
         self.users = user_list
 
     def _handle_closed(self):
         """
-        Handle the closing of the connection.
+        Handle the closing of the connection through the server.
 
         Returns
         -------
@@ -1239,7 +1256,6 @@ class UserClient(Client, AbstractUserClient):
 
         This manager closes the connection when the context is left.
         """
-
         def __init__(self, client):
             self.client: UserClient = client
 
@@ -1292,9 +1308,8 @@ class UserClient(Client, AbstractUserClient):
                 if not parsed[0]:
                     # not accepted -> not compatible
                     raise ConnectException(
-                        "Server ({}, {})[{}] refused.".format(server,
-                                                              port,
-                                                              parsed[1]))
+                        "Server ({}, {})[{}] refused.".format(
+                            server, port, parsed[1]))
             else:
                 parsed = self.parse_error(cmd)
                 if parsed:
@@ -1358,9 +1373,9 @@ class UserClient(Client, AbstractUserClient):
         None.
 
         """
-        if self._thread:
+        if self._thread and self._thread.is_alive():
             self._thread.end.set()
-            self._thread.join()
+            self._thread.join()  # raises an exception if thread isn't alive
 
         if self.socket:
             self.socket.close()
@@ -1385,7 +1400,12 @@ class UserClient(Client, AbstractUserClient):
         None.
 
         """
+        # send package
         self.send_package(package)
+
+        # append package to package storage
+        package.time = datetime.datetime.now()
+        self.packages.add(package)
 
     def _update(self):
         """
@@ -1405,8 +1425,9 @@ class UserClient(Client, AbstractUserClient):
         if self._thread and self._thread.is_alive():
             self._thread.idle.wait()
 
-    def receive(self, n: int = None) -> Union[AbstractPackage,
-                                              List[AbstractPackage]]:
+    def receive(
+            self,
+            n: int = None) -> Union[AbstractPackage, List[AbstractPackage]]:
         """
         Read out the buffer of Packages.
 
@@ -1441,5 +1462,4 @@ class UserClient(Client, AbstractUserClient):
             self.buffer = self.buffer[1:]
             return package
 
-        raise ValueError(
-            "Cannot receive less than one package from buffer.")
+        raise ValueError("Cannot receive less than one package from buffer.")
