@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox
 
 from ...ectecQt.client import QUserClient
 from ...helpers import list_local_hosts
-from ..chatview import ChatView
+from ..chatview import ChatView, EctecPackageModel
 from . import logger
 from .qobjects import UserListLineEdit, UserListValidator, UsernameValidator
 from .ui_main import Ui_dUserClient
@@ -205,14 +205,19 @@ class UserClientWindow(QtWidgets.QDialog):
         # Override deletion of the user list seperator in `comboBoxTo`
         self.ui.comboBoxTo.setLineEdit(UserListLineEdit())
 
-        # TODO add completer to comboBoxes
-
         #  add validators to comboBoxes
         self.ui.comboBoxFrom.setValidator(UsernameValidator(max_length=20))
         self.ui.comboBoxTo.setValidator(
             UserListValidator(max_user_length=20, max_users=5))
 
-        # TODO Init ChatView
+        # init chatview
+
+        # change packagestorage of client
+        self.packagemodel = EctecPackageModel()
+        self.client.packages = self.packagemodel.storage
+
+        self.ui.chatView.setModel(self.packagemodel)
+        self.ui.chatView.setLocalName(self.client.username)
 
         # =================================================================
         #

@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import textwrap
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union, cast
 
 from ectec.client import Package, PackageStorage
 from PyQt5.QtCore import (QAbstractListModel, QEvent, QModelIndex, QObject,
@@ -695,6 +695,9 @@ class ChatView(QListView):
     def setLocalName(self, local_name: str):
         """Set `local_name` in qt fashion."""
         self.local_name = str(local_name)
+        if isinstance(self.itemDelegate(), ChatViewDelegate):
+            delegate = cast(ChatViewDelegate, self.itemDelegate())  # type hint
+            delegate.local_name = local_name
 
     def localName(self) -> str:
         """Get `local_name` in qt fashion."""
