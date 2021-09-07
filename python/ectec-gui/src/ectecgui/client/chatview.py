@@ -405,9 +405,9 @@ class ChatViewDelegate(QStyledItemDelegate):
 
         # draw content
         painter.setFont(font)
-        painter.drawText(content_rect,
-                         Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextWordWrap,
-                         text)
+        painter.drawText(
+            content_rect, Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextWordWrap
+            | Qt.TextFlag.TextWrapAnywhere, text)
 
         # pull painter state
         painter.restore()
@@ -589,8 +589,8 @@ class ChatViewDelegate(QStyledItemDelegate):
         metrics = QFontMetrics(font)
         content_rect = metrics.boundingRect(
             0, 0, inner_frame.width(),
-            metrics.lineSpacing() * len(text),
-            Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignLeft, text)
+            metrics.lineSpacing() * len(text), Qt.TextFlag.TextWordWrap
+            | Qt.TextFlag.TextWrapAnywhere | Qt.AlignmentFlag.AlignLeft, text)
         content_rect.translate(title_rect.bottomLeft())
         content_rect.translate(0, self.header_padding)
 
