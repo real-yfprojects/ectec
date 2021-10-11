@@ -364,7 +364,7 @@ def pyuic5():
             elif VERBOSITY > 1:
                 print("Generating python module for {}.".format(form_file))
 
-            subprocess.run(pyuic5_cmd, stdout=stdout, stderr=sys.stderr)
+            subprocess.run(pyuic5_cmd, stdout=stdout, stderr=sys.stderr, shell=True)
 
 
 # ---- Generate .qrc files --------------------------------------------------
@@ -516,7 +516,7 @@ def pyrcc5(root: str = None,
         elif VERBOSITY > 1:
             print("Generating python module for {}.".format(res_file))
 
-        subprocess.run(pyrcc5_cmd, stdout=stdout, stderr=sys.stderr)
+        subprocess.run(pyrcc5_cmd, stdout=stdout, stderr=sys.stderr, shell=True)
 
 
 def pylupdate5(drop_obsolete: bool = False):
@@ -546,7 +546,7 @@ def pylupdate5(drop_obsolete: bool = False):
     elif VERBOSITY > 0:
         print("Running pylupdate5.")
 
-    subprocess.run(cmd, stdout=stdout, stderr=sys.stderr)
+    subprocess.run(cmd, stdout=stdout, stderr=sys.stderr, shell=True)
 
 
 if __name__ == "__main__":
