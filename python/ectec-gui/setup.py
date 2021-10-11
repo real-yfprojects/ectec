@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Documentation string.
-
-@version: 0.0
+Use setuptools.
 
 ***********************************
 
@@ -25,4 +23,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import setuptools
 
+if __name__ == '__main__':
+    setuptools.setup()
