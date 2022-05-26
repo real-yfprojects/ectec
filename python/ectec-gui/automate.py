@@ -58,7 +58,7 @@ from xml.etree import ElementTree
 
 try:
     import argcomplete
-except:
+except ImportError:
     argcomplete = None
 
 VERSION_TUPLE = (1, 0)
@@ -137,6 +137,7 @@ def solve_relative_path(path) -> Path:
         The absolute path.
     """
     return Path(pwd(), path).resolve()
+
 
 def path(path: Path) -> str:
     """Get the string version of a path."""
@@ -503,7 +504,6 @@ def pyrcc5(root: str = None,
         if threshold:
             pyrcc5_cmd += ["-theshold", str(threshold)]
 
-
         if compression:
             pyrcc5_cmd += ["-compress", str(compression)]
 
@@ -537,7 +537,7 @@ def pylupdate5(drop_obsolete: bool = False):
     """
     stdout = sys.stdout if VERBOSITY > 1 else subprocess.DEVNULL
 
-    cmd = ["pylupdate5", "-translate-function", "_tr"    ]
+    cmd = ["pylupdate5", "-translate-function", "_tr"]
 
     if drop_obsolete:
         cmd.append("-noobsolete")
