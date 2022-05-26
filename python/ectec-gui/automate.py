@@ -138,6 +138,10 @@ def solve_relative_path(path) -> Path:
     """
     return Path(pwd(), path).resolve()
 
+def path(path: Path) -> str:
+    """Get the string version of a path."""
+    return str(path.resolve().relative_to(Path.cwd()))
+
 
 # ---- Generate .pro File ----------------------------------------------------
 
@@ -346,7 +350,7 @@ def pyuic5():
             # generate to file
             pyuic5_cmd = [
                 "pyuic5",
-                str(form_file),
+                path(form_file),
                 '-i',
                 str(4),
                 '--import-from',
@@ -354,7 +358,7 @@ def pyuic5():
                 '--resource-suffix',
                 RESOURCE_SUFFIX,
                 "-o",
-                str(pyui_file),
+                path(pyui_file),
             ]
             if VERBOSITY > 3:
                 print("Running \"", ' '.join(pyuic5_cmd), '"', sep='')
@@ -364,7 +368,7 @@ def pyuic5():
             elif VERBOSITY > 1:
                 print("Generating python module for {}.".format(form_file))
 
-            subprocess.run(pyuic5_cmd, stdout=stdout, stderr=sys.stderr, shell=True)
+            subprocess.run(pyuic5_cmd, stdout=stdout, stderr=sys.stderr)
 
 
 # ---- Generate .qrc files --------------------------------------------------
@@ -494,10 +498,11 @@ def pyrcc5(root: str = None,
             pyres_file /= get_module_filename(res_file.name)
 
         # generate to file
-        pyrcc5_cmd = ["pyrcc5", str(res_file), "-o", str(pyres_file)]
+        pyrcc5_cmd = ["pyrcc5", "-o", path(pyres_file)]
 
         if threshold:
             pyrcc5_cmd += ["-theshold", str(threshold)]
+
 
         if compression:
             pyrcc5_cmd += ["-compress", str(compression)]
@@ -508,6 +513,8 @@ def pyrcc5(root: str = None,
         if root:
             pyrcc5_cmd += ["-root", str(root)]
 
+        pyrcc5_cmd.append(path(res_file))
+
         if VERBOSITY > 3:
             print("Running \"", ' '.join(pyrcc5_cmd), '"', sep='')
         if VERBOSITY > 2:
@@ -516,7 +523,7 @@ def pyrcc5(root: str = None,
         elif VERBOSITY > 1:
             print("Generating python module for {}.".format(res_file))
 
-        subprocess.run(pyrcc5_cmd, stdout=stdout, stderr=sys.stderr, shell=True)
+        subprocess.run(pyrcc5_cmd, stdout=stdout, stderr=sys.stderr)
 
 
 def pylupdate5(drop_obsolete: bool = False):
@@ -530,10 +537,7 @@ def pylupdate5(drop_obsolete: bool = False):
     """
     stdout = sys.stdout if VERBOSITY > 1 else subprocess.DEVNULL
 
-    cmd = [
-        "pylupdate5", "-translate-function", "_tr",
-        str(solve_relative_path(PROJECT_FILE).as_posix())
-    ]
+    cmd = ["pylupdate5", "-translate-function", "_tr"    ]
 
     if drop_obsolete:
         cmd.append("-noobsolete")
@@ -541,12 +545,14 @@ def pylupdate5(drop_obsolete: bool = False):
     if VERBOSITY > 2:
         cmd.append("-verbose")
 
+    cmd.append(str(solve_relative_path(PROJECT_FILE).as_posix()))
+
     if VERBOSITY > 3:
         print("Running \"", ' '.join(cmd), '"', sep='')
     elif VERBOSITY > 0:
         print("Running pylupdate5.")
 
-    subprocess.run(cmd, stdout=stdout, stderr=sys.stderr, shell=True)
+    subprocess.run(cmd, stdout=stdout, stderr=sys.stderr)
 
 
 if __name__ == "__main__":
