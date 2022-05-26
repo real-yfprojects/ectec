@@ -50,6 +50,7 @@ class Ui_ConnectWindow(Ui_dConnect):
     This class inherits a automatically generated form class and makes changes
     that can't be done in Qt Designer.
     """
+
     def setupUi(self, dConnect: QtWidgets.QDialog):
         """
         Setup the form that is the GUI.
@@ -61,7 +62,6 @@ class Ui_ConnectWindow(Ui_dConnect):
         dStartServer : QtWidgets.QDialog
             The QDialog to add the widgets to.
         """
-        self.init = True
         super().setupUi(dConnect)
 
         # =================================================================
@@ -84,9 +84,6 @@ class Ui_ConnectWindow(Ui_dConnect):
         # Add menu to toolbutton
         self.toolButtonMenu.setMenu(self.menu_main)
 
-        # end init
-        self.init = False
-
     def retranslateUi(self, dStartServer: QtWidgets.QDialog):
         """
         Retranslate the UI.
@@ -98,13 +95,8 @@ class Ui_ConnectWindow(Ui_dConnect):
         ----------
         dStartServer : QtWidgets.QDialog
             The QDialog window that contains this form.
-        init : bool
-            Whether the UI is completely initialized.
         """
         super().retranslateUi(dStartServer)
-
-        if self.init:
-            return
 
         # =================================================================
         #
@@ -112,7 +104,8 @@ class Ui_ConnectWindow(Ui_dConnect):
         #
         # =================================================================
 
-        self.action_about.setText(_tr('dConnect', "About", "menu"))
+        if hasattr(self, 'action_about'):
+            self.action_about.setText(_tr('dConnect', "About", "menu"))
 
 
 # ---- Implement GUI's logic -------------------------------------------------
@@ -127,6 +120,7 @@ class ConnectWindow(QtWidgets.QDialog):
     given user role.
 
     """
+
     def __init__(self, parent=None) -> None:
         """Init."""
         super().__init__(parent=parent)

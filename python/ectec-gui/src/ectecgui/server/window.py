@@ -52,6 +52,7 @@ class Ui_mainWindow(Ui_dStartServer):
     This class inherits a automatically generated form class and makes changes
     that can't be done in Qt Designer.
     """
+
     def setupUi(self, dStartServer: QtWidgets.QDialog):
         """
         Setup the form that is the GUI.
@@ -63,7 +64,6 @@ class Ui_mainWindow(Ui_dStartServer):
         dStartServer : QtWidgets.QDialog
             The QDialog to add the widgets to.
         """
-        self.init = True
         super().setupUi(dStartServer)
 
         # =================================================================
@@ -86,8 +86,6 @@ class Ui_mainWindow(Ui_dStartServer):
         # Add menu to toolbutton
         self.toolButtonMenu.setMenu(self.menu_main)
 
-        # end init
-        self.init = False
 
     def retranslateUi(self, dStartServer: QtWidgets.QDialog):
         """
@@ -105,19 +103,18 @@ class Ui_mainWindow(Ui_dStartServer):
         """
         super().retranslateUi(dStartServer)
 
-        if self.init:
-            return
-
         # =================================================================
         #
         # Retranslate main menu.
         #
         # =================================================================
 
-        self.action_about.setText(_tr('dStartServer', "About", "menu"))
+        if hasattr(self, 'action_about'):
+            self.action_about.setText(_tr('dStartServer', "About", "menu"))
 
 
 class MainWindow(QtWidgets.QDialog):
+
     def __init__(self, parent=None):
         super().__init__(parent)
 

@@ -50,6 +50,7 @@ class Ui_UserClientWindow(Ui_dUserClient):
     This class inherits a automatically generated form class and makes changes
     that can't be done in Qt Designer.
     """
+
     def setupUi(self, dUserClient: QtWidgets.QDialog):
         """
         Setup the form that is the GUI.
@@ -61,7 +62,6 @@ class Ui_UserClientWindow(Ui_dUserClient):
         dStartServer : QtWidgets.QDialog
             The QDialog to add the widgets to.
         """
-        self.init = True
         super().setupUi(dUserClient)
 
         # =================================================================
@@ -120,9 +120,6 @@ class Ui_UserClientWindow(Ui_dUserClient):
         # Add menu to toolbutton
         self.toolButtonMenu.setMenu(self.menu_main)
 
-        # end init
-        self.init = False
-
     def retranslateUi(self, dStartServer: QtWidgets.QDialog):
         """
         Retranslate the UI.
@@ -139,16 +136,14 @@ class Ui_UserClientWindow(Ui_dUserClient):
         """
         super().retranslateUi(dStartServer)
 
-        if self.init:
-            return
-
         # =================================================================
         #
         # Retranslate main menu.
         #
         # =================================================================
 
-        self.action_about.setText(_tr('dUserClient', "About", "menu"))
+        if hasattr(self, 'action_about'):
+            self.action_about.setText(_tr('dUserClient', "About", "menu"))
 
 
 class UserClientWindow(QtWidgets.QDialog):
