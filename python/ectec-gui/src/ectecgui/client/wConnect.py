@@ -31,7 +31,9 @@ from PyQt5.QtCore import QEventLoop, QLocale, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from .. import DEFAULT_PORT
+from ..about import AboutDialog
 from ..ectecQt.client import QUserClient
+from ..helpers import translate
 from . import logger
 from .qobjects import AddressValidator, UsernameValidator
 from .ui_connect import Ui_dConnect
@@ -162,7 +164,8 @@ class ConnectWindow(QtWidgets.QDialog):
         self.ui.buttonConnect.clicked.connect(self.slotConnect)
         self.ui.buttonClose.clicked.connect(self.slotClose)
 
-        # TODO About menu
+        # connect hamburger menu
+        self.ui.action_about.triggered.connect(self.slotAbout)
 
         # =================================================================
         #
@@ -171,6 +174,17 @@ class ConnectWindow(QtWidgets.QDialog):
         # =================================================================
 
         self.init_pConfig()
+
+    @pyqtSlot()
+    def slotAbout(self):
+        """Show the about dialog."""
+        title = translate("AboutDialog", "Ectec - Client")
+        description = translate("AboutDialog", "Description")
+
+        dialog = AboutDialog(title, description, parent=self)
+        self.finished.connect(dialog.done)
+        dialog.show()
+        logger.debug("Opened `About` window.")
 
     def init_pConfig(self):
         """Setup the interface for the phase in which the user enters info."""

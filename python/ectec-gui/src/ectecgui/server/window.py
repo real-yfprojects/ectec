@@ -34,8 +34,9 @@ from PyQt5.QtCore import QLocale, QPoint, Qt, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMessageBox
 
 from .. import DEFAULT_PORT, ectec_res
+from ..about import AboutDialog
 from ..ectecQt.server import Server
-from ..helpers import list_local_hosts
+from ..helpers import list_local_hosts, translate
 from . import logger
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
@@ -157,7 +158,8 @@ class MainWindow(QtWidgets.QDialog):
         self.ui.tableClients.customContextMenuRequested.connect(
             self.slotTableContextMenu)
 
-        # TODO About menu
+        # connect hamburger menu
+        self.ui.action_about.triggered.connect(self.slotAbout)
 
         # =================================================================
         #
@@ -401,3 +403,14 @@ class MainWindow(QtWidgets.QDialog):
         logger.debug('App closed.')
 
         return super().closeEvent(event)
+
+    @pyqtSlot()
+    def slotAbout(self):
+        """Show the about dialog."""
+        title = translate("AboutDialog", "Ectec - Server")
+        description = translate("AboutDialog", "Description")
+
+        dialog = AboutDialog(title, description, parent=self)
+        self.finished.connect(dialog.done)
+        dialog.show()
+        logger.debug("Opened `About` window.")

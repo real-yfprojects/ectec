@@ -30,8 +30,9 @@ from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QCloseEvent, QPalette
 from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox
 
+from ...about import AboutDialog
 from ...ectecQt.client import QUserClient
-from ...helpers import list_local_hosts
+from ...helpers import list_local_hosts, translate
 from ..chatview import ChatView, EctecPackageModel
 from . import logger
 from .qobjects import UserListLineEdit, UserListValidator, UsernameValidator
@@ -228,7 +229,8 @@ class UserClientWindow(QtWidgets.QDialog):
         self.client.usersUpdated.connect(self.slotUsersUpdated)
         self.client.disconnected.connect(self.slotConnectionClosed)
 
-        # TODO About menu
+        # connect hamburger menu
+        self.ui.action_about.triggered.connect(self.slotAbout)
 
     @pyqtSlot()
     def slotSend(self):
@@ -406,3 +408,14 @@ class UserClientWindow(QtWidgets.QDialog):
 
         # Pass the event to the parent class for its handling.
         super().changeEvent(event)
+
+    @pyqtSlot()
+    def slotAbout(self):
+        """Show the about dialog."""
+        title = translate("AboutDialog", "Ectec - UserClient")
+        description = translate("AboutDialog", "Description")
+
+        dialog = AboutDialog(title, description, parent=self)
+        self.finished.connect(dialog.done)
+        dialog.show()
+        logger.debug("Opened `About` window.")
