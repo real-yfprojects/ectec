@@ -15,11 +15,22 @@ The GUI uses the ectec package as a back-end.
 ### Testing
 
 Before running the code you should make sure all resources are compiled.
-Usually a simply running the following command should be sufficient.
+For that you will need to install the python package `doit`.
+Then enter the directory of this file with your favourite terminal and run:
 
 ```bash
-$ ./automate.py all
+> doit
+.  rcc:res/ectec.qrc
+.  qrc:res/breeze.qrc
+.  rcc:res/breeze.qrc
+.  uic:res/server.ui
+.  uic:res/clientConnect.ui
+.  uic:res/clientUser.ui
+.  uic:res/about.ui
+.  pro
+.  lupdate
 ```
+
 ### QT Resource System
 
 The qt resource system allows resources which are files used by the application to be embedded inside a python module.
@@ -28,17 +39,27 @@ The advantage of this approach is that it is way easier to package the resources
 
 To use the resources specified inside a qt resource file named `assets.qrc` in this example, follow these steps:
 
-1. Configure the resource file in `automate.py`:
+1. Configure the resource file in `dodo.py`:
 
    ```python
    RESOURCES = {...,
       "path/to/assets.qrc" : "parent/directory/of/python/module/"
    }
 
-2. Run the following command inside this file's directory with `PyQt5` installed.
+2. Run the build command that was introduced previously with `PyQt5` installed.
 
    ```bash
-   $ ./automate.py rcc
+   > doit
+   -- rcc:res/ectec.qrc
+   -- qrc:res/breeze.qrc
+   -- rcc:res/breeze.qrc
+   -- rcc:path/to/assets.qrc
+   -- uic:res/server.ui
+   -- uic:res/clientConnect.ui
+   -- uic:res/clientUser.ui
+   -- uic:res/about.ui
+   -- pro
+   --  lupdate
    ```
 
 3. A python module named `assets_res.py` was created in the directory specified.
@@ -63,17 +84,27 @@ inside _QT Designer_ to use its resources in the GUI.
 
 To use a UI from an `.ui`-File follow these steps:
 
-1. Configure the form file in `automate.py`.
+1. Configure the form file in `dodo.py`.
 
    ```python
    FORMS = {...,
             "path/to/form.ui" : "path/to/python/module.py"}
    ```
 
-2. Run the following command inside this file's directory with `PyQt5` installed.
+2. Run the build command that was introduced previously with `PyQt5` installed.
 
    ```bash
-   $ ./automate.py uic
+   > doit
+   -- rcc:res/ectec.qrc
+   -- qrc:res/breeze.qrc
+   -- rcc:res/breeze.qrc
+   -- uic:res/server.ui
+   -- uic:res/clientConnect.ui
+   -- uic:res/clientUser.ui
+   -- uic:res/about.ui
+   -- uic:path/to/form.ui
+   -- pro
+   --  lupdate
    ```
 
 3. Create import statements of as the following in the `__init__` of the module with the python _ui_ object class.
@@ -119,10 +150,27 @@ _tr = QtApplication.translate
 
 The strings that should be translated should then be wrapped by `_tr`:
 ```python
-dialog.setTitle(_tr("The title in developer English"))
+dialog.setTitle(_tr("The context of the string",
+                    "The title in developer English"))
 ```
 
-To get the `.ts` translation files from the code and the forms the forms have to be configured in `automate.py` as
+In very rare cases you will want to mark a string for translation without
+translating it yet. For that you can use the method `translate` that is
+defined in `ectecgui.helpers`. It will simply return the arguments passed
+to it as a tuple. You use it in the same way as `_tr` before but store the
+return value in a variable. Later you can than pass the arguments stored
+in that variable to `_tr` so that they are actually translated:
+
+```python
+from .helpers import translate
+
+some_text = translate("Context", "Some text")
+
+# the `*` is important so that the tuple will be unpacked.
+label.setText(_tr(*some_text))
+```
+
+To get the `.ts` translation files from the code and the forms the forms have to be configured in `dodo.py` as
 described [above](#qt-designer-and-ui-files). The translation files wished have to be configured like that:
 
 ```python
@@ -130,11 +178,20 @@ TRANSLATIONS = ["res/ectecgui.en.ts", "res/ectecgui.de.ts"]
 ```
 
 The dot between `ectecgui` and the *language code* must be in place.
-The `.ts` files can be created or updated by running the following in this
-files directory:
+The `.ts` files can be created or updated by running the previously explained
+build command:
 
 ```bash
-$ ./automate.py lupdate
+> doit
+-- rcc:res/ectec.qrc
+-- qrc:res/breeze.qrc
+-- rcc:res/breeze.qrc
+-- uic:res/server.ui
+-- uic:res/clientConnect.ui
+-- uic:res/clientUser.ui
+-- uic:res/about.ui
+-- pro
+.  lupdate
 ```
 
 The `.ts` translation files should be converted into a `.qm` optimized translation file for use in the application.
