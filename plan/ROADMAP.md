@@ -17,7 +17,7 @@
 
 <br>
 
-- [ ] *About*
+- [x] *About*
 
 
 # Version 1.1.0
