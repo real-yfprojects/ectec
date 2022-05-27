@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
     <file alias="ectec-icon.svg">EctecIcon.svg</file>
+    <file alias="LICENSE">../LICENSE</file>
   </qresource>
 </RCC>

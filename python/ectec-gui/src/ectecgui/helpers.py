@@ -34,6 +34,10 @@ from . import TRANSLATION_DIR, logs
 from .logs import indent
 
 
+def translate(context: str, sourceText: str, *args) -> tuple:
+    return (context, sourceText) + args
+
+
 def get_languages(cls) -> List[QLocale]:
     """
     Return a list of languages that the server GUI can be translated to.

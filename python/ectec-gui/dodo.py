@@ -23,14 +23,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+from importlib.machinery import SOURCE_SUFFIXES
 from pathlib import Path, PurePath
 from typing import List, Tuple
 from xml.dom import minidom
 from xml.etree import ElementTree
 
 from doit import task_params
-from doit.action import CmdAction
-from doit.tools import check_timestamp_unchanged, config_changed
+from doit.tools import config_changed
 
 # ---- Configuration ---------------------------------------------------------
 
@@ -44,7 +44,7 @@ SOURCES = ["src/ectecgui/"]
 SOURCES_TEMP_DIRS = ["__pycache__"]
 
 #: List of endings for source files.
-SOURCE_ENDINGS = [".py", ".pyw"]
+SOURCE_ENDINGS = SOURCE_SUFFIXES
 
 #: Generate resource files from a dictionary.
 RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons", '')}
@@ -63,7 +63,8 @@ RESOURCE_SUFFIX = "_res"
 FORMS = {
     "res/server.ui": "src/ectecgui/server/ui_main.py",
     "res/clientConnect.ui": 'src/ectecgui/client/ui_connect.py',
-    "res/clientUser.ui": 'src/ectecgui/client/userclient/ui_main.py'
+    "res/clientUser.ui": 'src/ectecgui/client/userclient/ui_main.py',
+    "res/about.ui": 'src/ectecgui/about/ui_about.py'
 }
 
 #: List of paths for translation files relative to this script.
@@ -366,9 +367,13 @@ def task_qrc():
     for file, data in RESOURCES.items():
         path = solve_relative_path(file)
         yield {
-            'name': file,
+            'name':
+            file,
+            'file_dep': [
+                p for p in solve_relative_path(data[1]).glob('**/*')
+                if p.is_file()
+            ],
             'targets': [path],
-            'uptodate': [check_timestamp_unchanged(data[1], 'modify')],
             'actions': [(write, [path, data])],
         }
 
@@ -442,12 +447,21 @@ def task_pro():
 
     The .pro project file is needed for the `pylupdate5` command.
     """
+    sources = []
+    for source in SOURCES:
+        for ending in SOURCE_ENDINGS:
+            sources += [
+                str(path)
+                for path in solve_relative_path(source).glob('**/*' + ending)
+            ]
+
     return {
-        'uptodate': [check_timestamp_unchanged(file) for file in SOURCES] + [
+        'uptodate': [
             config_changed({
                 'resources': list(RESOURCES),
                 'forms': list(FORMS),
                 'translations': TRANSLATIONS,
+                'sources': sources,
             })
         ],
         'targets': [solve_relative_path(PROJECT_FILE)],
@@ -457,7 +471,7 @@ def task_pro():
 
 @task_params([{
     'name': 'drop_obsolete',
-    'short': 'd',
+    'short': '',
     'long': 'drop-obsolete',
     'type': bool,
     'default': False,
@@ -472,14 +486,24 @@ def task_lupdate(drop_obsolete):
     drop_obsolete : bool, optional
         Whether to drop all obsolete strings, by default False
     """
-    cmd = ["pylupdate5", "-verbose", "-translate-function", "_tr"]
+    cmd = [
+        "pylupdate5",
+        "-verbose",
+        "-translate-function",
+        "_tr",
+    ]
     if drop_obsolete:
         cmd.append('-noobsolete')
     cmd.append(str(solve_relative_path(PROJECT_FILE).as_posix()))
 
+    sources = []
+    for source in SOURCES:
+        for ending in SOURCE_ENDINGS:
+            sources += list(solve_relative_path(source).glob('**/*' + ending))
+
     return {
         'targets': [solve_relative_path(file) for file in TRANSLATIONS],
-        'file_dep': [solve_relative_path(PROJECT_FILE)],
+        'file_dep': [solve_relative_path(PROJECT_FILE)] + sources,
         'actions': [cmd],
         'verbosity': 2,
         'uptodate': [config_changed({'drop_obsolete': drop_obsolete})],
