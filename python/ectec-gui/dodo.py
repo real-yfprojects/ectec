@@ -31,6 +31,7 @@ from xml.etree import ElementTree
 
 import defusedxml.ElementTree as defusedET
 from doit import task_params
+from doit.action import CmdAction
 from doit.tools import config_changed
 
 # ---- Configuration ---------------------------------------------------------
@@ -535,4 +536,40 @@ def task_lupdate(drop_obsolete):
         'actions': [cmd],
         'verbosity': 2,
         'uptodate': [config_changed({'drop_obsolete': drop_obsolete})],
+    }
+
+
+@task_params([{
+    'name': 'build',
+    'long': 'build',
+    'type': bool,
+    'default': True,
+    'inverse': 'skip-build',
+    'help': 'Skip building the source files.'
+}])
+def task_client(build):
+    """Start the client."""
+    return {
+        'task_dep': ['rcc', 'uic'] if build else [],
+        'actions': [CmdAction('python3 -m ectecgui.client', cwd='./src/')],
+        'verbosity': 2,
+        'uptodate': [False],
+    }
+
+
+@task_params([{
+    'name': 'build',
+    'long': 'build',
+    'type': bool,
+    'default': True,
+    'inverse': 'skip-build',
+    'help': 'Skip building the source files.'
+}])
+def task_server(build):
+    """Start the server."""
+    return {
+        'task_dep': ['rcc', 'uic'] if build else [],
+        'actions': [CmdAction('python3 -m ectecgui.server', cwd='./src/')],
+        'verbosity': 2,
+        'uptodate': [False],
     }
