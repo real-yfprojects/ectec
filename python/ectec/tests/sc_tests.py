@@ -106,8 +106,8 @@ class SimpleClientServerTests(unittest.TestCase):
 
                 client.send(package)
 
-                # shouldn't receive anything
-                self.assertFalse(len(client.packages))
+                # won\t receive anything but store own package
+                self.assertEqual(len(client.packages), 1)
 
             self.assertFalse(client.connected)
             self.assertFalse(client.server)
@@ -240,8 +240,8 @@ class SimpleClientServerTests(unittest.TestCase):
                     time.sleep(0.05)
                     client2._update()
 
-                    # client1 shouldn't receive anything
-                    self.assertFalse(len(client1.packages))
+                    # client1 shouldn't receive anything but store own package
+                    self.assertEqual(len(client1.packages), 1)
 
                     # client2 should receive something
                     self.assertTrue(client2.receive())
@@ -289,10 +289,10 @@ class SimpleClientServerTests(unittest.TestCase):
                 clients[0].send(package)
 
                 # ---- receive package
-                # sender shouldn't receive anything
+                # sender shouldn't receive anything but store own package
                 clients[0]._update()
                 self.assertFalse(clients[0].receive())
-                self.assertEqual(len(clients[0].packages), 0)
+                self.assertEqual(len(clients[0].packages), 1)
 
                 time.sleep(0.01)
                 for client in clients[1:]:
@@ -325,7 +325,9 @@ class SimpleClientServerTests(unittest.TestCase):
                 time.sleep(0.05)
                 for client in clients:
                     client._update()
-                    self.assertEqual(len(client.receive()), len(clients)-1)
+                    # Though the package storage should contain the package
+                    # the client sent, the client shouldn't receive it.
+                    self.assertEqual(len(client.receive()), len(clients) - 1)
 
                 # ---- disconnect
                 for i in range(len(clients)):
