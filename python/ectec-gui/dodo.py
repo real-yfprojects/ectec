@@ -25,10 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from importlib.machinery import SOURCE_SUFFIXES
 from pathlib import Path, PurePath
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from xml.dom import minidom
 from xml.etree import ElementTree
 
+import defusedxml.ElementTree as defusedET
 from doit import task_params
 from doit.tools import config_changed
 
@@ -356,6 +357,35 @@ DOIT_CONFIG = {
 }
 
 
+res_file_cache: Dict[str, list] = {}
+
+
+def files_for_resource(resource: str):
+    """
+    Get a list of files that included in a resource file.
+
+    The results are cached.
+    """
+    file_list = res_file_cache.get(resource)
+    if file_list is None:
+        if resource in RESOURCES:
+            data = RESOURCES[resource]
+            file_list = [
+                p for p in solve_relative_path(data[1]).glob('**/*')
+                if p.is_file()
+            ]
+            res_file_cache[resource] = file_list
+        else:
+            # extract from file
+            file_path = solve_relative_path(resource)
+            tree = defusedET.parse(file_path.open())
+            file_list = [
+                Path(file_path.parent, file_tag.text).resolve()
+                for file_tag in tree.findall('.//file')
+            ]
+
+    return file_list
+
 def task_qrc():
     """Automate the writing of qrc files."""
 
@@ -366,13 +396,10 @@ def task_qrc():
 
     for file, data in RESOURCES.items():
         path = solve_relative_path(file)
+        files = files_for_resource(file)
         yield {
-            'name':
-            file,
-            'file_dep': [
-                p for p in solve_relative_path(data[1]).glob('**/*')
-                if p.is_file()
-            ],
+            'name': file,
+            'uptodate': [config_changed({'files': [str(f) for f in files]})],
             'targets': [path],
             'actions': [(write, [path, data])],
         }
@@ -431,10 +458,11 @@ def task_rcc():
         # if root:
         #     pyrcc5_cmd += ["-root", str(root)]
 
+        files = files_for_resource(qrc)
         yield {
             'name': qrc,
             'targets': [pyres_file],
-            'file_dep': [res_file],
+            'file_dep': [res_file] + files,
             'actions': [["pyrcc5", "-o",
                          path(pyres_file),
                          path(res_file)]]
