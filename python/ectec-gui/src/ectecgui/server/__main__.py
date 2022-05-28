@@ -142,6 +142,12 @@ QtGui.QIcon.setFallbackThemeName('breeze')
 # start app
 app = QtWidgets.QApplication(sys.argv)
 
+# install default translator
+translator = QTranslator()
+translator.load(QLocale(), 'ectecgui', '.', ':/i18n', '.qm')
+app.installTranslator(translator)
+
+# open window
 dialog = MainWindow()
 
 dialog.show()

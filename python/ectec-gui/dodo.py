@@ -72,7 +72,7 @@ FORMS = {
 }
 
 #: List of paths for translation files relative to this script.
-TRANSLATIONS = ["res/ectecgui.en.ts", "res/ectecgui.de.ts"]
+TRANSLATIONS = ["res/ectecgui.de.ts"]
 
 #: The default verbosity.
 VERBOSITY = 2
