@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import signal
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -126,6 +127,9 @@ if args.log_file:
 qInstallMessageHandler(logs.QtMessageHander(logger))
 
 # ---- Qt App ----------------------------------------------------------------
+
+# exit immediately on keyboard interrupt
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 # some global settings
 QApplication.setDesktopSettingsAware(True)

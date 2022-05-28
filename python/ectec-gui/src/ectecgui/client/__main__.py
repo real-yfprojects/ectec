@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import signal
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
@@ -126,6 +127,9 @@ qInstallMessageHandler(logs.QtMessageHander(logger))
 
 # ---- Qt App ----------------------------------------------------------------
 
+# exit immediately on keyboard interrupt
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 # some global settings
 QApplication.setDesktopSettingsAware(True)
 QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
@@ -141,4 +145,5 @@ dialog = ConnectWindow()
 
 dialog.show()
 
+# start qt event loop
 sys.exit(app.exec_())
