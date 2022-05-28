@@ -23,13 +23,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-from typing import List
 
 from ectec.version import SemanticVersion
 
 from . import logs
 
 VERSION = SemanticVersion(1, 0, 0)
+APPNAME = 'Ectec'
+APPAUTHOR = 'real-yfprojects'
 
 # ---- Constants -------------------------------------------------------------
 

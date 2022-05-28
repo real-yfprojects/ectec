@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# PYTHON_ARGCOMPLETE_OK
 """
 Run the client gui.
 
@@ -25,23 +26,100 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import sys
+from argparse import ArgumentParser
+from pathlib import Path
 
+from appdirs import user_log_dir
 from PyQt5 import QtGui, QtWidgets
 from PyQt5.QtCore import (QFile, QLocale, Qt, QTextStream, QTranslator,
                           qInstallMessageHandler)
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 
-from .. import logs
+from .. import APPAUTHOR, APPNAME, VERSION, logs
 from .wConnect import ConnectWindow
+
+# ---- Argparse --------------------------------------------------------------
+
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
+
+# determine program name
+if sys.argv[0] == __file__:
+    # use static value
+    prog = 'ectecgui.client'
+else:
+    prog = None
+
+# define arguments
+parser = ArgumentParser(
+    description="The ectec client.",
+    epilog="The ectec client program allows connecting to an ectec server "
+    "and sending packages/messages to other clients connected to the "
+    "same server.",
+    prog=prog,
+    allow_abbrev=True,
+    add_help=True)
+parser.add_argument('--version',
+                    action='version',
+                    version="%(prog)s " + str(VERSION))
+
+# logging
+parser.add_argument(
+    '--log-level',
+    dest='log_level',
+    choices=['critical', 'error', 'warning', 'info', 'debug', 'notset'],
+    help="Set the minimum level for logged messages")
+log_file_group = parser.add_mutually_exclusive_group()
+log_file_group.add_argument('--log-file',
+                            dest='log_file_path',
+                            metavar='PATH',
+                            type=Path,
+                            help="Set the file log messages are outputted to "
+                            "additionally to standard output.")
+log_file_group.add_argument('--no-logfile',
+                            '--no-log-file',
+                            action='store_false',
+                            dest='log_file',
+                            help="Log to standard output only.")
+
+# parse arguments
+if argcomplete:
+    argcomplete.autocomplete(parser)
+
+args = parser.parse_args()
 
 # ---- Logging ---------------------------------------------------------------
 
 logger = logs.getLogger()  # root logger
 
+# standard output handler
 handler = logs.StreamHandler()
-handler.setFormatter(logs.EctecGuiFormatter('UserClient'))
-handler.setLevel(logs.DEBUG)
+handler.setFormatter(logs.EctecGuiFormatter('Client'))
+if args.log_level:
+    handler.setLevel(args.log_level.upper())
+else:
+    handler.setLevel(logs.WARNING)
 logger.addHandler(handler)
+
+# file handler
+if args.log_file:
+    if args.log_file_path is None:
+        log_dir = Path(user_log_dir(APPNAME, APPAUTHOR))
+        log_dir.mkdir(parents=True, exist_ok=True)  # ensure dir exists
+        log_file = log_dir / 'client.log'
+    else:
+        log_file = args.log_file_path
+
+    max_size = 300 * 1024 * 1024  # 300 MiB
+    file_handler = logs.SessionRotatingFileHandler(log_file, sessionCount=5)
+    file_handler.setFormatter(logs.EctecGuiFormatter('Client'))
+    if args.log_level:
+        file_handler.setLevel(args.log_level.upper())
+    else:
+        file_handler.setLevel(logs.DEBUG)
+    logger.addHandler(file_handler)
 
 # convert Qt messages (from the qt logging system) to python LogRecords.
 qInstallMessageHandler(logs.QtMessageHander(logger))
