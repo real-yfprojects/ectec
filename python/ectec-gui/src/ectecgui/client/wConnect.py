@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import ipaddress
+
 import ectec
 import ectec.client as eccl
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -33,7 +35,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from .. import DEFAULT_PORT
 from ..about import AboutDialog
 from ..ectecQt.client import QUserClient
-from ..helpers import translate
+from ..helpers import list_local_hosts, translate
 from . import logger
 from .qobjects import AddressValidator, UsernameValidator
 from .ui_connect import Ui_dConnect
@@ -151,9 +153,14 @@ class ConnectWindow(QtWidgets.QDialog):
         self.ui.entryAddress.setMaxLength(20)
         self.ui.spinBoxPort.setValue(DEFAULT_PORT)
 
-        # TODO add validators
+        # add validators
         self.ui.entryAddress.setValidator(AddressValidator(dn_allowed=True))
         self.ui.entryName.setValidator(UsernameValidator())
+
+        # set initial address
+        address = ipaddress.ip_address(list_local_hosts()[0])
+        self.ui.entryAddress.setText(str(address))
+        self.ui.entryAddress.setPlaceholderText(str(address))
 
         # =================================================================
         #

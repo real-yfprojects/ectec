@@ -34,13 +34,10 @@ from . import logger
 
 # ---- Validators ------------------------------------------------------------
 
-ip_group = r"([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
-full_ip = r"^({group}\.){{3}}{group}$".format(group=ip_group)
-regex_ip = re.compile(full_ip)
-
-dn_group = r"([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])"
-full_dn = r"({group}\.)*{group}".format(group=dn_group)
-regex_dn = re.compile(full_dn)
+# host name re as specified in https://www.rfc-editor.org/rfc/rfc952 as hname
+name = r"(?!-)[a-zA-Z0-9-]+(?<!-)"  # may not start or end with a hyphen
+hname = r"({name}.?)+".format(name=name)
+regex_hname = re.compile(hname)
 
 
 class AddressValidator(QValidator):
@@ -66,57 +63,13 @@ class AddressValidator(QValidator):
     def validate(self, input: str,
                  pos: int) -> Tuple[QValidator.State, str, int]:
         """Validate the address"""
-        input = input.strip().replace(' ', '')
+        if not input:
+            return QValidator.Intermediate, input, pos
 
-        if regex_ip.match(input) or (self.dn_allowed
-                                     and regex_dn.match(input)):
-            # valid
-            logger.debug('Address valid')
-            return (self.State.Acceptable, input, pos)
+        if not (len(input) < 255 and regex_hname.fullmatch(input)):
+            return QValidator.Invalid, input, pos
 
-        # must be an intermediate ip address
-        fixed = ''
-        new_pos = pos
-
-        group_number = 0
-        group = ''
-        group_added = True
-        for i, c in enumerate(input):
-            if c == '.':
-                # new group
-                if not group:
-                    fixed += '0'
-                    if i < pos: new_pos += 1
-
-                if group_number >= 3:
-                    break  # ip address only consists of 4 groups
-
-                # python's socket module doesn't work with leading zeros
-                group = group.rstrip('0')
-                if not group:  # group was only zero
-                    group = '0'
-
-                fixed += group + '.'
-                group_added = True
-
-                group = ''
-                group_number += 1
-            elif not group and re.fullmatch('[0-2]', c):
-                # first digit may only be 1-2
-                group += c
-                group_added = False
-            elif 0 < len(group) < 3 and re.fullmatch('[0-9]', c):
-                # normal digit
-                group += c
-                group_added = False
-            else:
-                # invalid letter
-                if i < pos: new_pos -= 1
-
-        if not group_added:
-            fixed += group
-
-        return (self.State.Intermediate, fixed, new_pos)
+        return QValidator.Acceptable, input, pos
 
 
 class UsernameValidator(QValidator):
