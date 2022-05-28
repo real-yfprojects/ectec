@@ -42,8 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
 import os
-from logging import (CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING,
-                     NullHandler, StreamHandler, getLogger, handlers)
+from logging import CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING, handlers
 
 import ectec
 from PyQt5.QtCore import QMessageLogContext, QtMsgType

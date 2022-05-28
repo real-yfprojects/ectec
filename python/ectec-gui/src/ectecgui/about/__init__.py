@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import logging
 from typing import Optional, Tuple, Union
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -41,7 +42,7 @@ _tr = QApplication.translate
 
 # ---- Logging ---------------------------------------------------------------
 
-logger = logs.getLogger(__name__)
+logger = logging.getLogger(__name__)
 logger.setLevel(logs.DEBUG)
 
 # ---- Implement AboutWindow -------------------------------------------------

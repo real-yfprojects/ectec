@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import logging
 import signal
 import sys
 from argparse import ArgumentParser
@@ -93,10 +94,10 @@ args = parser.parse_args()
 
 # ---- Logging ---------------------------------------------------------------
 
-logger = logs.getLogger()  # root logger
+logger = logging.getLogger()  # root logger
 
 # standard output handler
-handler = logs.StreamHandler()
+handler = logging.StreamHandler()
 handler.setFormatter(logs.EctecGuiFormatter('Client'))
 if args.log_level:
     handler.setLevel(args.log_level.upper())

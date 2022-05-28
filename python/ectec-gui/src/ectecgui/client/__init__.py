@@ -23,9 +23,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import logging
+
 from .. import breeze_res, ectec_res, logs
 
 # ---- Logging ---------------------------------------------------------------
 
-logger = logs.getLogger(__name__)
+logger = logging.getLogger(__name__)
 logger.setLevel(logs.DEBUG)

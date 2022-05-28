@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import logging
+
 from ectec.version import SemanticVersion
 
 from . import logs
@@ -40,9 +42,9 @@ DEFAULT_PORT = 50234
 
 # ---- Logging ---------------------------------------------------------------
 
-logger = logs.getLogger(__name__)  # Parent logger for the module
+logger = logging.getLogger(__name__)  # Parent logger for the module
 logger.setLevel(logs.DEBUG)
 
 # Disable default logging behaviour by creating bin for log events
-nullhandler = logs.NullHandler()
+nullhandler = logging.NullHandler()
 logger.addHandler(nullhandler)
