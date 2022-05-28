@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import re
 from importlib.machinery import SOURCE_SUFFIXES
 from pathlib import Path, PurePath
 from typing import Dict, List, Tuple
@@ -46,7 +47,8 @@ SOURCES = ["src/ectecgui/"]
 SOURCES_TEMP_DIRS = ["__pycache__"]
 
 #: List of endings for source files.
-SOURCE_ENDINGS = SOURCE_SUFFIXES
+SOURCE_REGEX = re.compile(r'.*/[^/]+(?<!_res)(' + '|'.join(SOURCE_SUFFIXES) +
+                          r')')
 
 #: Generate resource files from a dictionary.
 RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons", '')}
@@ -142,7 +144,6 @@ def generate_file_list(name: str,
         The statement that can be written into the project file.
     """
     content = str(name) + " " * (center - len(name)) + '='
-    # print(content)
 
     # Make str list of elements
     line = ''
@@ -189,8 +190,8 @@ def generate_file_list(name: str,
 
 
 def files_recursive(paths: List[Path],
-                    dir_filter: List[str] = [],
-                    file_endings: List[str] = []) -> List[Path]:
+                    pattern: re.Pattern = None,
+                    exclude_dir_names: List[str] = []) -> List[Path]:
     """
     Make a list of files from a list of directories and files.
 
@@ -224,12 +225,25 @@ def files_recursive(paths: List[Path],
     while directories_left:
         dir = directories_left.pop()
         for element in dir.iterdir():
-            if element.is_dir() and element.name not in dir_filter:
+            if element.is_dir() and element.name not in exclude_dir_names:
                 directories_left.append(element.resolve())
-            elif element.suffix in file_endings:
+            elif not pattern or pattern.fullmatch(
+                    element.resolve().as_posix()):
                 files.append(element.resolve())
 
     return files
+
+
+source_files = None
+
+
+def get_source_files():
+    global source_files
+    if source_files is None:
+        source_files = files_recursive(SOURCES, SOURCE_REGEX,
+                                       SOURCES_TEMP_DIRS)
+    return source_files
+
 
 
 def make_pro_file():
@@ -241,7 +255,7 @@ def make_pro_file():
     content = ""
 
     # Make List of Sources
-    source_files = files_recursive(SOURCES, SOURCES_TEMP_DIRS, SOURCE_ENDINGS)
+    source_files = get_source_files()
 
     # Make list of resource files
     resource_files = files_recursive(RESOURCE_FILES)
@@ -354,9 +368,11 @@ def get_module_filename(res_file: str):
 
 DOIT_CONFIG = {
     'action_string_formatting': 'new',
-    'default_tasks': ['rcc', 'uic', 'lupdate']
+    'default_tasks': [
+        'rcc',
+        'uic',
+    ]
 }
-
 
 res_file_cache: Dict[str, list] = {}
 
@@ -386,6 +402,7 @@ def files_for_resource(resource: str):
             ]
 
     return file_list
+
 
 def task_qrc():
     """Automate the writing of qrc files."""
@@ -476,13 +493,7 @@ def task_pro():
 
     The .pro project file is needed for the `pylupdate5` command.
     """
-    sources = []
-    for source in SOURCES:
-        for ending in SOURCE_ENDINGS:
-            sources += [
-                str(path)
-                for path in solve_relative_path(source).glob('**/*' + ending)
-            ]
+    sources = [str(f) for f in get_source_files()]
 
     return {
         'uptodate': [
@@ -495,6 +506,10 @@ def task_pro():
         ],
         'targets': [solve_relative_path(PROJECT_FILE)],
         'actions': [make_pro_file],
+        'clean':
+        True,
+        'verbosity':
+        2,
     }
 
 
@@ -525,10 +540,7 @@ def task_lupdate(drop_obsolete):
         cmd.append('-noobsolete')
     cmd.append(str(solve_relative_path(PROJECT_FILE).as_posix()))
 
-    sources = []
-    for source in SOURCES:
-        for ending in SOURCE_ENDINGS:
-            sources += list(solve_relative_path(source).glob('**/*' + ending))
+    sources = get_source_files()
 
     return {
         'targets': [solve_relative_path(file) for file in TRANSLATIONS],
@@ -536,6 +548,73 @@ def task_lupdate(drop_obsolete):
         'actions': [cmd],
         'verbosity': 2,
         'uptodate': [config_changed({'drop_obsolete': drop_obsolete})],
+    }
+
+
+@task_params([{
+    'name':
+    'remove_identical',
+    'long':
+    'noident',
+    'type':
+    bool,
+    'default':
+    False,
+    'help':
+    'If the translated text is the same as the source text, '
+    'do not include the message'
+}, {
+    'name': 'no_unfinished',
+    'long': 'no-unfinished',
+    'type': bool,
+    'default': False,
+    'help': 'Do not include unfinished translations'
+}, {
+    'name':
+    'mark_untranslated',
+    'short':
+    'm',
+    'long':
+    'mark',
+    'type':
+    str,
+    'default':
+    '',
+    'help':
+    'If a message has no real translation, use the source text '
+    'prefixed with the given string instead'
+}])
+def task_lrelease(remove_identical, no_unfinished, mark_untranslated):
+    """Compile `.ts` translation files into `.qm` binary translations files."""
+
+    cmd = ["lrelease"]
+    if remove_identical:
+        cmd.append('-removeidentical')
+    if no_unfinished:
+        cmd.append('-nounfinished')
+    if mark_untranslated:
+        cmd.extend(['-markuntranslated', mark_untranslated])
+    cmd.append(str(solve_relative_path(PROJECT_FILE).as_posix()))
+
+    ts_files = [solve_relative_path(f) for f in TRANSLATIONS]
+    qm_files = [tsf.parent / (tsf.stem + '.qm') for tsf in ts_files]
+    return {
+        'targets':
+        qm_files,
+        'file_dep':
+        ts_files,
+        'actions': [cmd],
+        'verbosity':
+        2,
+        'uptodate': [
+            config_changed({
+                'remove_identical': remove_identical,
+                'no_unfinished': no_unfinished,
+                'mark_untranslated': mark_untranslated
+            })
+        ],
+        'clean':
+        True,
     }
 
 

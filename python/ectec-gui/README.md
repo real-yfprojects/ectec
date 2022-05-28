@@ -20,15 +20,16 @@ Then enter the directory of this file with your favourite terminal and run:
 
 ```bash
 > doit
-.  rcc:res/ectec.qrc
 .  qrc:res/breeze.qrc
 .  rcc:res/breeze.qrc
-.  uic:res/server.ui
 .  uic:res/clientConnect.ui
 .  uic:res/clientUser.ui
+.  uic:res/server.ui
 .  uic:res/about.ui
 .  pro
 .  lupdate
+.  lrelease
+.  rcc:res/ectec.qrc
 ```
 
 ### QT Resource System
@@ -50,16 +51,17 @@ To use the resources specified inside a qt resource file named `assets.qrc` in t
 
    ```bash
    > doit
-   -- rcc:res/ectec.qrc
    -- qrc:res/breeze.qrc
    -- rcc:res/breeze.qrc
-   -- rcc:path/to/assets.qrc
-   -- uic:res/server.ui
+   .  rcc:path/to/assets.qrc
    -- uic:res/clientConnect.ui
    -- uic:res/clientUser.ui
+   -- uic:res/server.ui
    -- uic:res/about.ui
    -- pro
-   --  lupdate
+   -- lupdate
+   -- lrelease
+   -- rcc:res/ectec.qrc
    ```
 
 3. A python module named `assets_res.py` was created in the directory specified.
@@ -95,16 +97,17 @@ To use a UI from an `.ui`-File follow these steps:
 
    ```bash
    > doit
-   -- rcc:res/ectec.qrc
    -- qrc:res/breeze.qrc
    -- rcc:res/breeze.qrc
-   -- uic:res/server.ui
    -- uic:res/clientConnect.ui
    -- uic:res/clientUser.ui
+   -- uic:res/server.ui
    -- uic:res/about.ui
-   -- uic:path/to/form.ui
+   .  uic:path/to/form.ui
    -- pro
-   --  lupdate
+   -- lupdate
+   -- lrelease
+   -- rcc:res/ectec.qrc
    ```
 
 3. Create import statements of as the following in the `__init__` of the module with the python _ui_ object class.
@@ -178,20 +181,21 @@ TRANSLATIONS = ["res/ectecgui.en.ts", "res/ectecgui.de.ts"]
 ```
 
 The dot between `ectecgui` and the *language code* must be in place.
-The `.ts` files can be created or updated by running the previously explained
+The `.ts` files can be created or updated by running the previously introduced
 build command:
 
 ```bash
 > doit
--- rcc:res/ectec.qrc
 -- qrc:res/breeze.qrc
 -- rcc:res/breeze.qrc
--- uic:res/server.ui
 -- uic:res/clientConnect.ui
 -- uic:res/clientUser.ui
+-- uic:res/server.ui
 -- uic:res/about.ui
 -- pro
 .  lupdate
+.  lrelease
+.  rcc:res/ectec.qrc
 ```
 
 The `.ts` translation files should be converted into a `.qm` optimized translation file for use in the application.
