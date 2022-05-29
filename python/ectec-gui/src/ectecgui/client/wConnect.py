@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import ipaddress
+import logging
 
 import ectec
 import ectec.client as eccl
@@ -37,13 +38,19 @@ from ..about import AboutDialog
 from ..ectecQt.client import QUserClient
 from ..helpers import list_local_hosts, translate
 from ..qobjects import LanguageMenu
-from . import logger
 from .qobjects import AddressValidator, UsernameValidator
 from .ui_connect import Ui_dConnect
 from .userclient.window import UserClientWindow
 
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
+
+
+# ---- Logging ---------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 # ---- Add widgets to the main window form -----------------------------------
 
@@ -82,7 +89,7 @@ class Ui_ConnectWindow(Ui_dConnect):
         self.menu_main = QtWidgets.QMenu(dConnect)
 
         # language menu
-        self.menu_main.addMenu(LanguageMenu(self))
+        self.menu_main.addMenu(LanguageMenu(dConnect))
 
         # Add 'About' action
         self.action_about = QtWidgets.QAction(_tr('dConnect', "About", "menu"),

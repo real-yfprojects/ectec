@@ -35,7 +35,8 @@ from typing import Callable, Iterable, List, Optional, Union
 from . import logs
 from .version import SemanticVersion, Version
 
-VERSION: Version = SemanticVersion(1, 1, 2)
+__version__ = '1.2.0'
+VERSION: Version = SemanticVersion.parse(__version__)
 
 # ---- Logging
 

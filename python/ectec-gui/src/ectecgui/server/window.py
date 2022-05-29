@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import logging
 import socket
 import subprocess
 import sys
@@ -38,12 +39,18 @@ from ..about import AboutDialog
 from ..ectecQt.server import Server
 from ..helpers import list_local_hosts, translate
 from ..qobjects import LanguageMenu
-from . import logger
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
 
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
+
+
+# ---- Logging ---------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 
 # ---- Add widgets to the main window form -----------------------------------
@@ -81,7 +88,7 @@ class Ui_mainWindow(Ui_dStartServer):
         self.menu_main = QMenu(dStartServer)
 
         # language menu
-        self.menu_main.addMenu(LanguageMenu(self))
+        self.menu_main.addMenu(LanguageMenu(dStartServer))
 
         # Add 'About' action
         self.action_about = QAction(_tr('dStartServer', "About", "menu"),

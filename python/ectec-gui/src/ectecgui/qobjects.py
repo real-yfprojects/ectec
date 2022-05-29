@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import logging
 from typing import Dict, List, cast
 
 from PyQt5.QtCore import QEvent, QLocale, QTranslator
@@ -34,6 +35,8 @@ from .helpers import get_current_language, get_languages
 
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
+
+# ---- QObjects --------------------------------------------------------------
 
 
 class TranslatorAwareApp(QApplication):

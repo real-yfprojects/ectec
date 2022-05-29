@@ -25,12 +25,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import logging
 import re
 from typing import Tuple
 
 from PyQt5.QtGui import QValidator
 
-from . import logger
+# ---- Logging ---------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 # ---- Validators ------------------------------------------------------------
 
@@ -46,6 +51,7 @@ class AddressValidator(QValidator):
 
     That can be an IP address or a domain-/hostname.
     """
+
     def __init__(self, parent=None, dn_allowed=True) -> None:
         """
         Init.
@@ -83,6 +89,7 @@ class UsernameValidator(QValidator):
     max_length : int, optional
         The maximum length for the user name, by default None
     """
+
     def __init__(self, parent=None, max_length=None) -> None:
         """
         Init validator.

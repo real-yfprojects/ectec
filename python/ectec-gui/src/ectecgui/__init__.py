@@ -26,11 +26,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
 
-from ectec.version import SemanticVersion
-
 from . import logs
 
-VERSION = SemanticVersion(1, 0, 0)
+VERSION = '1.0.0'
 
 # ---- Constants -------------------------------------------------------------
 

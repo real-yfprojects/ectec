@@ -115,7 +115,7 @@ class Ui_UserClientWindow(Ui_dUserClient):
         self.menu_main = QtWidgets.QMenu(dUserClient)
 
         # language menu
-        self.menu_main.addMenu(LanguageMenu(self))
+        self.menu_main.addMenu(LanguageMenu(dUserClient))
 
         # Add 'About' action
         self.action_about = QtWidgets.QAction(
