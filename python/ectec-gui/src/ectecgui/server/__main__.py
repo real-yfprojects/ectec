@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
+import logging
 import signal
 import sys
 from argparse import ArgumentParser
@@ -31,11 +32,12 @@ from pathlib import Path
 
 from appdirs import user_log_dir
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtCore import (QFile, QLocale, Qt, QTextStream, QTranslator,
-                          qInstallMessageHandler)
-from PyQt5.QtWidgets import QApplication, QStyleFactory
+from PyQt5.QtCore import QLocale, Qt, QTranslator, qInstallMessageHandler
+from PyQt5.QtWidgets import QApplication
 
 from .. import APPAUTHOR, APPNAME, VERSION, logs
+from ..helpers import get_current_language
+from ..qobjects import TranslatorAwareApp
 from .window import MainWindow
 
 # ---- Argparse --------------------------------------------------------------
@@ -93,10 +95,11 @@ args = parser.parse_args()
 
 # ---- Logging ---------------------------------------------------------------
 
-logger = logs.getLogger()  # root logger
+logger = logging.getLogger()  # root logger
+logger.setLevel(logging.DEBUG)
 
 # standard output handler
-handler = logs.StreamHandler()
+handler = logging.StreamHandler()
 handler.setFormatter(logs.EctecGuiFormatter('Server'))
 if args.log_level:
     handler.setLevel(args.log_level.upper())
@@ -140,12 +143,20 @@ QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
 QtGui.QIcon.setFallbackThemeName('breeze')
 
 # start app
-app = QtWidgets.QApplication(sys.argv)
+app = TranslatorAwareApp(sys.argv)
 
 # install default translator
 translator = QTranslator()
-translator.load(QLocale(), 'ectecgui', '.', ':/i18n', '.qm')
+success = translator.load(QLocale(), 'ectecgui', '.', ':/i18n', '.qm')
 app.installTranslator(translator)
+
+if success:
+    locale = get_current_language()
+    logger.debug(
+        f"Loaded translation {locale.bcp47Name()} for {QLocale().uiLanguages()}."
+    )
+else:
+    logger.debug(f"Failed to load translation for {QLocale().uiLanguages()}.")
 
 # open window
 dialog = MainWindow()

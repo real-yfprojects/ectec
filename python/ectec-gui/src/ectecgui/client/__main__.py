@@ -33,11 +33,12 @@ from pathlib import Path
 
 from appdirs import user_log_dir
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtCore import (QFile, QLocale, Qt, QTextStream, QTranslator,
-                          qInstallMessageHandler)
-from PyQt5.QtWidgets import QApplication, QStyleFactory
+from PyQt5.QtCore import QLocale, Qt, QTranslator, qInstallMessageHandler
+from PyQt5.QtWidgets import QApplication
 
 from .. import APPAUTHOR, APPNAME, VERSION, logs
+from ..helpers import get_current_language
+from ..qobjects import TranslatorAwareApp
 from .wConnect import ConnectWindow
 
 # ---- Argparse --------------------------------------------------------------
@@ -95,6 +96,7 @@ args = parser.parse_args()
 # ---- Logging ---------------------------------------------------------------
 
 logger = logging.getLogger()  # root logger
+logger.setLevel(logging.DEBUG)
 
 # standard output handler
 handler = logging.StreamHandler()
@@ -140,12 +142,19 @@ QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
 QtGui.QIcon.setFallbackThemeName('breeze')
 
 # start app
-app = QtWidgets.QApplication(sys.argv)
+app = TranslatorAwareApp(sys.argv)
 
 # install default translator
 translator = QTranslator()
-translator.load(QLocale(), 'ectecgui', '.', ':/i18n', '.qm')
+success = translator.load(QLocale(), 'ectecgui', '.', ':/i18n', '.qm')
 app.installTranslator(translator)
+
+if success:
+    language_id = get_current_language().bcp47Name()
+    logger.debug(
+        f"Loaded translation {language_id} for {QLocale().uiLanguages()}.")
+else:
+    logger.debug(f"Failed to load translation for {QLocale().uiLanguages()}.")
 
 # open window
 dialog = ConnectWindow()

@@ -37,6 +37,7 @@ from .. import DEFAULT_PORT, ectec_res
 from ..about import AboutDialog
 from ..ectecQt.server import Server
 from ..helpers import list_local_hosts, translate
+from ..qobjects import LanguageMenu
 from . import logger
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
@@ -78,6 +79,9 @@ class Ui_mainWindow(Ui_dStartServer):
         # =================================================================
 
         self.menu_main = QMenu(dStartServer)
+
+        # language menu
+        self.menu_main.addMenu(LanguageMenu(self))
 
         # Add 'About' action
         self.action_about = QAction(_tr('dStartServer', "About", "menu"),

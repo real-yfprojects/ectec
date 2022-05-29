@@ -31,10 +31,13 @@ from ectec.version import SemanticVersion
 from . import logs
 
 VERSION = SemanticVersion(1, 0, 0)
+
+# ---- Constants -------------------------------------------------------------
+
 APPNAME = 'Ectec'
 APPAUTHOR = 'real-yfprojects'
 
-# ---- Constants -------------------------------------------------------------
+SOURCE_LANGUAGE = 'en'
 
 TRANSLATION_DIR = ':/i18n'
 

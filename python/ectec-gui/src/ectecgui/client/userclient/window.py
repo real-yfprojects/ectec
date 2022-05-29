@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox
 from ...about import AboutDialog
 from ...ectecQt.client import QUserClient
 from ...helpers import list_local_hosts, translate
+from ...qobjects import LanguageMenu
 from ..chatview import ChatView, EctecPackageModel
 from . import logger
 from .qobjects import UserListLineEdit, UserListValidator, UsernameValidator
@@ -112,6 +113,9 @@ class Ui_UserClientWindow(Ui_dUserClient):
         # =================================================================
 
         self.menu_main = QtWidgets.QMenu(dUserClient)
+
+        # language menu
+        self.menu_main.addMenu(LanguageMenu(self))
 
         # Add 'About' action
         self.action_about = QtWidgets.QAction(

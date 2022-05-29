@@ -29,16 +29,28 @@ import sys
 from typing import List
 
 from PyQt5.QtCore import QDir, QLocale
+from PyQt5.QtWidgets import QApplication
 
-from . import TRANSLATION_DIR, logs
+from . import SOURCE_LANGUAGE, TRANSLATION_DIR, logs
 from .logs import indent
 
 
 def translate(context: str, sourceText: str, *args) -> tuple:
+    """Mark a string for translation without translating it."""
     return (context, sourceText) + args
 
 
-def get_languages(cls) -> List[QLocale]:
+def get_current_language() -> QLocale:
+    """Get the locale/language currently used for translation."""
+    lid = QApplication.translate("METADATA", "LANGUAGE_ID")
+
+    if lid == "LANGUAGE_ID":
+        lid = SOURCE_LANGUAGE
+
+    return QLocale(lid)
+
+
+def get_languages() -> List[QLocale]:
     """
     Return a list of languages that the server GUI can be translated to.
 
@@ -60,7 +72,7 @@ def get_languages(cls) -> List[QLocale]:
     tfiles = tfile_dir.entryList(['ectecgui.*.qm'])
 
     # query the files and make a list of locales that will be returned.
-    locale_list = []
+    locale_list = [QLocale(SOURCE_LANGUAGE)]
     for file in tfiles:
         # extract locale id from filename
         locale_id = file.split('.')[-2]

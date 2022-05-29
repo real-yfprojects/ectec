@@ -36,6 +36,7 @@ from .. import DEFAULT_PORT
 from ..about import AboutDialog
 from ..ectecQt.client import QUserClient
 from ..helpers import list_local_hosts, translate
+from ..qobjects import LanguageMenu
 from . import logger
 from .qobjects import AddressValidator, UsernameValidator
 from .ui_connect import Ui_dConnect
@@ -79,6 +80,9 @@ class Ui_ConnectWindow(Ui_dConnect):
         # =================================================================
 
         self.menu_main = QtWidgets.QMenu(dConnect)
+
+        # language menu
+        self.menu_main.addMenu(LanguageMenu(self))
 
         # Add 'About' action
         self.action_about = QtWidgets.QAction(_tr('dConnect', "About", "menu"),
