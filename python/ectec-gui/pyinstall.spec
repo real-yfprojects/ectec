@@ -27,6 +27,7 @@ from pathlib import Path
 
 # Spec
 
+console = True
 block_cipher = None
 
 # EctecGui Server
@@ -47,11 +48,12 @@ exe_a = EXE(pyz_a,
             analysis_a.scripts, [],
             exclude_binaries=True,
             name='ectecgui-server',
+            icon='res/ectec-icon/EctecIcon.ico',
             debug=False,
             bootloader_ignore_signals=False,
             strip=False,
             upx=True,
-            console=True)
+            console=console)
 
 # EctecGui Client
 analysis_b = Analysis(['client-entry.py'],
@@ -71,13 +73,17 @@ exe_b = EXE(pyz_b,
             analysis_b.scripts, [],
             exclude_binaries=True,
             name='ectecgui-client',
+            icon='res/ectec-icon/EctecIcon.ico',
             debug=False,
             bootloader_ignore_signals=False,
             strip=False,
             upx=True,
-            console=True)
+            console=console)
 
 # Collect
+extra_data = [('README.md', '../../README.md', 'DATA'),
+              ('EctecIcon.svg', 'res/EctecIcon.svg', 'DATA'),
+              ('LICENSE', 'LICENSE', 'DATA')]
 coll = COLLECT(exe_a,
                analysis_a.binaries,
                analysis_a.zipfiles,
@@ -86,7 +92,8 @@ coll = COLLECT(exe_a,
                analysis_b.binaries,
                analysis_b.zipfiles,
                analysis_b.datas,
+               extra_data,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='ectecgui')
+               name='Ectec')
