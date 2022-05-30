@@ -4,11 +4,74 @@ This is the python package containing the official graphical application (GUI) o
 The GUI uses the ectec package as a back-end.
 
 - [Ectec GUI](#ectec-gui)
+  - [Building from Source](#building-from-source)
+    - [Building the python package](#building-the-python-package)
+    - [Building the PyInstaller distributable](#building-the-pyinstaller-distributable)
   - [Development](#development)
     - [Testing](#testing)
     - [QT Resource System](#qt-resource-system)
     - [QT Designer and `.ui` files](#qt-designer-and-ui-files)
     - [QT Internationalization](#qt-internationalization)
+
+## Building from Source
+
+You will need a complete *Python 3* installation for the following steps.
+And you will need to know how to call the commands `python` or `pip` from
+the command line. Often these commands have a slightly different name:
+`python3` and `pip3`.
+
+### Building the python package
+
+1. Install the `build` and the `wheel` python package.
+
+   ```bash
+   > pip install -U build wheel
+   ```
+
+2. Enter the directory of this file (python/ectecgui/).
+
+3. Build the python package.
+
+   ```bash
+   > python -m build -s -w
+   ```
+
+The wheel and the source distributable python package can now be found in
+the dist folder.
+
+
+
+### Building the PyInstaller distributable
+
+1. Create a virtual python environment in the folder `env`:
+
+   ```bash
+   > python -m venv env
+   ```
+
+2. Enter/source the virtual environment. In bash type:
+
+   ```bash
+   > source env/bin/activate
+   ```
+
+3. Enter the directory `python/ectecgui` of this repository.
+
+4. Install `ectec` and `ectecgui` in the virtual environment.
+
+   ```bash
+   > python install ../ectec
+   > python install .
+   ```
+
+5. Run pyinstaller.
+
+   ```bash
+   > python -m PyInstaller pyinstall.spec
+   ```
+
+6. You will find the distributable build (the `Ectec` folder) in `./dist/`.
+
 
 ## Development
 
