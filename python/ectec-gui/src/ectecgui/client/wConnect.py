@@ -30,14 +30,14 @@ import logging
 import ectec
 import ectec.client as eccl
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QEventLoop, QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtCore import QEventLoop, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QAction, QApplication, QMessageBox
 
 from .. import DEFAULT_PORT
 from ..about import AboutDialog
 from ..ectecQt.client import QUserClient
 from ..helpers import list_local_hosts, translate
-from ..qobjects import LanguageMenu
+from ..qobjects import LanguageMenu, open_logs
 from .qobjects import AddressValidator, UsernameValidator
 from .ui_connect import Ui_dConnect
 from .userclient.window import UserClientWindow
@@ -91,8 +91,12 @@ class Ui_ConnectWindow(Ui_dConnect):
         # language menu
         self.menu_main.addMenu(LanguageMenu(dConnect))
 
+        # open logs action
+        self.action_logs = QAction(_tr('MainMenu', "Logs", "menu"))
+        self.menu_main.addAction(self.action_logs)
+
         # Add 'About' action
-        self.action_about = QtWidgets.QAction(_tr('dConnect', "About", "menu"),
+        self.action_about = QtWidgets.QAction(_tr('MainMenu', "About", "menu"),
                                               self.menu_main)
         self.menu_main.addAction(self.action_about)
 
@@ -120,7 +124,8 @@ class Ui_ConnectWindow(Ui_dConnect):
         # =================================================================
 
         if hasattr(self, 'action_about'):
-            self.action_about.setText(_tr('dConnect', "About", "menu"))
+            self.action_about.setText(_tr('MainMenu', "About", "menu"))
+            self.action_logs.setText(_tr('MainMenu', "Logs", "menu"))
 
 
 # ---- Implement GUI's logic -------------------------------------------------
@@ -184,6 +189,7 @@ class ConnectWindow(QtWidgets.QDialog):
 
         # connect hamburger menu
         self.ui.action_about.triggered.connect(self.slotAbout)
+        self.ui.action_logs.triggered.connect(open_logs)
 
         # =================================================================
         #

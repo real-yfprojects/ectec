@@ -24,19 +24,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
-import logging
-from typing import Dict, List, cast
+from pathlib import Path
+from typing import List, cast
 
-from PyQt5.QtCore import QEvent, QLocale, QTranslator
+from appdirs import user_log_dir
+from PyQt5.QtCore import QEvent, QLocale, QTranslator, QUrl
+from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QAction, QActionGroup, QApplication, QMenu
 
-from . import SOURCE_LANGUAGE, logger
+from . import APPAUTHOR, APPNAME, SOURCE_LANGUAGE, Settings, logger
 from .helpers import get_current_language, get_languages
 
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
 
-# ---- QObjects --------------------------------------------------------------
+# ---- Log Action ------------------------------------------------------------
+
+
+def open_logs():
+    """Open the location of the default log file"""
+    path = Settings.LOG_FILE.parent.resolve()
+    QDesktopServices.openUrl(QUrl(path.as_uri()))
+
+
+# ---- Language Menu ---------------------------------------------------------
 
 
 class TranslatorAwareApp(QApplication):
@@ -94,6 +105,7 @@ class TranslatorAwareApp(QApplication):
 
         return super().removeTranslator(translationFile)
 
+
 class LanguageMenu(QMenu):
     """A menu for switching the app language."""
 
@@ -119,6 +131,7 @@ class LanguageMenu(QMenu):
         self.language_actiongroup.triggered.connect(self.language_clicked)
 
     def language_clicked(self, action: QAction):
+        """Change the translation of the app on trigger of a menu action."""
         app = QApplication.instance()
 
         if isinstance(app, TranslatorAwareApp):

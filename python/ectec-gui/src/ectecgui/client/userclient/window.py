@@ -27,13 +27,13 @@ import ectec
 import ectec.client as eccl
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QCloseEvent, QPalette
-from PyQt5.QtWidgets import QApplication, QComboBox, QMessageBox
+from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QMessageBox
 
 from ...about import AboutDialog
 from ...ectecQt.client import QUserClient
 from ...helpers import list_local_hosts, translate
-from ...qobjects import LanguageMenu
+from ...qobjects import LanguageMenu, open_logs
 from ..chatview import ChatView, EctecPackageModel
 from . import logger
 from .qobjects import UserListLineEdit, UserListValidator, UsernameValidator
@@ -117,9 +117,13 @@ class Ui_UserClientWindow(Ui_dUserClient):
         # language menu
         self.menu_main.addMenu(LanguageMenu(dUserClient))
 
+        # open logs action
+        self.action_logs = QAction(_tr('MainMenu', "Logs", "menu"))
+        self.menu_main.addAction(self.action_logs)
+
         # Add 'About' action
-        self.action_about = QtWidgets.QAction(
-            _tr('dUserClient', "About", "menu"), self.menu_main)
+        self.action_about = QtWidgets.QAction(_tr('MainMenu', "About", "menu"),
+                                              self.menu_main)
         self.menu_main.addAction(self.action_about)
 
         # Add menu to toolbutton
@@ -148,7 +152,8 @@ class Ui_UserClientWindow(Ui_dUserClient):
         # =================================================================
 
         if hasattr(self, 'action_about'):
-            self.action_about.setText(_tr('dUserClient', "About", "menu"))
+            self.action_about.setText(_tr('MainMenu', "About", "menu"))
+            self.action_logs.setText(_tr('MainMenu', "Logs", "menu"))
 
 
 class UserClientWindow(QtWidgets.QDialog):
@@ -235,6 +240,8 @@ class UserClientWindow(QtWidgets.QDialog):
 
         # connect hamburger menu
         self.ui.action_about.triggered.connect(self.slotAbout)
+        self.ui.action_logs.triggered.connect(open_logs)
+
 
     @pyqtSlot()
     def slotSend(self):

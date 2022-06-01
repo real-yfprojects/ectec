@@ -24,21 +24,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 import logging
-import socket
-import subprocess
-import sys
-from typing import List
 
 from ectec import server as ecse
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QLocale, QPoint, Qt, QTranslator, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMessageBox
 
 from .. import DEFAULT_PORT, ectec_res
 from ..about import AboutDialog
 from ..ectecQt.server import Server
 from ..helpers import list_local_hosts, translate
-from ..qobjects import LanguageMenu
+from ..qobjects import LanguageMenu, open_logs
 from .modelview import ClientsTableModel
 from .ui_main import Ui_dStartServer
 
@@ -54,6 +50,8 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---- Add widgets to the main window form -----------------------------------
+
+
 class Ui_mainWindow(Ui_dStartServer):
     """
     The UI that are the Widgets of the MainWindow.
@@ -90,8 +88,12 @@ class Ui_mainWindow(Ui_dStartServer):
         # language menu
         self.menu_main.addMenu(LanguageMenu(dStartServer))
 
+        # open logs action
+        self.action_logs = QAction(_tr('MainMenu', "Logs", "menu"))
+        self.menu_main.addAction(self.action_logs)
+
         # Add 'About' action
-        self.action_about = QAction(_tr('dStartServer', "About", "menu"),
+        self.action_about = QAction(_tr('MainMenu', "About", "menu"),
                                     self.menu_main)
         self.menu_main.addAction(self.action_about)
 
@@ -122,7 +124,8 @@ class Ui_mainWindow(Ui_dStartServer):
         # =================================================================
 
         if hasattr(self, 'action_about'):
-            self.action_about.setText(_tr('dStartServer', "About", "menu"))
+            self.action_about.setText(_tr('MainMenu', "About", "menu"))
+            self.action_logs.setText(_tr('MainMenu', "Logs", "menu"))
 
 
 class MainWindow(QtWidgets.QDialog):
@@ -171,6 +174,7 @@ class MainWindow(QtWidgets.QDialog):
 
         # connect hamburger menu
         self.ui.action_about.triggered.connect(self.slotAbout)
+        self.ui.action_logs.triggered.connect(open_logs)
 
         # =================================================================
         #
