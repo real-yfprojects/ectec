@@ -31,8 +31,7 @@ from typing import List
 from PyQt5.QtCore import QDir, QLocale
 from PyQt5.QtWidgets import QApplication
 
-from . import SOURCE_LANGUAGE, TRANSLATION_DIR, logs
-from .logs import indent
+from . import SOURCE_LANGUAGE, TRANSLATION_DIR
 
 
 def translate(context: str, sourceText: str, *args) -> tuple:

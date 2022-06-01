@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import logging
+from pathlib import Path
+from typing import Optional
 
 from . import logs
 
@@ -49,3 +51,11 @@ logger.setLevel(logs.DEBUG)
 # Disable default logging behaviour by creating bin for log events
 nullhandler = logging.NullHandler()
 logger.addHandler(nullhandler)
+
+# ---- Dynamic settings ------------------------------------------------------
+
+
+class Settings:
+    """This namespace holds the settings of this app."""
+
+    LOG_FILE: Optional[Path] = None
