@@ -82,7 +82,7 @@
             <enum>QFrame::Plain</enum>
            </property>
            <property name="text">
-            <string>127.0.0.1</string>
+            <string notr="true">127.0.0.1</string>
            </property>
            <property name="textInteractionFlags">
             <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
@@ -98,7 +98,7 @@
             <enum>QFrame::Plain</enum>
            </property>
            <property name="text">
-            <string>user1</string>
+            <string notr="true">user1</string>
            </property>
            <property name="textInteractionFlags">
             <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
@@ -158,7 +158,7 @@
             <enum>QFrame::Plain</enum>
            </property>
            <property name="text">
-            <string>197.12.45.23</string>
+            <string notr="true">197.12.45.23</string>
            </property>
            <property name="textInteractionFlags">
             <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
@@ -174,7 +174,7 @@
             <enum>QFrame::Plain</enum>
            </property>
            <property name="text">
-            <string>50000</string>
+            <string notr="true">50000</string>
            </property>
            <property name="textInteractionFlags">
             <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>

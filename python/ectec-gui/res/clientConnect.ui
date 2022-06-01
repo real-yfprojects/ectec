@@ -112,13 +112,13 @@
       <item row="0" column="1">
        <widget class="QLineEdit" name="entryAddress">
         <property name="text">
-         <string>192.168.178.0</string>
+         <string notr="true">192.168.178.0</string>
         </property>
         <property name="frame">
          <bool>true</bool>
         </property>
         <property name="placeholderText">
-         <string>192.168.178.28</string>
+         <string notr="true">192.168.178.28</string>
         </property>
         <property name="clearButtonEnabled">
          <bool>true</bool>
