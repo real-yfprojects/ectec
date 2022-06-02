@@ -23,7 +23,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import os
 import re
+import sys
 from importlib.machinery import SOURCE_SUFFIXES
 from pathlib import Path, PurePath
 from typing import Dict, List, Tuple
@@ -31,6 +33,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 import defusedxml.ElementTree as defusedET
+import virtualenv
 from doit import task_params
 from doit.action import CmdAction
 from doit.tools import config_changed
@@ -245,7 +248,6 @@ def get_source_files():
     return source_files
 
 
-
 def make_pro_file():
     """
     Generate and write the .pro project file of the PyQt project.
@@ -364,7 +366,7 @@ def get_module_filename(res_file: str):
     return path.stem + RESOURCE_SUFFIX + '.py'
 
 
-# ---- Rules -----------------------------------------------------------------
+# ---- Build Rules -----------------------------------------------------------
 
 DOIT_CONFIG = {
     'action_string_formatting': 'new',
@@ -373,6 +375,16 @@ DOIT_CONFIG = {
         'uic',
     ]
 }
+
+
+def string_title(title: str):
+    """Set a string title for a task."""
+
+    def get_title(task):
+        return title
+
+    return get_title
+
 
 res_file_cache: Dict[str, list] = {}
 
@@ -618,6 +630,9 @@ def task_lrelease(remove_identical, no_unfinished, mark_untranslated):
     }
 
 
+# ---- Run Rules -------------------------------------------------------------
+
+
 @task_params([{
     'name': 'build',
     'long': 'build',
@@ -651,4 +666,105 @@ def task_server(build):
         'actions': [CmdAction('python3 -m ectecgui.server', cwd='./src/')],
         'verbosity': 2,
         'uptodate': [False],
+    }
+
+
+# ---- Virtual Environments --------------------------------------------------
+
+
+def create_venv(path: Path) -> virtualenv.run.Session:
+    """Create a virtual python environment at the given path."""
+    virtualenv.cli_run([str(path.absolute())])
+
+
+def source_venv(path: Path):
+    """Prepare a bash environment."""
+    environment = os.environ.copy()
+    environment['VIRTUAL_ENV'] = str(path.resolve())
+    environment['PATH'] = str(
+        (path / 'bin').resolve()) + os.pathsep + environment['PATH']
+    environment.pop('PYTHON_HOME', None)
+
+    return environment
+
+
+def CmdInVenv(venv: Path, cmd, **kwargs):
+    """Run task action in a virtual env"""
+    kwargs.setdefault('env', {}).update(source_venv(venv))
+    if isinstance(cmd, list):
+        kwargs.setdefault('shell', False)
+    # kwargs.setdefault('executable', '/usr/bin/bash')
+    return CmdAction(cmd, **kwargs)
+
+
+# ---- Package Rules ---------------------------------------------------------
+
+TEMP_ENV_PATH = 'tempenv'
+
+
+def temp_env_available():
+    path = solve_relative_path(TEMP_ENV_PATH)
+
+    return path.exists()
+
+
+def task_temp_env():
+    """Create a virtual environment for packaging."""
+    venv = solve_relative_path(TEMP_ENV_PATH)
+    return {
+        'actions': [
+            ['rm', '-R', '-f', venv],
+            (create_venv, [venv]),
+            CmdInVenv(venv, 'pip install -U build'),
+        ],
+        'uptodate': [False],
+        'title':
+        string_title(
+            f'Setting up virtual python environment at {TEMP_ENV_PATH}...'),
+    }
+
+
+def task_build_ectec():
+    """Build ectec python package."""
+    venv = solve_relative_path(TEMP_ENV_PATH)
+    return {
+        'task_dep': ['temp_env'],
+        'actions': [CmdInVenv(venv, 'python -m build', cwd="../ectec/")],
+        'verbosity': 2,
+    }
+
+
+def task_build_ectecgui():
+    """Build ectecgui python package."""
+    venv = solve_relative_path(TEMP_ENV_PATH)
+    return {
+        'task_dep': ['temp_env'],
+        'actions': [CmdInVenv(venv, 'python -m build')],
+        'verbosity': 2,
+    }
+
+
+def task_setup_packaging():
+    """Install ectec and ectecgui package in tempenv."""
+    venv = solve_relative_path(TEMP_ENV_PATH)
+    return {
+        'task_dep': ['temp_env'],
+        'actions': [
+            CmdInVenv(venv, 'pip install ../ectec/'),
+            CmdInVenv(venv, 'pip install .'),
+            CmdInVenv(venv, 'pip install -U PyInstaller')
+        ],
+        'title':
+        string_title('Install the ectec packages and pyinstaller in venv...'),
+    }
+
+
+def task_bundle_pyinstaller():
+    venv = solve_relative_path(TEMP_ENV_PATH)
+    return {
+        'task_dep': ['setup_packaging'],
+        'actions':
+        [CmdInVenv(venv, 'python -m PyInstaller --noconfirm pyinstall.spec')],
+        'verbosity':
+        2,
     }
