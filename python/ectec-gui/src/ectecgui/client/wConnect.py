@@ -203,7 +203,14 @@ class ConnectWindow(QtWidgets.QDialog):
     def slotAbout(self):
         """Show the about dialog."""
         title = translate("AboutDialog", "Ectec - Client")
-        description = translate("AboutDialog", "Description")
+        description = translate(
+            "AboutDialog", "The client GUI allows connecting to a server. "
+            "One can specify the address of the machine the server is running on "
+            "and the port on that machine the server is listening on. "
+            "The client allows choosing different roles that have different abilities. "
+            "The standard client role is called <i>user</i>. "
+            "The user client can send packages - i.e. messages - "
+            "to the other clients connected to the same server.")
 
         dialog = AboutDialog(title, description, parent=self)
         self.finished.connect(dialog.done)

@@ -441,7 +441,16 @@ class MainWindow(QtWidgets.QDialog):
     def slotAbout(self):
         """Show the about dialog."""
         title = translate("AboutDialog", "Ectec - Server")
-        description = translate("AboutDialog", "Description")
+        description = translate(
+            "AboutDialog",
+            "The server GUI of ectec allows starting a server on the local machine. "
+            "The server acts as a moderator of a chat and "
+            "relays message or packages sent by clients. "
+            "Clients can connect to a server at the address and the port "
+            "the server is listening for them. "
+            "After connecting they can sent packages to the server "
+            "that will be forwarded to all the other clients "
+            "also connected to the server.")
 
         dialog = AboutDialog(title, description, parent=self)
         self.finished.connect(dialog.done)
