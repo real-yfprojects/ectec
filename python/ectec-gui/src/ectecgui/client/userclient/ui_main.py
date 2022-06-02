@@ -15,6 +15,7 @@ class Ui_dUserClient(object):
     def setupUi(self, dUserClient):
         dUserClient.setObjectName("dUserClient")
         dUserClient.resize(789, 600)
+        dUserClient.setWindowTitle("Ectec User Client")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/ectec-icon.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         dUserClient.setWindowIcon(icon)
@@ -198,7 +199,6 @@ class Ui_dUserClient(object):
 
     def retranslateUi(self, dUserClient):
         _translate = QtCore.QCoreApplication.translate
-        dUserClient.setWindowTitle(_translate("dUserClient", "Dialog"))
         self.labelClient.setText(_translate("dUserClient", "<html><head/><body><p><span style=\" font-style:italic;\">Local client</span></p></body></html>"))
         self.labelServer.setText(_translate("dUserClient", "<html><head/><body><p><span style=\" font-style:italic;\">Server</span></p></body></html>"))
         self.buttonDisconnect.setText(_translate("dUserClient", "Disconnect"))

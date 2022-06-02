@@ -15,6 +15,7 @@ class Ui_dStartServer(object):
     def setupUi(self, dStartServer):
         dStartServer.setObjectName("dStartServer")
         dStartServer.resize(386, 462)
+        dStartServer.setWindowTitle("Start Server")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/ectec-icon.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         dStartServer.setWindowIcon(icon)
@@ -155,7 +156,6 @@ class Ui_dStartServer(object):
 
     def retranslateUi(self, dStartServer):
         _translate = QtCore.QCoreApplication.translate
-        dStartServer.setWindowTitle(_translate("dStartServer", "Start Server"))
         self.toolButtonMenu.setToolTip(_translate("dStartServer", "<html><head/><body><p>Menu</p></body></html>"))
         self.labelAddress.setText(_translate("dStartServer", "Local Address", "IP"))
         self.comboBoxAddress.setToolTip(_translate("dStartServer", "<html><head/><body><p>The address to start the server on.</p></body></html>"))

@@ -193,6 +193,11 @@ class UserClientWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
+        # set window title
+        self.setWindowTitle(
+            _tr('dUserClient', 'Ectec User Client') + ' - ' +
+            self.client.username)
+
         # init values for info labels
         local_address = list_local_hosts()[0]
         server_address = self.client.server
@@ -414,6 +419,10 @@ class UserClientWindow(QtWidgets.QDialog):
             # The language of the QApplication was changed.
             # The GUI has to be retranslated.
             self.ui.retranslateUi(self)
+            # set window title
+            self.setWindowTitle(
+                _tr('dUserClient', 'Ectec User Client') + ' - ' +
+                self.client.username)
 
             logger.debug("Retranslated ui.")
 

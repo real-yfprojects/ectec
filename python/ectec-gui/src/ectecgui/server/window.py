@@ -41,13 +41,10 @@ from .ui_main import Ui_dStartServer
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
 
-
 # ---- Logging ---------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
 
 # ---- Add widgets to the main window form -----------------------------------
 
@@ -100,7 +97,6 @@ class Ui_mainWindow(Ui_dStartServer):
         # Add menu to toolbutton
         self.toolButtonMenu.setMenu(self.menu_main)
 
-
     def retranslateUi(self, dStartServer: QtWidgets.QDialog):
         """
         Retranslate the UI.
@@ -146,6 +142,9 @@ class MainWindow(QtWidgets.QDialog):
         self.server = Server()
         self.port = DEFAULT_PORT
 
+        #: Whether the GUI is in running phase or start phase
+        self.running = False
+
         # =================================================================
         #
         # Setup table view of clients.
@@ -189,6 +188,7 @@ class MainWindow(QtWidgets.QDialog):
         Setup the interface for the phase in which the server is started.
 
         """
+        self.running = False
 
         # =================================================================
         #
@@ -210,7 +210,6 @@ class MainWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
-        self.ui.buttonStart.setText(_tr('dStartServer', "Start", "server"))
         self.ui.buttonStart.disconnect()
         self.ui.buttonStart.clicked.connect(self.slotStart)
 
@@ -234,18 +233,22 @@ class MainWindow(QtWidgets.QDialog):
         self.ui.checkBoxBlocking.setEnabled(False)
         self.ui.checkBoxBlocking.setChecked(False)
 
+        # update texts
+        self.setUiText()
+
     def init_pRunning(self):
         """
         Setup the interface for the phase in which the server is running.
 
         """
+        self.running = True
+
         # =================================================================
         #
         # Change buttonStart to buttonStop.
         #
         # =================================================================
 
-        self.ui.buttonStart.setText(_tr('dStartServer', "Stop", "server"))
         self.ui.buttonStart.disconnect()
         self.ui.buttonStart.clicked.connect(self.slotStop)
 
@@ -261,6 +264,20 @@ class MainWindow(QtWidgets.QDialog):
 
         self.ui.checkBoxBlocking.setEnabled(True)
         self.ui.checkBoxBlocking.setChecked(False)
+
+        # update texts
+        self.setUiText()
+
+    def setUiText(self):
+        """Set UI texts and retranslate them."""
+        if self.running:
+            self.ui.buttonStart.setText(_tr('dStartServer', "Stop", "server"))
+            self.setWindowTitle(
+                _tr('dStartServer', 'Ectec Server') + ' - ' +
+                str(self.server.port))
+        else:
+            self.ui.buttonStart.setText(_tr('dStartServer', "Start", "server"))
+            self.setWindowTitle(_tr('dStartServer', 'Start Server'))
 
     @pyqtSlot(bool)
     def slotStart(self, checked=False):
@@ -389,6 +406,7 @@ class MainWindow(QtWidgets.QDialog):
             # The language of the QApplication was changed.
             # The GUI has to be retranslated.
             self.ui.retranslateUi(self)
+            self.setUiText()
 
             logger.debug("Retranslated ui.")
 
