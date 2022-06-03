@@ -50,8 +50,8 @@ SOURCES = ["src/ectecgui/"]
 SOURCES_TEMP_DIRS = ["__pycache__"]
 
 #: List of endings for source files.
-SOURCE_REGEX = re.compile(r'.*/[^/]+(?<!_res)(' + '|'.join(SOURCE_SUFFIXES) +
-                          r')')
+SOURCE_REGEX = re.compile(r'.*/(?!ui_)[^/]+(?<!_res)(' +
+                          '|'.join(SOURCE_SUFFIXES) + r')')
 
 #: Generate resource files from a dictionary.
 RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons", '')}
@@ -553,10 +553,11 @@ def task_lupdate(drop_obsolete):
     cmd.append(str(solve_relative_path(PROJECT_FILE).as_posix()))
 
     sources = get_source_files()
+    form_files = [solve_relative_path(form) for form in FORMS]
 
     return {
         'targets': [solve_relative_path(file) for file in TRANSLATIONS],
-        'file_dep': [solve_relative_path(PROJECT_FILE)] + sources,
+        'file_dep': [solve_relative_path(PROJECT_FILE)] + sources + form_files,
         'actions': [cmd],
         'verbosity': 2,
         'uptodate': [config_changed({'drop_obsolete': drop_obsolete})],
