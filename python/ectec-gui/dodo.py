@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import os
 import re
+import shutil
 import sys
 from importlib.machinery import SOURCE_SUFFIXES
 from pathlib import Path, PurePath
@@ -675,15 +676,19 @@ def task_server(build):
 
 def create_venv(path: Path) -> virtualenv.run.Session:
     """Create a virtual python environment at the given path."""
-    virtualenv.cli_run([str(path.absolute())])
+    virtualenv.cli_run([str(path.resolve())])
 
 
 def source_venv(path: Path):
     """Prepare a bash environment."""
     environment = os.environ.copy()
     environment['VIRTUAL_ENV'] = str(path.resolve())
+    if sys.platform == 'win32':
+        script_path = 'Scripts'
+    else:
+        script_path = 'bin'
     environment['PATH'] = str(
-        (path / 'bin').resolve()) + os.pathsep + environment['PATH']
+        (path / script_path).resolve()) + os.pathsep + environment['PATH']
     environment.pop('PYTHON_HOME', None)
 
     return environment
@@ -714,7 +719,7 @@ def task_temp_env():
     venv = solve_relative_path(TEMP_ENV_PATH)
     return {
         'actions': [
-            ['rm', '-R', '-f', venv],
+            (shutil.rmtree, [venv,True]),
             (create_venv, [venv]),
             CmdInVenv(venv, 'pip install -U build'),
         ],
