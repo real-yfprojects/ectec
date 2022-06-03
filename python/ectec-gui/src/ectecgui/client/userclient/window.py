@@ -432,7 +432,7 @@ class UserClientWindow(QtWidgets.QDialog):
     @pyqtSlot()
     def slotAbout(self):
         """Show the about dialog."""
-        title = translate("AboutDialog", "Ectec - UserClient")
+        title = translate("AboutDialog", "Ectec - User Client")
         description = translate(
             "AboutDialog",
             "The user client GUI component is part of the client GUI. "

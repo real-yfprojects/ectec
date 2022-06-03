@@ -70,7 +70,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Menu&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>Menu</string>
         </property>
         <property name="icon">
          <iconset theme="settings-configure">
@@ -163,7 +163,7 @@
             <item>
              <widget class="QComboBox" name="comboBoxAddress">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The address to start the server on.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>The address to start the server on.</string>
               </property>
               <property name="currentText">
                <string notr="true"/>
@@ -219,7 +219,7 @@
             <item>
              <widget class="QSpinBox" name="spinBoxPort">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The port (TCP) to start the sever on.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>The port (TCP) to start the sever on.</string>
               </property>
               <property name="maximum">
                <number>60000</number>
@@ -251,7 +251,7 @@
             <cursorShape>PointingHandCursor</cursorShape>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Start the server.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Start the server.</string>
            </property>
            <property name="text">
             <string comment="verb">Start</string>
@@ -307,7 +307,7 @@
       <enum>Qt::CustomContextMenu</enum>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of connected clients.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>List of connected clients.</string>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>

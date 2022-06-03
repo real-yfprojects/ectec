@@ -202,7 +202,7 @@ class Ui_dUserClient(object):
         self.labelClient.setText(_translate("dUserClient", "<html><head/><body><p><span style=\" font-style:italic;\">Local client</span></p></body></html>"))
         self.labelServer.setText(_translate("dUserClient", "<html><head/><body><p><span style=\" font-style:italic;\">Server</span></p></body></html>"))
         self.buttonDisconnect.setText(_translate("dUserClient", "Disconnect"))
-        self.toolButtonMenu.setToolTip(_translate("dUserClient", "<html><head/><body><p>Menu</p></body></html>"))
+        self.toolButtonMenu.setToolTip(_translate("dUserClient", "Menu"))
         self.labelTo.setText(_translate("dUserClient", "To:"))
         self.labelFrom.setText(_translate("dUserClient", "From:"))
         self.buttonSend.setText(_translate("dUserClient", "Send"))

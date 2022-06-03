@@ -131,7 +131,6 @@ class Ui_dConnect(object):
     def retranslateUi(self, dConnect):
         _translate = QtCore.QCoreApplication.translate
         dConnect.setWindowTitle(_translate("dConnect", "Connect to Server"))
-        self.toolButtonMenu.setToolTip(_translate("dConnect", "<html><head/><body><p>Menu</p></body></html>"))
         self.groupServer.setTitle(_translate("dConnect", "Server"))
         self.labelAddress.setText(_translate("dConnect", "Address"))
         self.labelPort.setText(_translate("dConnect", "Port"))

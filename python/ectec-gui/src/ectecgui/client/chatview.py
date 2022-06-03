@@ -471,10 +471,12 @@ class ChatViewDelegate(QStyledItemDelegate):
             tooltipText = text
             tooltipRect = content_rect
         elif sender_rect and sender_rect.contains(pos):
-            tooltipText = _tr('ChatView', 'From: ', 'letter') + sender_text
+            tooltipText = _tr('ChatView', 'From:',
+                              'letter') + ' ' + sender_text
             tooltipRect = sender_rect
         elif receiver_rect.contains(pos):
-            tooltipText = _tr('ChatView', 'To: ', 'letter') + receiver_text
+            tooltipText = _tr('ChatView', 'To:',
+                              'letter') + ' ' + receiver_text
             tooltipRect = receiver_rect
         else:
             # no tooltip available

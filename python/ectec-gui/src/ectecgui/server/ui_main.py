@@ -156,13 +156,13 @@ class Ui_dStartServer(object):
 
     def retranslateUi(self, dStartServer):
         _translate = QtCore.QCoreApplication.translate
-        self.toolButtonMenu.setToolTip(_translate("dStartServer", "<html><head/><body><p>Menu</p></body></html>"))
+        self.toolButtonMenu.setToolTip(_translate("dStartServer", "Menu"))
         self.labelAddress.setText(_translate("dStartServer", "Local Address", "IP"))
-        self.comboBoxAddress.setToolTip(_translate("dStartServer", "<html><head/><body><p>The address to start the server on.</p></body></html>"))
+        self.comboBoxAddress.setToolTip(_translate("dStartServer", "The address to start the server on."))
         self.labelPort.setText(_translate("dStartServer", "Port", "socket"))
-        self.spinBoxPort.setToolTip(_translate("dStartServer", "<html><head/><body><p>The port (TCP) to start the sever on.</p></body></html>"))
-        self.buttonStart.setToolTip(_translate("dStartServer", "<html><head/><body><p>Start the server.</p></body></html>"))
+        self.spinBoxPort.setToolTip(_translate("dStartServer", "The port (TCP) to start the sever on."))
+        self.buttonStart.setToolTip(_translate("dStartServer", "Start the server."))
         self.buttonStart.setText(_translate("dStartServer", "Start", "verb"))
         self.checkBoxBlocking.setText(_translate("dStartServer", "Reject new clients."))
-        self.tableClients.setToolTip(_translate("dStartServer", "<html><head/><body><p>List of connected clients.</p></body></html>"))
+        self.tableClients.setToolTip(_translate("dStartServer", "List of connected clients."))
 from . import ectec_res
