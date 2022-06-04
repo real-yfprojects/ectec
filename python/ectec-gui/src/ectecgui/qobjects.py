@@ -29,7 +29,7 @@ from typing import List, cast
 
 from appdirs import user_log_dir
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, QUrl
-from PyQt5.QtGui import QDesktopServices
+from PyQt5.QtGui import QDesktopServices, QIcon
 from PyQt5.QtWidgets import QAction, QActionGroup, QApplication, QMenu
 
 from . import APPAUTHOR, APPNAME, SOURCE_LANGUAGE, Settings, logger
@@ -112,6 +112,8 @@ class LanguageMenu(QMenu):
     def __init__(self, parent=None):
         """Init."""
         super().__init__(parent=parent, title=_tr("LanguageMenu", "Languages"))
+
+        self.setIcon(QIcon.fromTheme('languages'))
 
         self.language_actiongroup = QActionGroup(self)
 

@@ -27,7 +27,7 @@ import ectec
 import ectec.client as eccl
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtGui import QCloseEvent, QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QMessageBox
 
 from ...about import AboutDialog
@@ -118,11 +118,13 @@ class Ui_UserClientWindow(Ui_dUserClient):
         self.menu_main.addMenu(LanguageMenu(dUserClient))
 
         # open logs action
-        self.action_logs = QAction(_tr('MainMenu', "Logs", "menu"))
+        self.action_logs = QAction(QIcon.fromTheme('viewlog'),
+                                   _tr('MainMenu', "Logs", "menu"))
         self.menu_main.addAction(self.action_logs)
 
         # Add 'About' action
-        self.action_about = QtWidgets.QAction(_tr('MainMenu', "About", "menu"),
+        self.action_about = QtWidgets.QAction(QIcon.fromTheme('help-about'),
+                                              _tr('MainMenu', "About", "menu"),
                                               self.menu_main)
         self.menu_main.addAction(self.action_about)
 

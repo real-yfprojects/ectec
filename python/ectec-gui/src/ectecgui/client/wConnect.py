@@ -31,6 +31,7 @@ import ectec
 import ectec.client as eccl
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QEventLoop, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMessageBox
 
 from .. import DEFAULT_PORT
@@ -92,11 +93,13 @@ class Ui_ConnectWindow(Ui_dConnect):
         self.menu_main.addMenu(LanguageMenu(dConnect))
 
         # open logs action
-        self.action_logs = QAction(_tr('MainMenu', "Logs", "menu"))
+        self.action_logs = QAction(QIcon.fromTheme('viewlog'),
+                                   _tr('MainMenu', "Logs", "menu"))
         self.menu_main.addAction(self.action_logs)
 
         # Add 'About' action
-        self.action_about = QtWidgets.QAction(_tr('MainMenu', "About", "menu"),
+        self.action_about = QtWidgets.QAction(QIcon.fromTheme('help-about'),
+                                              _tr('MainMenu', "About", "menu"),
                                               self.menu_main)
         self.menu_main.addAction(self.action_about)
 

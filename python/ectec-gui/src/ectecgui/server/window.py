@@ -28,6 +28,7 @@ import logging
 from ectec import server as ecse
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QPoint, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QMessageBox
 
 from .. import DEFAULT_PORT, ectec_res
@@ -86,11 +87,13 @@ class Ui_mainWindow(Ui_dStartServer):
         self.menu_main.addMenu(LanguageMenu(dStartServer))
 
         # open logs action
-        self.action_logs = QAction(_tr('MainMenu', "Logs", "menu"))
+        self.action_logs = QAction(QIcon.fromTheme('viewlog'),
+                                   _tr('MainMenu', "Logs", "menu"))
         self.menu_main.addAction(self.action_logs)
 
         # Add 'About' action
-        self.action_about = QAction(_tr('MainMenu', "About", "menu"),
+        self.action_about = QAction(QIcon.fromTheme('help-about'),
+                                    _tr('MainMenu', "About", "menu"),
                                     self.menu_main)
         self.menu_main.addAction(self.action_about)
 
@@ -210,6 +213,7 @@ class MainWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
+        self.ui.buttonStart.setIcon(QIcon())
         self.ui.buttonStart.disconnect()
         self.ui.buttonStart.clicked.connect(self.slotStart)
 
@@ -249,6 +253,7 @@ class MainWindow(QtWidgets.QDialog):
         #
         # =================================================================
 
+        self.ui.buttonStart.setIcon(QIcon.fromTheme('process-stop'))
         self.ui.buttonStart.disconnect()
         self.ui.buttonStart.clicked.connect(self.slotStop)
 
