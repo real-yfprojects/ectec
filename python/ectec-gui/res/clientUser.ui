@@ -229,7 +229,7 @@
          <string>Menu</string>
         </property>
         <property name="icon">
-         <iconset theme="settings-configure">
+          <iconset theme="configure">
           <normaloff>../../../../../../</normaloff>../../../../../../</iconset>
         </property>
         <property name="popupMode">

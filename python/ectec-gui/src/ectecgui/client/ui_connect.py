@@ -37,7 +37,7 @@ class Ui_dConnect(object):
         sizePolicy.setHeightForWidth(self.toolButtonMenu.sizePolicy().hasHeightForWidth())
         self.toolButtonMenu.setSizePolicy(sizePolicy)
         self.toolButtonMenu.setMinimumSize(QtCore.QSize(0, 0))
-        icon = QtGui.QIcon.fromTheme("settings-configure")
+        icon = QtGui.QIcon.fromTheme("configure")
         self.toolButtonMenu.setIcon(icon)
         self.toolButtonMenu.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         self.toolButtonMenu.setAutoRaise(True)
