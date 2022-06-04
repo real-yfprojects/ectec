@@ -115,6 +115,8 @@ def setup_qt() -> QApplication:
 
     # icon theme
     QIcon.setFallbackThemeName('breeze')
+    if sys.platform == 'win32':
+        QIcon.setThemeName('breeze')
 
     # start app
     app = qobjects.TranslatorAwareApp(sys.argv)
