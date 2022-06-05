@@ -30,7 +30,7 @@ from typing import Optional
 
 from . import logs
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 # ---- Constants -------------------------------------------------------------
 
