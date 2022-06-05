@@ -27,7 +27,7 @@ import ectec
 import ectec.client as eccl
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QCloseEvent, QIcon
+from PyQt5.QtGui import QCloseEvent, QIcon, QTextCursor
 from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QMessageBox
 
 from ...about import AboutDialog
@@ -294,6 +294,13 @@ class UserClientWindow(QtWidgets.QDialog):
 
             msgBox.exec()
             return
+
+        # successfully sent -> clear content
+        cursor = QTextCursor(self.ui.textEditContent.document())
+        cursor.beginEditBlock()
+        cursor.select(QTextCursor.Document)
+        cursor.removeSelectedText()
+        cursor.endEditBlock()
 
     @pyqtSlot()
     def slotUsersUpdated(self):
