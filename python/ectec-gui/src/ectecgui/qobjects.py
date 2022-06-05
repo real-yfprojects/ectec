@@ -180,6 +180,8 @@ class LanguageMenu(QMenu):
         if event.type() == QEvent.LanguageChange:
             # The language of the QApplication was changed.
             # The checked language has to be updated.
+            self.setTitle(_tr("LanguageMenu", "Languages"))
+
             current_locale = get_current_language()
             for action in self.language_actiongroup.actions():
                 if action.data().bcp47Name() == current_locale.bcp47Name():
