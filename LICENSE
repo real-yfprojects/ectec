@@ -1,3 +1,103 @@
+Ectec - An educational chat tool for learning how encrypted communication works.
+This is a combined work of the actual ectec code released under the GPLv3 or
+later as stated below and other libraries. Their copyright notices and license
+information is listed below. The combined work is licensed under the GPLv3 as
+well.
+
+    Copyright (C) 2021 real-yfprojects (github.com user)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+Qt 5 - This work uses the Qt framework through PyQt5. More information on Qt
+also concerning licensing or downloading can be found on <https://qt.io>.
+The Qt framework is licensed under the Lesser GPLv3 though some parts are
+licensed differently. These exceptions are listed here:
+<https://doc.qt.io/qt-5/licenses-used-in-qt.html>.
+A copy of the Qt framework can be obtained from the following
+github repository: <https://github.com/real-yfprojects/sources>. It is located
+in the folder Qt5. There you can also find the mentioned license files.
+You might not find the complete Qt framework there. The framework consists of
+multiple libraries that do not have to be disclosed if they aren't beeing used.
+
+    The Qt Toolkit is Copyright (C) 2016 The Qt Company Ltd.
+    Contact: http://www.qt.io/licensing/
+
+    You may use, distribute and copy the Qt Toolkit under the terms of
+    GNU Lesser General Public License version 3, which is displayed below.
+    This license makes reference to the version 3 of the GNU General
+    Public License, which you can find in the LICENSE.GPL3 file.
+
+
+PyQt5 - This work uses PyQt5 which are python bindings of the Qt framework and
+a number of add-ons that correspond to Qt’s additional libraries. PyQt5 is
+licensed under the GPLv3. A copy of PyQt5 can be found in the PyQt5 folder of
+the following github repository: <https://github.com/real-yfprojects/sources>.
+
+    PyQt5 is copyright (c) Riverbank Computing Limited.  Its homepage is
+    https://www.riverbankcomputing.com/software/pyqt/.
+
+
+Breeze icon theme - This work uses the breeze icon theme which is included as a
+submodule in this repository and can be obtained on this gitlab instance:
+<https://invent.kde.org/frameworks/breeze-icons/>. The breeze icon theme is
+licensed under the LGPLv3.
+
+    Copyright (C) 2014 Uri Herrera <uri_herrera@nitrux.in> and others
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library. If not, see <http://www.gnu.org/licenses/>.
+
+    Clarification:
+
+    The GNU Lesser General Public License or LGPL is written for
+    software libraries in the first place. We expressly want the LGPL to
+    be valid for this artwork library too.
+
+    KDE Breeze theme icons is a special kind of software library, it is an
+    artwork library, it's elements can be used in a Graphical User Interface, or
+    GUI.
+
+    Source code, for this library means:
+      - where they exist, SVG;
+      - otherwise, if applicable, the multi-layered formats xcf or psd, or
+    otherwise png.
+
+    The LGPL in some sections obliges you to make the files carry
+    notices. With images this is in some cases impossible or hardly useful.
+
+    With this library a notice is placed at a prominent place in the directory
+    containing the elements. You may follow this practice.
+
+    The exception in section 5 of the GNU Lesser General Public License covers
+    the use of elements of this art library in a GUI.
+
+    https://vdesign.kde.org/
+
+
+-----
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 

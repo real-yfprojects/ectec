@@ -35,23 +35,17 @@ from typing import Callable, Iterable, List, Optional, Union
 from . import logs
 from .version import SemanticVersion, Version
 
-VERSION: Version = SemanticVersion(1, 1, 2)
+__version__ = '1.1.2'
+VERSION: Version = SemanticVersion.parse(__version__)
 
 # ---- Logging
 
 logger = logs.getLogger(__name__)  # Parent logger for the module
 logger.setLevel(logs.DEBUG)
 
+# Disable logging output sot that users of this lib can log as desired.
 nullhandler = logs.NullHandler()  # Bin for logs
-
-handler = logs.StreamHandler()  # Output to console
-handler.setLevel(logs.WARNING)  # Log everything with equal or greater level
-formatter = logs.EctecFormatter()  # Control format of output
-handler.setFormatter(formatter)  # Add formatter to handler
-
-# Add Handlers to logger
 logger.addHandler(nullhandler)
-logger.addHandler(handler)
 
 # ---- Exceptions Client Side
 
@@ -173,6 +167,7 @@ class AbstractPackageStorage:
     """
     Stores and manages packages.
     """
+
     def remove(self,
                *packages: AbstractPackage,
                func: Optional[Callable[[AbstractPackage], bool]] = None):

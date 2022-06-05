@@ -1,0 +1,13 @@
+# doit build artefact
+.doit.db
+.doit.db.*
+
+# The project file is a build and development artefact
+project.pro
+
+# The .qm compiled translation files are a build artefact
+*.qm
+
+# breeze icon theme is very large ignore its build artefacts
+breeze.qrc
+breeze_res.py

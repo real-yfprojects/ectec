@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="ectec-icon.svg">EctecIcon.svg</file>
+    <file alias="LICENSE">../LICENSE</file>
+  </qresource>
+  <qresource prefix="/i18n">
+    <file alias="ectecgui.de.qm">ectecgui.de.qm</file>
+  </qresource>
+</RCC>

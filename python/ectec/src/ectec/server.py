@@ -295,6 +295,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
     # ---- BaseRequestHandler API
 
+    def __init__(self, request, client_address, server) -> None:
+        super().__init__(request, client_address, server)
+
     def setup(self):
         """
         Setups the Handler.
@@ -494,6 +497,22 @@ class ClientHandler(socketserver.BaseRequestHandler):
             # It always needs an update
             self.send_update()
 
+        self.handle_client(role)
+
+    def handle_client(self, role: Role):
+        """
+        Handle a connected client with specified role.
+
+        Parameters
+        ----------
+        role : Role
+            The role of the client that should be handled.
+
+        Raises
+        ------
+        NotImplementedError
+            The role is not supported.
+        """
         if role == Role.USER:
             self.handle_user()
         else:

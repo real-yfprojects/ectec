@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="en" sourcelanguage="de">
+<!DOCTYPE TS><TS version="2.0" language="en" sourcelanguage="de">
 <context>
     <name>Dialog</name>
     <message>
@@ -10,8 +9,8 @@
     </message>
     <message>
         <location filename="hauptdialog.ui" line="29"/>
-        <source>Persönliche Daten</source>
-        <translation>Personal Information</translation>
+        <source>Pers&#xc3;&#xb6;nliche Daten</source>
+        <translation type="unfinished">Personal Information</translation>
     </message>
     <message>
         <location filename="hauptdialog.ui" line="35"/>
@@ -67,12 +66,12 @@
 <context>
     <name>MeinDialog</name>
     <message>
-        <location filename="programm.py" line="54"/>
+        <location filename="programm.py" line="56"/>
         <source>AGBs akzeptiert</source>
         <translation>The general terms and conditions were accepted</translation>
     </message>
     <message>
-        <location filename="programm.py" line="56"/>
+        <location filename="programm.py" line="58"/>
         <source>Katalog bestellt</source>
         <translation>The Catalog was ordered</translation>
     </message>

@@ -60,6 +60,7 @@ class ClientAdapter(logs.logging.LoggerAdapter):
         More context. The default is None.
 
     """
+
     def __init__(self, logger, client_type: str, extra=None):
         """
         Adapter to add connection context information.
@@ -173,7 +174,7 @@ class Package(AbstractPackage):
             self.recipient = tuple(recipient)
 
     @property
-    def time(self):
+    def time(self) -> datetime.datetime:
         """
         Get the `time` property.
 
@@ -281,6 +282,7 @@ class PackageStorage(AbstractPackageStorage):
     called 'somesender'. In this case that's only `package1`.
 
     """
+
     def __init__(self):
         """
         Init.
@@ -384,11 +386,9 @@ class PackageStorage(AbstractPackageStorage):
 
         self.package_list = new_list
 
-    def add(
-        self,
-        *packages: Package,
-        as_list: Optional[List[Package]] = None,
-    ) -> None:
+    def add(self,
+            *packages: Package,
+            as_list: Optional[List[Package]] = None) -> None:
         """
         Add packages to the PackageStorage.
 
@@ -1046,6 +1046,7 @@ class UserClientThread(threading.Thread):
     """
     Thread to do the UserClient receiving work.
     """
+
     def __init__(self, userclient: 'UserClient'):
         super().__init__(name="Ectec-UserClientThread")
         self.client: 'UserClient' = userclient
@@ -1101,11 +1102,14 @@ class UserClientThread(threading.Thread):
 
         except (ConnectionClosed, OSError) as error:
             self.log.warning(str(error))
-            self.client._handle_closed()
         except Exception as error:
             self.log.exception("Local Exception in UserClientThread.")
 
         self.idle.set()
+
+        # only call if closed by the server.
+        if not self.end.is_set():
+            self.client._handle_closed()
 
 
 class UserClient(Client, AbstractUserClient):
@@ -1145,6 +1149,7 @@ class UserClient(Client, AbstractUserClient):
         Read out the buffer of Packages.
 
     """
+
     def __init__(self, username: str):
         """
         A Client for the normal user role.
@@ -1207,15 +1212,35 @@ class UserClient(Client, AbstractUserClient):
         return Address._make(self.socket.getpeername())
 
     def _add_package(self, package: Package):
+        """
+        Add a newly received package.
+
+        This method is usually called by the `UserClientThread`.
+
+        Parameters
+        ----------
+        package : Package
+            The newly received package.
+        """
         self.buffer.append(package)
         self.packages.add(package)
 
     def _update_users(self, user_list: List[str]):
+        """
+        Update the user list.
+
+        This method is usually called by the `UserClientThread`.
+
+        Parameters
+        ----------
+        user_list : List[str]
+            The list of the user's names.
+        """
         self.users = user_list
 
     def _handle_closed(self):
         """
-        Handle the closing of the connection.
+        Handle the closing of the connection through the server.
 
         Returns
         -------
@@ -1230,6 +1255,7 @@ class UserClient(Client, AbstractUserClient):
 
         This manager closes the connection when the context is left.
         """
+
         def __init__(self, client):
             self.client: UserClient = client
 
@@ -1349,9 +1375,9 @@ class UserClient(Client, AbstractUserClient):
         None.
 
         """
-        if self._thread:
+        if self._thread and self._thread.is_alive():
             self._thread.end.set()
-            self._thread.join()
+            self._thread.join()  # raises an exception if thread isn't alive
 
         if self.socket:
             self.socket.close()
@@ -1376,7 +1402,12 @@ class UserClient(Client, AbstractUserClient):
         None.
 
         """
+        # send package
         self.send_package(package)
+
+        # append package to package storage
+        package.time = datetime.datetime.now()
+        self.packages.add(package)
 
     def _update(self):
         """
