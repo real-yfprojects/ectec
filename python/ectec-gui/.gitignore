@@ -1,5 +1,6 @@
 # doit build artefact
 .doit.db
+.doit.db.*
 
 # The project file is a build and development artefact
 project.pro
