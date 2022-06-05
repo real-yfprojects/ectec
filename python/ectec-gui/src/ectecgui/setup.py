@@ -30,9 +30,10 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from appdirs import user_log_dir
-from PyQt5.QtCore import QLocale, Qt, QTranslator, qInstallMessageHandler
+from PyQt5.QtCore import (QDir, QDirIterator, QFile, QLocale, Qt, QTranslator,
+                          qInstallMessageHandler)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QStyleFactory
 
 from . import (APPAUTHOR, APPNAME, VERSION, Settings, helpers, logger, logs,
                qobjects)
@@ -117,6 +118,9 @@ def setup_qt() -> QApplication:
     QIcon.setFallbackThemeName('breeze')
     if sys.platform == 'win32':
         QIcon.setThemeName('breeze')
+
+    if sys.platform == 'win32' and 'Fusion' in QStyleFactory.keys():
+        QApplication.setStyle(QStyleFactory.create('Fusion'))
 
     # start app
     app = qobjects.TranslatorAwareApp(sys.argv)
