@@ -328,7 +328,7 @@ def generate_qrc(data: Tuple[str, str, str], root: Path) -> str:
     str_path = data[1]
     alias_prefix = data[2]
 
-    root_path = solve_relative_path(Path(str_path))
+    root_path = solve_relative_path(str_path)
     if not root_path.is_dir():
         return ''
 
@@ -344,7 +344,7 @@ def generate_qrc(data: Tuple[str, str, str], root: Path) -> str:
                 dirs.append(path)
                 continue
 
-            abs_path = solve_relative_path(path)
+            abs_path = path.absolute()
             path = path.relative_to(root)
 
             qrc_file(qresource, str(path),
