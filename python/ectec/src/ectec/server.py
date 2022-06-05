@@ -52,7 +52,7 @@ import threading
 import time
 import traceback
 from collections import namedtuple
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from . import (VERSION, AbstractServer, Address, EctecException, Role, logs,
                version)
@@ -264,7 +264,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
     """
 
     # ---- Process (server) wide constants
-    TIMEOUT = 1000  #: ms timeout for awaited commands
+    TIMEOUT = 0.5  #: s timeout for awaited commands
 
     TRANSMISSION_TIMEOUT = 0.200  #: seconds of timeout between parts
     COMMAND_TIMEOUT = 0.300  #: s timeout for a command to end
@@ -285,7 +285,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         """
         clients: threading.Lock = threading.Lock()
 
-    clients = {role.value: [] for role in Role}
+    clients: Dict[str, List[ClientData]] = {role.value: [] for role in Role}
     """
     Structure: { 'role': [ClientData, ClientData],
                }
@@ -792,7 +792,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         """
 
-        raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        raw_cmd = self.recv_command(self.COMMAND_LENGTH, self.TIMEOUT,
+                                    self.COMMAND_TIMEOUT)
         cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression
@@ -822,7 +823,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
             the name and the role received.
 
         """
-        raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+        raw_cmd = self.recv_command(self.COMMAND_LENGTH, self.TIMEOUT,
+                                    self.COMMAND_TIMEOUT)
         cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression on the whole text
@@ -870,7 +872,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
             the packages fields in a namedtuple.
 
         """
-        raw_cmd = self.recv_command(4096, timeout, self.COMMAND_TIMEOUT)
+        raw_cmd = self.recv_command(self.COMMAND_LENGTH, timeout,
+                                    self.COMMAND_TIMEOUT)
         cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression on the whole text

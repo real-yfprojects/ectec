@@ -513,7 +513,7 @@ class Client:
     This class provides methods useful for all Ectec clients.
     """
 
-    TIMEOUT = 1000  #: ms timeout for awaited commands
+    TIMEOUT = 2  #: s timeout for awaited commands
 
     TRANSMISSION_TIMEOUT = 0.200  #: seconds of timeout between parts
     COMMAND_TIMEOUT = 0.300  #: s timeout for a command to end
@@ -1060,7 +1060,8 @@ class UserClientThread(threading.Thread):
                 try:
                     # Recv a command
                     raw_cmd = self.client.recv_command(
-                        4096, 0.2, self.client.COMMAND_TIMEOUT)
+                        self.client.COMMAND_LENGTH, self.client.TIMEOUT,
+                        self.client.COMMAND_TIMEOUT)
                     cmd = raw_cmd.decode(encoding='utf-8',
                                          errors='backslashreplace')
 
@@ -1161,7 +1162,7 @@ class UserClient(Client, AbstractUserClient):
         self.packages: PackageStorage = PackageStorage()
 
         #: A buffer for processing packages. This is used by `receive`.
-        self.buffer = []
+        self.buffer: List[Package] = []
 
         #: The socket connected to the server. Or None.
         self.socket = None
@@ -1272,7 +1273,8 @@ class UserClient(Client, AbstractUserClient):
 
             # receive answer of the server
             # wether the version is accepted and the version of the server.
-            raw_cmd = self.recv_command(4096, 0.2, self.COMMAND_TIMEOUT)
+            raw_cmd = self.recv_command(self.COMMAND_LENGTH, self.TIMEOUT,
+                                        self.COMMAND_TIMEOUT)
             cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
             parsed = self.parse_info(cmd)
@@ -1301,7 +1303,8 @@ class UserClient(Client, AbstractUserClient):
             self.send_register(self.username, self.role.value)
 
             # Receive user list update
-            raw_cmd = self.recv_command(4096, 0.5, self.COMMAND_TIMEOUT)
+            raw_cmd = self.recv_command(self.COMMAND_LENGTH, self.TIMEOUT,
+                                        self.COMMAND_TIMEOUT)
             cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
             parsed = self.parse_update(cmd)
