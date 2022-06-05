@@ -372,6 +372,14 @@ class UserClientWindow(QtWidgets.QDialog):
         self.close()
         self.ended.emit()
 
+    def reject(self) -> None:
+        """Reject the dialog."""
+        super().reject()
+        # This is called if the user presses `ESC`.
+        # For some reason this will close the window without
+        # a call to`closeEvent`
+        self.close()
+
     def closeEvent(self, event: QCloseEvent) -> None:
         """
         Handle a QCloseEvent.
