@@ -1,0 +1,6 @@
+build
+doit
+defusedxml
+virtualenv
+PyQt5
+pyinstaller
