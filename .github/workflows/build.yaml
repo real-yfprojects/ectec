@@ -1,0 +1,122 @@
+name: Build ectecgui distributables
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - ectecgui**
+
+jobs:
+  build-python-distribution:
+    runs-on: ubuntu-latest
+    name: Build python wheel and sdist distribution.
+    steps:
+      - uses: actions/checkout@v3
+        with:
+           submodules: 'recursive'
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '>=3.8'
+          cache: 'pip'
+          cache-dependency-path: |
+            **/setup.cfg
+            **/requirements-dev.txt
+      - run: |
+          pip install -U pip
+          pip install -U setuptools wheel
+          pip install -r python/ectec-gui/requirements-dev.txt
+          
+      - name: Generate breeze resource file
+        run: doit rcc:res/breeze.qrc
+        working-directory: python/ectec-gui/
+        
+      - name: Build python distribution
+        run: python -m build -w -s -n
+        working-directory: python/ectec-gui/
+        
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Python sdist and wheel distributables
+          path: python/ectec-gui/dist/
+         
+  build-pyinstaller-bundle:
+    name: Use PyInstaller to create a executable bundle of the application.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+           submodules: 'recursive'
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '>=3.10'
+          cache: 'pip'
+          cache-dependency-path: |
+            **/setup.cfg
+            **/requirements-dev.txt
+      - run: |
+          pip install -U pip
+          pip install -U setuptools wheel
+          pip install -r python/ectec-gui/requirements-dev.txt
+      
+      - name: Extract ectecgui version
+        id: ectecgui-version
+        shell: python
+        run: |
+          import ast
+          import sys
+          with open('python/ectec-gui/src/ectecgui/__init__.py', 'r') as f: 
+            content = f.read()
+          document = ast.parse(content, 'ectecgui/__init__.py')
+          for node in ast.walk(document):
+            print(f'::debug::{str(type(node))}')
+            if isinstance(node, ast.Assign) and node.targets:
+              target = node.targets[0]
+              print(f'::debug::{ast.dump(target)}')
+              if isinstance(target.ctx, ast.Store) and target.id == 'VERSION':
+                # version found
+                version = str(node.value.value)
+                print(f'::set-output name=VERSION::{version}')
+                break
+          else:
+            # no version found
+            print('::error file=python/ectec-gui/src/ectecgui/__init__.py,title=Extraction of version failed::No assigment to the variable VERSION was found.')
+            sys.exit(1)
+                     
+      - name: Generate breeze resource file
+        run: doit rcc:res/breeze.qrc
+        working-directory: python/ectec-gui/
+        
+      - name: Bundle with PyInstaller.
+        run: |
+          pip install .
+          python -m PyInstaller pyinstall.spec
+        working-directory: python/ectec-gui/
+        
+      - name: Determine archive file name
+        shell: python
+        id: archive
+        run: |
+          if '${{ runner.os }}' == 'Linux':
+            extension = '.tar.gz'
+          else:
+            extension = '.zip'
+          filename = 'python/ectec-gui/dist/Ectec-${{ steps.ectecgui-version.outputs.VERSION }}-${{ runner.os }}' + extension
+          print(f'::set-output name=FILE::{filename}')
+        
+      - name: Archive PyInstaller bundle
+        uses: ihiroky/archive-action@v1
+        with:
+          root_dir: python/ectec-gui/dist/Ectec/
+          file_path: ${{ steps.archive.outputs.FILE }}
+        
+      - uses: actions/upload-artifact@v3
+        with:
+          name: PyInstaller distribution for ${{ matrix.os }}
+          path: ${{ steps.archive.outputs.FILE }}
+          
+          
