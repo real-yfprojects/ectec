@@ -1,7 +1,9 @@
 # Ectec GUI
 
-This is the python package containing the official graphical application (GUI) of the Ectec chattool.
-The GUI uses the ectec package as a back-end.
+This is the python package containing the official graphical application (GUI)
+of the Ectec chattool.
+The GUI uses the ectec package which is contained in the packaged python
+distribution as a back-end.
 
 - [Ectec GUI](#ectec-gui)
   - [Building from Source](#building-from-source)
@@ -60,7 +62,6 @@ the dist folder.
 4. Install `ectec` and `ectecgui` in the virtual environment.
 
    ```bash
-   > python install ../ectec
    > python install .
    ```
 

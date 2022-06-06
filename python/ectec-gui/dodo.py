@@ -719,7 +719,7 @@ def task_temp_env():
     venv = solve_relative_path(TEMP_ENV_PATH)
     return {
         'actions': [
-            (shutil.rmtree, [venv,True]),
+            (shutil.rmtree, [venv, True]),
             (create_venv, [venv]),
             CmdInVenv(venv, 'pip install -U build'),
         ],
@@ -730,17 +730,7 @@ def task_temp_env():
     }
 
 
-def task_build_ectec():
-    """Build ectec python package."""
-    venv = solve_relative_path(TEMP_ENV_PATH)
-    return {
-        'task_dep': ['temp_env'],
-        'actions': [CmdInVenv(venv, 'python -m build', cwd="../ectec/")],
-        'verbosity': 2,
-    }
-
-
-def task_build_ectecgui():
+def task_build():
     """Build ectecgui python package."""
     venv = solve_relative_path(TEMP_ENV_PATH)
     return {
@@ -756,7 +746,6 @@ def task_setup_packaging():
     return {
         'task_dep': ['temp_env'],
         'actions': [
-            CmdInVenv(venv, 'pip install ../ectec/'),
             CmdInVenv(venv, 'pip install .'),
             CmdInVenv(venv, 'pip install -U PyInstaller')
         ],
