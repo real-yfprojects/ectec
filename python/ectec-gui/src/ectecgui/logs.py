@@ -42,6 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import logging
 import os
+import shutil
 from logging import CRITICAL, DEBUG, ERROR, INFO, NOTSET, WARNING, handlers
 
 import ectec
@@ -197,12 +198,34 @@ class SessionRotatingFileHandler(handlers.BaseRotatingHandler):
                     if os.path.exists(dfn):
                         os.remove(dfn)
                     os.rename(sfn, dfn)
+
             dfn = self.rotation_filename(self.baseFilename + ".1")
             if os.path.exists(dfn):
                 os.remove(dfn)
             self.rotate(self.baseFilename, dfn)
         if not self.delay:
             self.stream = self._open()
+
+    def rotate(self, source: str, dest: str):
+        """
+        When rotating, rotate the current log.
+
+        The default implementation calls the 'rotator' attribute of the
+        handler, if it's callable, passing the source and dest arguments to
+        it. If the attribute isn't callable (the default is None), the source
+        is simply renamed to the destination.
+
+        :param source: The source filename. This is normally the base
+                       filename, e.g. 'test.log'
+        :param dest:   The destination filename. This is normally
+                       what the source is rotated to, e.g. 'test.log.1'.
+        """
+        if callable(self.rotator):
+            return self.rotator(source, dest)
+
+        # Do not rename the file but instead copy it and clear it afterwards
+        shutil.copyfile(source, dest)
+        open(source, 'w').close()  # clear file
 
     def shouldRollover(self, record: logging.LogRecord) -> bool:
         """
