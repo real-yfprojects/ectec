@@ -110,10 +110,10 @@ coll = COLLECT(exe_a,
 if sys.platform == 'darwin':
     app_a = BUNDLE(exe_a,
                    name='ectec-server.app',
-                   icon='res/ectec-icon/EctecIcon.png',
+                   icon='res/ectec-icon/EctecIcon.icns',
                    bundle_identifier=None)
 
     app_b = BUNDLE(exe_b,
                    name='ectec-client.app',
-                   icon='res/ectec-icon/EctecIcon.png',
+                   icon='res/ectec-icon/EctecIcon.icns',
                    bundle_identifier=None)
