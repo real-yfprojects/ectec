@@ -117,6 +117,8 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: PyInstaller distribution for ${{ matrix.os }}
-          path: ${{ steps.archive.outputs.FILE }}
+          path: |
+            ${{ steps.archive.outputs.FILE }}
+            python/ectec-gui/dist/*.app
           
           
