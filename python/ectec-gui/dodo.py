@@ -471,9 +471,6 @@ def task_rcc():
         res_file = solve_relative_path(qrc)
         pyres_file = solve_relative_path(pymod)
 
-        if res_file.is_dir() or not res_file.exists():
-            continue
-
         if pyres_file.is_dir():
             pyres_file /= get_module_filename(res_file.name)
 
