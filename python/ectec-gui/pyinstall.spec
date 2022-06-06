@@ -23,14 +23,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import sys
 from pathlib import Path
 
 # Spec
 
+archive = True  # compression saves space
 console = True
 block_cipher = None
 
-# EctecGui Server
+# Analysis
 analysis_a = Analysis(['server-entry.py'],
                       pathex=['.'],
                       binaries=[],
@@ -42,7 +44,26 @@ analysis_a = Analysis(['server-entry.py'],
                       win_no_prefer_redirects=False,
                       win_private_assemblies=False,
                       cipher=block_cipher,
-                      noarchive=False)
+                      noarchive=not archive)
+
+analysis_b = Analysis(['client-entry.py'],
+                      pathex=["."],
+                      binaries=[],
+                      datas=[],
+                      hiddenimports=[],
+                      hookspath=[],
+                      runtime_hooks=[],
+                      excludes=[],
+                      win_no_prefer_redirects=False,
+                      win_private_assemblies=False,
+                      cipher=block_cipher,
+                      noarchive=not archive)
+
+# # Merge
+# MERGE((analysis_b, 'client-entry', 'ectecgui-client'),
+#       (analysis_a, 'server-entry', 'ectecgui-server'))
+
+# EctecGui Server
 pyz_a = PYZ(analysis_a.pure, analysis_a.zipped_data, cipher=block_cipher)
 exe_a = EXE(pyz_a,
             analysis_a.scripts, [],
@@ -56,18 +77,6 @@ exe_a = EXE(pyz_a,
             console=console)
 
 # EctecGui Client
-analysis_b = Analysis(['client-entry.py'],
-                      pathex=["."],
-                      binaries=[],
-                      datas=[],
-                      hiddenimports=[],
-                      hookspath=[],
-                      runtime_hooks=[],
-                      excludes=[],
-                      win_no_prefer_redirects=False,
-                      win_private_assemblies=False,
-                      cipher=block_cipher,
-                      noarchive=False)
 pyz_b = PYZ(analysis_b.pure, analysis_b.zipped_data, cipher=block_cipher)
 exe_b = EXE(pyz_b,
             analysis_b.scripts, [],
@@ -97,3 +106,14 @@ coll = COLLECT(exe_a,
                upx=True,
                upx_exclude=[],
                name='Ectec')
+
+if sys.platform == 'darwin':
+    app_a = BUNDLE(exe_a,
+                   name='ectec-server.app',
+                   icon='res/ectec-icon/EctecIcon.png',
+                   bundle_identifier=None)
+
+    app_b = BUNDLE(exe_b,
+                   name='ectec-client.app',
+                   icon='res/ectec-icon/EctecIcon.png',
+                   bundle_identifier=None)
