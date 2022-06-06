@@ -30,7 +30,7 @@ import logging
 import ectec
 import ectec.client as eccl
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QEventLoop, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QEventLoop, QThread, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMessageBox
 
@@ -264,7 +264,7 @@ class ConnectWindow(QtWidgets.QDialog):
 
         address = self.ui.entryAddress.text()
         port = self.ui.spinBoxPort.value()
-        role = ectec.Role(self.ui.comboBoxRole.currentText())  # not used yet
+        role = ectec.Role(self.ui.comboBoxRole.currentText())
         name = self.ui.entryName.text()
 
         # check inputs
@@ -297,29 +297,76 @@ class ConnectWindow(QtWidgets.QDialog):
         QApplication.processEvents(
             QEventLoop.ExcludeUserInputEvents)  # update label
 
-        try:
-            self.client.connect(address, port)
-        except (OSError, eccl.ConnectException) as e:
-            logger.warning("Connecting failed: " + str(e))
+        self.ct = self.ConnectThread(self.client, address, port)
+        self.ct.succeeded.connect(self.slotConnected)
+        self.ct.failed.connect(self.slotConnectFailed)
+        self.ct.start()
 
-            self.ui.labelStatus.setText(_tr('dConnect', 'Connecting failed.'))
+    class ConnectThread(QThread):
+        """Connect to the server in another thread."""
 
-            # show error dialog
-            msgBox = QMessageBox(self)
-            msgBox.setWindowTitle(_tr('dConnect', "Connecting failed."))
-            msgBox.setText(
-                _tr('dConnect', "Connection couldn't be established."))
-            msgBox.setInformativeText(
-                '<i><span style="color: firebrick">{}</span></i> {}'.format(
-                    str(e.__class__.__name__), str(e)))
-            msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
-            msgBox.setIcon(QMessageBox.Icon.Critical)
+        succeeded = pyqtSignal()
+        failed = pyqtSignal(Exception)
 
-            msgBox.exec()
+        def __init__(self,
+                     client: QUserClient,
+                     address: str,
+                     port: int,
+                     parent=None) -> None:
+            "Init."
+            super().__init__(parent)
+            self.client = client
+            self.address = address
+            self.port = port
 
-            # give the user another chance
-            self.init_pConfig()
-            return
+        def run(self):
+            """Establish the connection and show a message box on failure."""
+            try:
+                self.client.connect(self.address, self.port)
+            except (OSError, eccl.ConnectException) as e:
+                self.failed.emit(e)
+                return
+
+            self.succeeded.emit()
+
+    @pyqtSlot(Exception)
+    def slotConnectFailed(self, exception):
+        """
+        Handle connection failure.
+
+        This shows a message box and inits the *Connect* phase.
+        """
+        self.ct = None  # free thread
+
+        logger.warning("Connecting failed: " + str(exception))
+
+        self.ui.labelStatus.setText(_tr('dConnect', 'Connecting failed.'))
+
+        # show error dialog
+        msgBox = QMessageBox(self)
+        msgBox.setWindowTitle(_tr('dConnect', "Connecting failed."))
+        msgBox.setText(_tr('dConnect', "Connection couldn't be established."))
+        msgBox.setInformativeText(
+            '<i><span style="color: firebrick">{}</span></i> {}'.format(
+                str(exception.__class__.__name__), str(exception)))
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msgBox.setIcon(QMessageBox.Icon.Critical)
+
+        msgBox.exec()
+
+        # give the user another chance
+        self.init_pConfig()
+
+    @pyqtSlot()
+    def slotConnected(self):
+        """
+        Connecting to the server succeeded.
+
+        This opens the client window matching the user role
+        """
+        self.ct = None  # free thread
+
+        role = ectec.Role(self.ui.comboBoxRole.currentText())
 
         logger.info("Connection established. Opening next dialog.")
 
@@ -344,6 +391,8 @@ class ConnectWindow(QtWidgets.QDialog):
             self.hide()
 
             logger.debug('Started `UserClientWindow`.')
+        else:
+            logger.critical(f'Unknown client role {str(role)}.')
 
     @pyqtSlot()
     def slotDisconnected(self):
