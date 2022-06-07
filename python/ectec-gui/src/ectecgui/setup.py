@@ -30,8 +30,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from appdirs import user_log_dir
-from PyQt5.QtCore import (QDir, QDirIterator, QFile, QLocale, Qt, QTranslator,
-                          qInstallMessageHandler)
+from PyQt5.QtCore import QLocale, Qt, QTranslator, qInstallMessageHandler
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 

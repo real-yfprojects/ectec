@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+import logging
 import socket
 import subprocess
 import sys
@@ -32,6 +33,8 @@ from PyQt5.QtCore import QDir, QLocale
 from PyQt5.QtWidgets import QApplication
 
 from . import SOURCE_LANGUAGE, TRANSLATION_DIR
+
+logger = logging.getLogger(__name__)
 
 
 def translate(context: str, sourceText: str, *args) -> tuple:

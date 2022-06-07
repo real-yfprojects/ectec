@@ -24,15 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 import logging
-from typing import Optional, Tuple, Union
+from typing import Tuple
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import (QFile, QIODevice, QLocale, QPoint, QRectF, QSize, Qt,
-                          QTextStream, QTranslator, pyqtSignal, pyqtSlot)
-from PyQt5.QtGui import QColor, QColorConstants, QImage, QPainter, QPixmap
-from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import (QAction, QApplication, QMenu, QMessageBox,
-                             QSizePolicy)
+from PyQt5.QtCore import QFile, QIODevice, QTextStream, pyqtSignal, pyqtSlot
+from PyQt5.QtWidgets import QApplication
 
 from .. import ectec_res, logs  # ectec_res will be imported in the ui module
 from .ui_about import Ui_dAbout

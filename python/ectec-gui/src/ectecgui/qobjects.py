@@ -24,15 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 
-from pathlib import Path
 from typing import List, cast
 
-from appdirs import user_log_dir
 from PyQt5.QtCore import QEvent, QLocale, QTranslator, QUrl
 from PyQt5.QtGui import QDesktopServices, QIcon
 from PyQt5.QtWidgets import QAction, QActionGroup, QApplication, QMenu
 
-from . import APPAUTHOR, APPNAME, SOURCE_LANGUAGE, Settings, logger
+from . import SOURCE_LANGUAGE, Settings, logger
 from .helpers import get_current_language, get_languages
 
 #: The function that provides internationalization by translation.

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import ectec
 import ectec.client as eccl
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QEvent, QLocale, QTranslator, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QEvent, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QCloseEvent, QIcon, QTextCursor
 from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QMessageBox
 
