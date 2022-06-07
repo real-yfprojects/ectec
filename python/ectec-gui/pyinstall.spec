@@ -29,7 +29,7 @@ from pathlib import Path
 # Spec
 
 archive = True  # compression saves space
-console = True
+console = False
 block_cipher = None
 
 # Analysis
