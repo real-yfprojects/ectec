@@ -1,4 +1,4 @@
-name: Build ectecgui distributables
+name: Build
 
 on:
   workflow_call:
@@ -23,31 +23,31 @@ jobs:
             **/setup.cfg
             **/requirements-dev.txt
       - run: |
-          pip install -U pip
+          python -m pip install -U pip
           pip install -U setuptools wheel
           pip install -r python/ectec-gui/requirements-dev.txt
-          
+
       - name: Generate breeze resource file
         run: doit rcc:res/breeze.qrc
         working-directory: python/ectec-gui/
-        
+
       - name: Build python distribution
         run: python -m build -w -s -n
         working-directory: python/ectec-gui/
-        
+
       - uses: actions/upload-artifact@v3
         with:
-          name: Python sdist and wheel distributables
+          name: python-sdist-wheel
           path: python/ectec-gui/dist/
-         
+
   build-pyinstaller-bundle:
-    name: Use PyInstaller to create a executable bundle of the application.
+    name: Create executable bundle with PyInstaller.
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -60,17 +60,17 @@ jobs:
             **/setup.cfg
             **/requirements-dev.txt
       - run: |
-          pip install -U pip
+          python -m pip install -U pip
           pip install -U setuptools wheel
           pip install -r python/ectec-gui/requirements-dev.txt
-      
+
       - name: Extract ectecgui version
         id: ectecgui-version
         shell: python
         run: |
           import ast
           import sys
-          with open('python/ectec-gui/src/ectecgui/__init__.py', 'r') as f: 
+          with open('python/ectec-gui/src/ectecgui/__init__.py', 'r') as f:
             content = f.read()
           document = ast.parse(content, 'ectecgui/__init__.py')
           for node in ast.walk(document):
@@ -87,17 +87,17 @@ jobs:
             # no version found
             print('::error file=python/ectec-gui/src/ectecgui/__init__.py,title=Extraction of version failed::No assigment to the variable VERSION was found.')
             sys.exit(1)
-                     
+
       - name: Generate breeze resource file
         run: doit rcc:res/breeze.qrc
         working-directory: python/ectec-gui/
-        
+
       - name: Bundle with PyInstaller.
         run: |
           pip install .
           python -m PyInstaller pyinstall.spec
         working-directory: python/ectec-gui/
-        
+
       - name: Determine archive file name
         shell: python
         id: archive
@@ -108,18 +108,27 @@ jobs:
             extension = '.zip'
           filename = 'python/ectec-gui/dist/Ectec-${{ steps.ectecgui-version.outputs.VERSION }}-${{ runner.os }}' + extension
           print(f'::set-output name=FILE::{filename}')
-        
+
       - name: Archive PyInstaller bundle
         uses: ihiroky/archive-action@v1
         with:
           root_dir: python/ectec-gui/dist/Ectec/
           file_path: ${{ steps.archive.outputs.FILE }}
-        
+
+      - name: Gather artifacts
+        shell: bash
+        run: |
+          mkdir upload
+          mv ${{ steps.archive.outputs.FILE }} upload/
+
+      - name: Archive PyInstaller MacOS app bundle
+        run: |
+          zip -r ${{ github.workspace }}/upload/MacOS-AppBundles.zip *.app
+        working-directory: python/ectec-gui/dist/
+        if: ${{ matrix.os == 'macos-latest' }}
+
       - uses: actions/upload-artifact@v3
         with:
-          name: PyInstaller distribution for ${{ matrix.os }}
+          name: pyinstaller-${{ matrix.os }}
           path: |
-            ${{ steps.archive.outputs.FILE }}
-            python/ectec-gui/dist/*.app
-          
-          
+            upload/*
