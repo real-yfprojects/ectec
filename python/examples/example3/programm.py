@@ -28,10 +28,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import sys
 
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import QTranslator, QLocale
+import res
+from PyQt5 import QtGui, QtWidgets, uic
+from PyQt5.QtCore import QLocale, QTranslator
 from PyQt5.QtWidgets import QApplication
-import res # resources for this application
+
 
 class MeinDialog(QtWidgets.QDialog):
 
@@ -62,9 +63,9 @@ class MeinDialog(QtWidgets.QDialog):
         self.close()
 
 
-
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
+    # app.setWindowIcon(QtGui.QIcon(':/res/icon.png'))
 
     locale = QLocale.system().name()
     locale = locale.split("_")[0]

@@ -66,12 +66,12 @@
 <context>
     <name>MeinDialog</name>
     <message>
-        <location filename="programm.py" line="54"/>
+        <location filename="programm.py" line="56"/>
         <source>AGBs akzeptiert</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="programm.py" line="56"/>
+        <location filename="programm.py" line="58"/>
         <source>Katalog bestellt</source>
         <translation type="unfinished"></translation>
     </message>

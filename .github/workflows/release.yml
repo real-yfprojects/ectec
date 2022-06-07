@@ -1,0 +1,56 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Draft a release with the build artifacts
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  workflow_dispatch:
+    inputs:
+      tagname:
+        description: The tag name of the new release.
+        required: true
+        type: string
+      
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    uses: ./.github/workflows/build.yaml
+    
+  draft-release:
+    runs-on: ubuntu-latest
+    name: Draft the release
+    needs: build
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3.0.0
+        with:
+          # Destination path
+          path: artifacts
+          
+      - name: Gather assets
+        run: |
+          mkdir assets
+          zip -r assets/MacOS-AppBundle.zip artifacts/'PyInstaller distribution for macos-latest'/*.app
+          mv artifacts/'PyInstaller distribution for macos-latest'/*.zip asssets/
+          mv artifacts/'PyInstaller distribution for ubuntu-latest'/*.tar.gz asssets/     
+          mv artifacts/'PyInstaller distribution for windows-latest'/*.zip asssets/
+          
+      - name: List assets
+        id: assets
+        run: echo "::set-output name=LIST=`ls assets/`"
+          
+      - name: Create release with assets
+        uses: meeDamian/github-release@v2.0.3
+        with:
+           token: ${{ secrets.GITHUB_TOKEN }}
+           draft: true
+           tag: ${{ inputs.tagname }}
+           gzip: false
+           prerelease: true
+           name: Latest release ${{ inputs.tagname }}
+           files: ${{ steps.assets.outputs.LIST }}
+           
+
