@@ -72,6 +72,10 @@ receive/read the message. A receiver cannot be sure that it actually originates
 from the specified sender. That seems impractical for a chat tool.
 However, this is how the internet works and this chat tool tries to simulate the internet.
 
+## Features and Roadmap
+
+Currently the tool only supports limited functionality. One can connect to a server, send and receive messages. The user can specify different senders and receivers for a sent message. The server is able to list connected clients, block new incoming connections when the option is selected and kick clients from the server. This feature set is not sufficient for learning how encrypted communication works. However this project is under continous development. The planned features and their order as well as timely scope of implementation are laid out in the [roadmap](./plan/ROADMAP.md).
+
 ## Issues and Contributing
 
 If the program raises an error, something doesn't work as expected or you
