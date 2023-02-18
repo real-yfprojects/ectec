@@ -1,0 +1,87 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9 # frozen: v4.4.0
+    hooks:
+      # check file system problems
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: destroyed-symlinks
+
+      # unify whitespace and line ending
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+
+      # sort requirements.txt files
+      - id: requirements-txt-fixer
+
+      # python code
+      - id: check-docstring-first
+      - id: fix-encoding-pragma
+
+      # check more
+      - id: check-yaml
+      - id: check-toml
+      - id: check-xml
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+
+  - repo: https://github.com/asottile/setup-cfg-fmt
+    rev: d9e113e9f501600e2abd12a42a3f407940b8fb0d # frozen: v2.2.0
+    hooks:
+      - id: setup-cfg-fmt
+
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 00804a44a0c6c4d3acbd67d9a31c47049b3d8b85 # frozen: 2.7.1
+    hooks:
+      - id: editorconfig-checker
+        alias: ec
+
+  - repo: https://github.com/google/yapf
+    rev: d3873c0693fe08e6233177c2f342af62547dcaa6 # frozen: v0.32.0
+    hooks:
+      - id: yapf
+
+  - repo: https://github.com/pycqa/isort
+    rev: dbf82f2dd09ae41d9355bcd7ab69187a19e6bf2f # frozen: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "cafd5506f18eea191804850dacc0a4264772d59d" # frozen: v3.0.0-alpha.4
+    hooks:
+      - id: prettier
+
+  - repo: https://github.com/rstcheck/rstcheck
+    rev: "77751d7a7d81a5d47aa344d802f41809c4d063c0" # frozen: v6.1.1
+    hooks:
+      - id: rstcheck
+        additional_dependencies: [sphinx]
+        args: ["--config", "docs/rstcheck.cfg"]
+
+  - repo: https://github.com/klen/pylama
+    rev: 7c81c74765768aa92a379cc37b7508f7c83c4dd3 # frozen: 8.4.1
+    hooks:
+      - id: pylama
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: "1ed79063e3672a1c6d91ee27cb648e07a7465344" # frozen: 1.7.4
+    hooks:
+      - id: bandit
+        files: "python/ectec-gui/src/"
+        args:
+          - "--aggregate"
+          - "vuln"
+          - "-ll"
+          - "-q"
+          - "-f"
+          - "custom"
+          - "--msg-template"
+          - "--------------------------------------------------\n
+            {relpath}:{line}:\n
+            [{test_id:^8}] Severity: {severity} Confidence: {confidence}\n
+            {msg}"
