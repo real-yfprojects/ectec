@@ -1,6 +1,9 @@
 build
-doit
 defusedxml
-virtualenv
-PyQt5
+doit
+mypy
 pyinstaller
+PyQt5
+pyqt5-stubs
+toml
+virtualenv

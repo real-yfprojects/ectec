@@ -153,7 +153,7 @@ def generate_file_list(name: str,
     line = ''
     first_line = True
 
-    end_of_line = line_max - (center + 1)  # The length for the code lines
+    end_of_line = line_max - (center + 1)    # The length for the code lines
     elements = list(elements)
     while elements:
         element = str(elements.pop())
@@ -350,8 +350,8 @@ def generate_qrc(data: Tuple[str, str, str], root: Path) -> str:
             qrc_file(qresource, str(path),
                      get_alias(abs_path, root_path, alias_prefix))
 
-    string_tree: str = ElementTree.tostring(
-        main_element, encoding='utf-8', xml_declaration=False).decode('utf-8')
+    string_tree: str = ElementTree.tostring(main_element,
+                                            encoding='utf-8').decode('utf-8')
     pretty_tree = minidom.parseString(string_tree).toprettyxml(indent=' ' * 4)
 
     pretty_tree = pretty_tree.split('\n', 1)[1]
@@ -760,3 +760,8 @@ def task_bundle_pyinstaller():
         'verbosity':
         2,
     }
+
+
+if __name__ == '__main__':
+    import doit
+    doit.run(globals())
