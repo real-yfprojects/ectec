@@ -56,7 +56,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
         # set up server socket
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind(("127.0.0.0", 0))
+        self.server_socket.bind(("127.0.0.1", 0))
         self.server_socket.listen(1)
 
         dummy, port = self.server_socket.getsockname()
