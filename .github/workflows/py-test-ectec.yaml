@@ -31,7 +31,7 @@ jobs:
     name: Ectec tests Py${{ matrix.python-version }}, ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
