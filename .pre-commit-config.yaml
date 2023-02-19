@@ -98,3 +98,22 @@ repos:
             {relpath}:{line}:\n
             [{test_id:^8}] Severity: {severity} Confidence: {confidence}\n
             {msg}"
+
+# configuration for the pre-commit.ci bot
+# only relevant when actually using the bot
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci, https://pre-commit.com and
+    the `.pre-commit-config.yaml` file in this repository.
+
+  autofix_prs: true # default
+  autoupdate_branch: "develop"
+  autoupdate_commit_msg: |
+    [pre-commit.ci] Autoupdate pre-commit hook versions.
+
+    for more information, see https://pre-commit.ci, https://pre-commit.com and
+    the `.pre-commit-config.yaml` file in this repository.
+
+  submodules: false # default
