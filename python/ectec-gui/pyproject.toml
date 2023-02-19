@@ -4,6 +4,73 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+# This document provides the configuration for setuptools.setup()
+
+[project]
+name = "ectec"
+description = "An educational chat tool for learning how encryption works."
+authors = [{ name = "real-yfprojects" }]
+maintainers = [{ name = "real-yfprojects" }]
+license = { file = "LICENSE" }
+
+keywords = [
+    "hashing",
+    "chat",
+    "education",
+    "encryption",
+    "networking",
+    "authentication",
+    "signing",
+    "network",
+    "hash",
+    "educational",
+    "sign",
+    "certification",
+    "chat-application",
+    "chatapp",
+    "educational-software",
+    "gui",
+    "pyqt",
+    "pyqt5",
+    "qt",
+    "qt5",
+]
+classifiers = [
+    "Topic :: Education",
+    "Topic :: Communications :: Chat",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Natural Language :: English",
+    "Natural Language :: German",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Development Status :: 3 - Alpha",
+]
+
+requires-python = ">=3.7"
+dependencies = ["appdirs", "PyQt5"]
+
+dynamic = ["version", "readme", "optional-dependencies"]
+
+[project.urls]
+repository = "https://github.com/real-yfprojects/ectec"
+
+[project.gui-scripts]
+ectecgui-client = "ectecgui.client:main"
+ectecgui-server = "ectecgui.server:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "ectecgui.VERSION" }
+readme = { file = ["ECTEC.md", "README.md"], content-type = "text/markdown" }
+optional-dependencies = { dev = { file = "requirements-dev.txt" } }
+
+[tool.setuptools.packages.find]
+where = ["src"]    # list of folders that contain the packages (["."] by default)
+namespaces = false # to disable scanning PEP 420 namespaces (true by default)
+
+
+# ---- Linter configuration --------------------------------------------------
+
 [tool.isort]
 src_paths = ["python/ectec-gui"]
 skip_gitignore = true

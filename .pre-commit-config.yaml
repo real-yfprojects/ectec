@@ -29,10 +29,11 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-merge-conflict
 
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: d9e113e9f501600e2abd12a42a3f407940b8fb0d # frozen: v2.2.0
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: cc27459d0f843a9333dd181e7451a8d041591a25 # frozen: v0.12.1
     hooks:
-      - id: setup-cfg-fmt
+      - id: validate-pyproject
+        files: pyproject.toml$
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
     rev: 00804a44a0c6c4d3acbd67d9a31c47049b3d8b85 # frozen: 2.7.1
