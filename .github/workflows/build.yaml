@@ -18,10 +18,10 @@ jobs:
     name: Build python wheel and sdist distribution.
     needs: test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           submodules: "recursive"
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
         with:
           python-version: ">=3.8"
           cache: "pip"
@@ -41,7 +41,7 @@ jobs:
         run: python -m build -w -s -n
         working-directory: python/ectec-gui/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: python-sdist-wheel
           path: python/ectec-gui/dist/
@@ -56,10 +56,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
           submodules: "recursive"
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
         with:
           python-version: ">=3.10"
           cache: "pip"
@@ -88,7 +88,7 @@ jobs:
               if isinstance(target.ctx, ast.Store) and target.id == 'VERSION':
                 # version found
                 version = str(node.value.value)
-                print(f'::set-output name=VERSION::{version}')
+                print(f"VERSION={version}", file=os.environ['GITHUB_OUTPUT'])
                 break
           else:
             # no version found
@@ -114,10 +114,10 @@ jobs:
           else:
             extension = '.zip'
           filename = 'python/ectec-gui/dist/Ectec-${{ steps.ectecgui-version.outputs.VERSION }}-${{ runner.os }}' + extension
-          print(f'::set-output name=FILE::{filename}')
+          print(f"FILE={outfilenameput}", file=os.environ['GITHUB_OUTPUT'])
 
       - name: Archive PyInstaller bundle
-        uses: ihiroky/archive-action@v1
+        uses: ihiroky/archive-action@e8b4644f992de8f7423e0bd7292c2e047ecf26ce # v1
         with:
           root_dir: python/ectec-gui/dist/Ectec/
           file_path: ${{ steps.archive.outputs.FILE }}
@@ -134,7 +134,7 @@ jobs:
         working-directory: python/ectec-gui/dist/
         if: ${{ matrix.os == 'macos-latest' }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: pyinstaller-${{ matrix.os }}
           path: |
