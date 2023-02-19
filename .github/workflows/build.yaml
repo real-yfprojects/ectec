@@ -4,13 +4,19 @@ on:
   workflow_call:
   workflow_dispatch:
   push:
+    paths:
+      - "python/ectec-gui/src/**"
     tags:
-      - ectecgui**
+      - build**
 
 jobs:
+  test:
+    uses: ./.github/workflows/py-test-ectec.yaml
+
   build-python-distribution:
     runs-on: ubuntu-latest
     name: Build python wheel and sdist distribution.
+    needs: test
     steps:
       - uses: actions/checkout@v3
         with:
@@ -42,6 +48,7 @@ jobs:
 
   build-pyinstaller-bundle:
     name: Create executable bundle with PyInstaller.
+    needs: test
     strategy:
       fail-fast: false
       matrix:
