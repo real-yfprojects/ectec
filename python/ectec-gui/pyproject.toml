@@ -76,11 +76,15 @@ src_paths = ["python/ectec-gui"]
 skip_gitignore = true
 line_length = 79
 multi_line_output = 0
+extend_skip_glob = ['*/ui_*.py', '*_res.py']
 
 [tool.yapf]
 based_on_style = "pep8"
 spaces_before_comment = 4
 split_before_logical_operator = true
+
+[tool.yapfignore]
+ignore_patterns = ['*/ui_*.py', '*_res.py']
 
 [tool.mypy]
 files = ['src/']
@@ -90,11 +94,12 @@ exclude = ['^ui_', '_res.py$']
 max_line_length = 79
 concurrent = true
 linters = "pycodestyle,pydocstyle,pyflakes,pylint,eradicate"
+skip = ['*/ui_*.py', '*_res.py']
 
 [tool.pylama.linter.pycodestyle]
 ignore = "W503,E203,E501"
 
-# [tool.pycodestyle] -> see setup.cfg
+# [tool.pycodestyle] -> must happen in setup.cfg
 
 [tool.pylama.linter.pydocstyle]
 ignore = "D202,D203,D205,D401,D212"
