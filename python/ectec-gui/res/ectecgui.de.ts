@@ -4,7 +4,7 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="448" />
+        <location filename="../src/ectecgui/server/window.py" line="447"/>
         <source>Ectec - Server</source>
         <translation>Ectec- Server</translation>
     </message>
@@ -14,27 +14,27 @@
         <translation type="obsolete">Ectec - Benutzer-Client</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="208" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="208"/>
         <source>Ectec - Client</source>
         <translation>Ectec - Client</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="449" />
+        <location filename="../src/ectecgui/server/window.py" line="448"/>
         <source>The server GUI of ectec allows starting a server on the local machine. The server acts as a moderator of a chat and relays message or packages sent by clients. Clients can connect to a server at the address and the port the server is listening for them. After connecting they can sent packages to the server that will be forwarded to all the other clients also connected to the server.</source>
         <translation>Ectecs Server-GUI (Benutzeroberfläche) erlaubt es, einen Server lokal auf dem Rechner zu starten. Der Server übernimmt die Rolle eines Moderators des Chats und gibt Nachrichten bzw. Pakete weiter, die er von Client empfangen hat. Clients können sich mit einem Server über die Adresse und dem Port, an denen der Server horcht, verbinden. Nach dem Verbindungsaufbau können Clients Pakete an den Server senden, die anschließend an die anderen mit dem selben Server verbundenen Clients weitergeleitet werden.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="438" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="453"/>
         <source>The user client GUI component is part of the client GUI. It allows using a server with the &lt;i&gt;user&lt;/i&gt; role. A user client can send packages to the other clients connected to the server and receive packages from them.</source>
         <translation>Der Anwender-Client ist Bestandteil der client GUI (Benutzeroberfläche). Er erlaubt, einen Server mit der &amp;lt;i&amp;gt;user&amp;lt;/i&amp;gt; (zu Deutsch: Benutzer) Rolle zu nutzen. Ein Anwender-Client kann Pakete an andere Clients, die mit demselben Server verbunden sind, versenden und Pakete von ihnen empfangen.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="209" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="209"/>
         <source>The client GUI allows connecting to a server. One can specify the address of the machine the server is running on and the port on that machine the server is listening on. The client allows choosing different roles that have different abilities. The standard client role is called &lt;i&gt;user&lt;/i&gt;. The user client can send packages - i.e. messages - to the other clients connected to the same server.</source>
         <translation>Die Client-GUI (Benutzeroberfläche) ermöglicht die Verbindung zu einem Server. Die Adresse des Computers des Servers und der Port auf der Maschine, an dem der Server horcht, können angeben werden. Im Client können verschiedene Rollen mit verschiedenen Funktionen gewählt werden. Die normale Rolle heißt &amp;lt;i&amp;gt;user&amp;lt;/i&amp;gt; (zu Deutsch: Benutzer). Der Benutzer-Client kann Pakate bzw. Nachrichten an andere mit demselben Server verbundene Clients senden.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="437" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="452"/>
         <source>Ectec - User Client</source>
         <translation>Ectec - Benutzer-Client</translation>
     </message>
@@ -63,7 +63,7 @@
 <context>
     <name>LanguageMenu</name>
     <message>
-        <location filename="../src/ectecgui/qobjects.py" line="114"/>
+        <location filename="../src/ectecgui/qobjects.py" line="181"/>
         <source>Languages</source>
         <translation>Sprachen</translation>
     </message>
@@ -71,7 +71,7 @@
 <context>
     <name>METADATA</name>
     <message>
-        <location filename="../src/ectecgui/helpers.py" line="44"/>
+        <location filename="../src/ectecgui/helpers.py" line="47"/>
         <source>LANGUAGE_ID</source>
         <translation>de</translation>
     </message>
@@ -79,13 +79,13 @@
 <context>
     <name>MainMenu</name>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="131" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="131"/>
         <source>Logs</source>
         <comment>menu</comment>
         <translation>Protokoll</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="130" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="130"/>
         <source>About</source>
         <comment>menu</comment>
         <translation>Über</translation>
@@ -169,24 +169,37 @@ Eine Lizenzdatei sollte aber dennoch Anwendungsordner vorliegen.</translation>
         <translation>Verbinden</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="309" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="347"/>
         <source>Connecting failed.</source>
         <translation>Verbinden fehlgeschlagen.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="278" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="278"/>
         <source>The user name mustn&apos;t be empty.</source>
         <translation>Ein Benutzername muss eingegeben werden.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="296" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="296"/>
         <source>Connecting...</source>
         <translation>Verbinden...</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/wConnect.py" line="310" />
+        <location filename="../src/ectecgui/client/wConnect.py" line="348"/>
         <source>Connection couldn&apos;t be established.</source>
         <translation>Eine Verbindung konnte nicht hergestellt werden.</translation>
+    </message>
+</context>
+<context>
+    <name>dErrorDialog</name>
+    <message>
+        <location filename="error.ui" line="14"/>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="error.ui" line="132"/>
+        <source>&lt;h4&gt;Logs:&lt;/h4&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -230,39 +243,39 @@ Eine Lizenzdatei sollte aber dennoch Anwendungsordner vorliegen.</translation>
         <translation>Neue Clients abweisen.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="279" />
+        <location filename="../src/ectecgui/server/window.py" line="278"/>
         <source>Stop</source>
         <comment>server</comment>
         <translation>Anhalten</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="280" />
+        <location filename="../src/ectecgui/server/window.py" line="279"/>
         <source>Ectec Server</source>
         <translation>Start</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="284" />
+        <location filename="../src/ectecgui/server/window.py" line="283"/>
         <source>Start</source>
         <comment>server</comment>
         <translation>Starten</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="285" />
+        <location filename="../src/ectecgui/server/window.py" line="284"/>
         <source>Start Server</source>
         <translation>Server starten</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="308" />
+        <location filename="../src/ectecgui/server/window.py" line="307"/>
         <source>Couldn&apos;t start server.</source>
         <translation>Server konnte nicht gestartet werden.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="310" />
+        <location filename="../src/ectecgui/server/window.py" line="309"/>
         <source>Starting the server failed.</source>
         <translation>Start des Servers fehlgeschlagen.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/server/window.py" line="349" />
+        <location filename="../src/ectecgui/server/window.py" line="348"/>
         <source>Kick</source>
         <comment>client</comment>
         <translation>Hinauswerfen</translation>
@@ -311,27 +324,27 @@ Eine Lizenzdatei sollte aber dennoch Anwendungsordner vorliegen.</translation>
         <translation>Senden</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="425" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="440"/>
         <source>Ectec User Client</source>
         <translation>Ectec Benutzer-Client</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="287" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="287"/>
         <source>Sending failed.</source>
         <translation>Senden fehlgeschlagen.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="288" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="288"/>
         <source>The following error occured.</source>
         <translation>Folgender Fehler ist aufgetreten.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="360" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="367"/>
         <source>Connection broke.</source>
         <translation>Die Verbindung wurde unterbrochen.</translation>
     </message>
     <message>
-        <location filename="../src/ectecgui/client/userclient/window.py" line="361" />
+        <location filename="../src/ectecgui/client/userclient/window.py" line="368"/>
         <source>The connection to the server broke. The server could have shutdown. You might also be kicked from the server.</source>
         <translation>Die Verbindung zum Server ist abgebrochen. Der Server könnte ausgeschaltern worden sein. Du könntest aber auch vom Server geworfen worden sein.</translation>
     </message>

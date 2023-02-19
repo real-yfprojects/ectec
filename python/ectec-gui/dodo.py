@@ -61,7 +61,7 @@ RESOURCES = {"res/breeze.qrc": ('icons/breeze', "res/breeze-icons/icons", '')}
 #: to the directories for or to the path of the generated python modules.
 RESOURCE_FILES = {
     "res/ectec.qrc": "src/ectecgui/",
-    "res/breeze.qrc": "src/ectecgui"
+    "res/breeze.qrc": ["src/ectecgui", "src/reporter"],
 }
 
 #: The suffix for python modules part of the qt resource system.
@@ -72,7 +72,8 @@ FORMS = {
     "res/server.ui": "src/ectecgui/server/ui_main.py",
     "res/clientConnect.ui": 'src/ectecgui/client/ui_connect.py',
     "res/clientUser.ui": 'src/ectecgui/client/userclient/ui_main.py',
-    "res/about.ui": 'src/ectecgui/about/ui_about.py'
+    "res/about.ui": 'src/ectecgui/about/ui_about.py',
+    "res/error.ui": 'src/reporter/ui_error.py',
 }
 
 #: List of paths for translation files relative to this script.
@@ -370,6 +371,7 @@ def get_module_filename(res_file: str):
 # ---- Build Rules -----------------------------------------------------------
 
 DOIT_CONFIG = {
+    'n': 4,
     'action_string_formatting': 'new',
     'default_tasks': [
         'rcc',
@@ -465,14 +467,31 @@ def task_uic():
             }
 
 
+def copy_file_action(src, dest):
+    return bool(shutil.copyfile(src, dest))
+
+
 def task_rcc():
     """Compile the resource files."""
-    for qrc, pymod in RESOURCE_FILES.items():
+    for qrc, pymodules in RESOURCE_FILES.items():
         res_file = solve_relative_path(qrc)
-        pyres_file = solve_relative_path(pymod)
 
-        if pyres_file.is_dir():
-            pyres_file /= get_module_filename(res_file.name)
+        targets = []
+        copy_actions = []
+        if not (isinstance(pymodules, list) or isinstance(pymodules, tuple)):
+            pymodules = (pymodules, )
+
+        for pymod in pymodules:
+            pyres_file = solve_relative_path(pymod)
+
+            if pyres_file.is_dir():
+                pyres_file /= get_module_filename(res_file.name)
+
+            if targets:
+                copy_actions.append(
+                    (copy_file_action, [targets[0], pyres_file]))
+
+            targets.append(pyres_file)
 
         # if threshold:
         #     pyrcc5_cmd += ["-theshold", str(threshold)]
@@ -488,12 +507,14 @@ def task_rcc():
 
         files = files_for_resource(qrc)
         yield {
-            'name': qrc,
-            'targets': [pyres_file],
+            'name':
+            qrc,
+            'targets':
+            targets,
             'file_dep': [res_file] + files,
             'actions': [["pyrcc5", "-o",
                          path(pyres_file),
-                         path(res_file)]]
+                         path(res_file)], *copy_actions]
         }
 
 
