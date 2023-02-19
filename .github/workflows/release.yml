@@ -47,7 +47,7 @@ jobs:
           print(f"::set-output name=LIST::{output}")
 
       - name: Create release with assets
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@v0.1.15
         with:
            tag_name: ${{ github.event.inputs.tagname }}
            target_commitish: ${{ github.ref_name }}
