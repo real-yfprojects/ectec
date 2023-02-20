@@ -28,9 +28,11 @@ import traceback as traceback_formatting
 from types import TracebackType
 from typing import Optional, Tuple, Type
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QMimeData, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import QApplication, QDialogButtonBox, QWidget
+from reporter.logprovider import (AbstractLogProvider, DictionaryLogProvider,
+                                  IsHtmlRole, LogRole)
 
 from .ui_error import Ui_dErrorDialog
 
@@ -87,12 +89,65 @@ class Ui_ErrorDialog(Ui_dErrorDialog):
 
 
 class ErrorView(QWidget):
+    """
+    A Widget that can be loaded into a dialog telling the user about an error.
+
+    The widget features a QDialogButtonBox with two buttons: `Ignore` and
+    `Report Bug`. When the former is clicked the widget should be hidden/the
+    dialog should be closed. When the latter is clicked, the dialog should
+    transition to a reporting the error.
+
+    Parameters
+    ----------
+    error_message : str
+        the title to display
+    parent : Optional[QWidget], optional
+        parent widget, by default None
+
+    Attributes
+    ----------
+    closeRequested : pyqtSignal
+        the user clicked the `Ignore` button.
+    reportRequested : pyqtSignal
+        the user clicked the `Report Bug` button.
+    error_message : str
+        The error title to display.
+    log_provider : AbstractLogProvider
+        The error message shown as a title of the dialog.
+    modelRow : int
+        The row of the log provide to use the logs from.
+
+    Methods
+    -------
+    copy_traceback
+        Copy the traceback set to the clipboard.
+    copy_logs
+        Copy the logs displayed to the clipboard.
+    refreshLogs
+        Refresh the logs displayed.
+
+    Staticmethods
+    -------------
+    from_exception
+        Init an errorview from an exception.
+    """
+
     closeRequested = pyqtSignal()
     reportRequested = pyqtSignal()
 
     def __init__(self,
                  error_message: str,
                  parent: Optional[QWidget] = None) -> None:
+        """
+        Init.
+
+        Parameters
+        ----------
+        error_message : str
+            the title to display
+        parent : Optional[QWidget], optional
+            parent widget, by default None
+        """
         super().__init__(parent)
 
         self.ui = Ui_ErrorDialog()
@@ -103,9 +158,10 @@ class ErrorView(QWidget):
         self.ui.tracebackView.setFont(font)
         self.ui.logView.setFont(font)
 
-        self.ui.lError.setText(f"<h2>{error_message}</h2>")
+        self.error_message = error_message    # does the formatting
 
-        self._log_provider = None
+        self._log_provider: Optional[AbstractLogProvider] = None
+        self._row = 0
         self.ui.fLogs.hide()
 
         self._traceback = ''
@@ -125,37 +181,105 @@ class ErrorView(QWidget):
 
     @pyqtSlot()
     def copy_traceback(self):
+        """
+        Copy the traceback set to the clipboard.
+        """
         QApplication.clipboard().setText(self._traceback)
 
     @pyqtSlot()
     def copy_logs(self):
-        # TODO retrieve logs
-        QApplication.clipboard().setText('')
+        """
+        Copy the logs displayed to the clipboard.
+        """
+        data = QMimeData()
+        data.setHtml(self.ui.logView.toHtml())
+        data.setText(self.ui.logView.toPlainText())
+        QApplication.clipboard().setMimeData(data)
 
     @property
     def error_message(self) -> str:
-        return self.ui.lError.text()
+        """
+        The error message shown as a title of the dialog.
 
-    @error_message.setter    # type: ignore
-    def error_mesage(self, msg: str):
-        self.ui.lError.setText(msg)
+        When set the message will automatically be surrounded by `<h2>` tags.
+        """
+        return self.ui.lError.text().lstrip("<h2>").rstrip("</h2>")
+
+    @error_message.setter
+    def error_message(self, msg: str):
+        self.ui.lError.setText(f"<h2>{msg}</h2>")
 
     @property
-    def log_provider(self):
+    def log_provider(self) -> Optional[AbstractLogProvider]:
+        """
+        The log provider to retrieve the displayed logs from
+
+        The row of the currently displayed log can be specified through
+        `modelRow`.
+
+        See Also
+        --------
+        modelRow : the row for the log provider used.
+        """
         return self._log_provider
 
-    @log_provider.setter    # type: ignore
-    def log_provder(self, lp):
-        self._log_provider = lp
+    @log_provider.setter
+    def log_provider(self, lp: Optional[AbstractLogProvider]):
+        if self._log_provider:
+            self._log_provider.dataChanged.disconnect(self.refreshLogs)
         if lp:
-            # TODO update logs
-            self.ui.fLogs.show()
+            lp.dataChanged.connect(self.refreshLogs)
+        self._log_provider = lp
+        self.refreshLogs()
+
+    @property
+    def modelRow(self) -> int:
+        """
+        The row of the log provide to use the logs from.
+
+        Setting this property will result in a call to `refreshLogs`.
+
+        See Also
+        --------
+        log_provider : Set the log provider model.
+        """
+        return self._row
+
+    @modelRow.setter
+    def modelRow(self, row: int):
+        """Set the row and refresh logs"""
+        self._row = row
+        self.refreshLogs()
+
+    @pyqtSlot()
+    def refreshLogs(self):
+        """
+        Refresh the logs displayed.
+
+        This method retrieves the logs from the log provider set.
+        If not possible, the corresponding widget is hidden.
+
+        See Also
+        --------
+        log_provider : The log provider to use
+        modelRow : The row to get the logs from
+        """
+        if self._log_provider and 0 <= self._row <= self._log_provider.rowCount(
+        ):
+            index = self._log_provider.index(self._row, 0)
+            logs = self._log_provider.data(index, LogRole)
+            if self._log_provider.data(index, IsHtmlRole):
+                self.ui.logView.setHtml(logs)
+            else:
+                self.ui.logView.setPlainText(logs)
+            self.ui.logView.show()
         else:
             self.ui.logView.clear()
-            self.ui.fLogs.hide()
+            self.ui.logView.hide()
 
     @property
     def traceback(self) -> str:
+        """The traceback to display."""
         return self._traceback
 
     @traceback.setter
@@ -168,21 +292,38 @@ class ErrorView(QWidget):
             self.ui.tracebackView.clear()
             self.ui.fTraceback.hide()
 
-    @classmethod
-    def from_exception(cls,
-                       exc_info: ExcInfo,
+    @staticmethod
+    def from_exception(exc_info: ExcInfo,
                        parent: Optional[QWidget] = None) -> 'ErrorView':
+        """
+        Init an errorview from an exception.
+
+        Parameters
+        ----------
+        exc_info : ExcInfo
+            A tuple as returned by `sys.exc_info()`
+        parent : Optional[QWidget], optional
+            Parent of the `ErrorView`, by default None
+
+        Returns
+        -------
+        ErrorView
+            The constructed ErrorView
+        """
         etype, e, tb_ = exc_info
         msg = traceback_formatting.format_exception_only(etype, e)[-1]
         full_tb = ''.join(traceback_formatting.format_exception(etype, e, tb_))
 
         error_view = ErrorView(msg, parent=parent)
-        error_view.traceback = full_tb + '\n'
+        error_view.traceback = full_tb
 
         return error_view
 
 
+# ---- Testing ---------------------------------------------------------------
+
 if __name__ == "__main__":
+
     app = QApplication(sys.argv)
 
     try:
@@ -192,6 +333,7 @@ if __name__ == "__main__":
         exc_info = sys.exc_info()
 
     error_dialog = ErrorView.from_exception(exc_info)    # type: ignore
+    error_dialog.log_provider = DictionaryLogProvider({"": "Some logs"})
     error_dialog.show()
 
     sys.exit(app.exec_())
