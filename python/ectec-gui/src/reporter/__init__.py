@@ -23,3 +23,43 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
+
+import logging
+from typing import Any, Callable, NamedTuple, Optional, Union
+
+from PyQt5.QtCore import QCoreApplication, pyqtBoundSignal
+
+logger = logging.getLogger(__name__)
+
+# Convenient type aliases.
+PYQT_SLOT = Union[Callable[..., Any], pyqtBoundSignal]
+
+# ---- Helpers --------------------------------------------------------------
+
+
+class TranslatableString(NamedTuple):
+    """
+    Represents a string that can be translated with `QApplication.translate`.
+
+    You can use this class to mark strings for translation without translating
+    them yet. Just define an alias that matches the name of the
+    `-translate-function` you configured for `lupdate5`:
+
+    .. code:: python
+
+        translate = TranslatableString
+
+    """
+    context: str
+    sourceText: str
+    disambiguation: Optional[str] = None
+    n: int = -1
+
+    def translated(self) -> str:
+        """Translate this string using `QCoreApplication.translate`."""
+        return QCoreApplication.translate(self.context, self.sourceText,
+                                          self.disambiguation, self.n)
+
+    def __str__(self) -> str:
+        """Return translated string"""
+        return self.translated()

@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_dErrorDialog(object):
     def setupUi(self, dErrorDialog):
         dErrorDialog.setObjectName("dErrorDialog")
-        dErrorDialog.resize(406, 546)
+        dErrorDialog.resize(400, 540)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(dErrorDialog)
         self.verticalLayout_2.setSpacing(12)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
