@@ -31,6 +31,7 @@ from typing import Optional, Tuple, Type
 from PyQt5.QtCore import QMimeData, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import QApplication, QDialogButtonBox, QWidget
+from reporter import View
 from reporter.logprovider import (AbstractLogProvider, DictionaryLogProvider,
                                   IsHtmlRole, LogRole)
 
@@ -88,7 +89,7 @@ class Ui_ErrorDialog(Ui_dErrorDialog):
             self.bReport.setText(_tr("ErrorDialog", "Report"))
 
 
-class ErrorView(QWidget):
+class ErrorView(View):
     """
     A Widget that can be loaded into a dialog telling the user about an error.
 

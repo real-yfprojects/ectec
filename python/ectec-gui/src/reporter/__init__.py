@@ -27,7 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from typing import Any, Callable, NamedTuple, Optional, Union
 
-from PyQt5.QtCore import QCoreApplication, pyqtBoundSignal
+from PyQt5.QtCore import QCoreApplication, QEvent, pyqtBoundSignal, pyqtSignal
+from PyQt5.QtWidgets import QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class TranslatableString(NamedTuple):
         translate = TranslatableString
 
     """
+
     context: str
     sourceText: str
     disambiguation: Optional[str] = None
@@ -63,3 +65,44 @@ class TranslatableString(NamedTuple):
     def __str__(self) -> str:
         """Return translated string"""
         return self.translated()
+
+
+# ---- Base Classes ----------------------------------------------------------
+
+
+class TranslatableQWidget(QWidget):
+
+    def retranslateUi(self):
+        pass
+
+    def changeEvent(self, event: QEvent):
+        """
+        This event handler can be implemented to handle state changes.
+
+        The state being changed in this event can be retrieved through
+        the event supplied. Change events include:
+        `QEvent.ToolBarChange`, `QEvent.ActivationChange`,
+        `QEvent.EnabledChange`, `QEvent.FontChange`, `QEvent.StyleChange`,
+        `QEvent.PaletteChange`, `QEvent.WindowTitleChange`,
+        `QEvent.IconTextChange`, `QEvent.ModifiedChange`,
+        `QEvent.MouseTrackingChange`, `QEvent.ParentChange`,
+        `QEvent.WindowStateChange`, `QEvent.LanguageChange`,
+        `QEvent.LocaleChange`, `QEvent.LayoutDirectionChange`,
+        `QEvent.ReadOnlyChange`.
+
+        Parameters
+        ----------
+        event : QtCore.QEvent
+            The event that occurred.
+        """
+        if event.type() == QEvent.LanguageChange:
+            # The language of the QApplication was changed.
+            # The GUI has to be retranslated.
+            self.retranslateUi()
+
+        # Pass the event to the parent class for its handling.
+        super().changeEvent(event)
+
+
+class View(TranslatableQWidget):
+    closeRequested = pyqtSignal()
