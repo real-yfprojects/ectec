@@ -88,7 +88,7 @@ def indent(text, by, space=" ", prefix="", suffix=""):
         The indented text.
 
     """
-    t = ""  # Stores the indented lines and will be returned
+    t = ""    # Stores the indented lines and will be returned
 
     # Iterate of the lines of the text
     for line in text.splitlines(True):
@@ -116,6 +116,7 @@ class EctecGuiFormatter(logging.Formatter):
             The format variable style used, by default '{'
 
     """
+
     def __init__(self, program=None, fmt=None, datefmt=None, style='{'):
         """
         Init the Formatter.
@@ -140,18 +141,19 @@ class EctecGuiFormatter(logging.Formatter):
         """
         Format an exception so that it prints on a single line.
         """
-        result = super().formatException(exc_info)  # Super formats for us.
-        return indent(result, 2, prefix="| >>>")  # Indent output
+        result = super().formatException(exc_info)    # Super formats for us.
+        return indent(result, 2, prefix="| >>>")    # Indent output
 
     def formatStack(self, stack_info):
         """
         Format an exception so that it prints on a single line.
         """
-        result = super().formatStack(stack_info)  # Super formats for us.
-        return indent(result, 2, prefix="| >>>")  # Indent output
+        result = super().formatStack(stack_info)    # Super formats for us.
+        return indent(result, 2, prefix="| >>>")    # Indent output
 
 
 class SessionRotatingFileHandler(handlers.BaseRotatingHandler):
+
     def __init__(self,
                  filename,
                  sessionCount: int,
@@ -225,7 +227,7 @@ class SessionRotatingFileHandler(handlers.BaseRotatingHandler):
 
         # Do not rename the file but instead copy it and clear it afterwards
         shutil.copyfile(source, dest)
-        open(source, 'w').close()  # clear file
+        open(source, 'w').close()    # clear file
 
     def shouldRollover(self, record: logging.LogRecord) -> bool:
         """
@@ -244,13 +246,14 @@ class SessionRotatingFileHandler(handlers.BaseRotatingHandler):
         bool
             False.
         """
-        return False  # Only rollover when session changes
+        return False    # Only rollover when session changes
 
 
 # ---- QtMessageHandling -----------------------------------------------------
 
 
 class QtMessageHander:
+
     def __init__(self, logger: logging.Logger):
         self.logger = logger
 

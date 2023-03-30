@@ -5,11 +5,10 @@ Created on Sun Oct 14 16:55:56 2018
 
 @author: Yannick Funke
 """
-import socketserver
-import socket
-import pickle
 import enum
-
+import pickle
+import socket
+import socketserver
 
 
 class Requests(enum.Enum):
@@ -21,56 +20,60 @@ class Requests(enum.Enum):
     Long = 6
     LongEnd = 7
     Disconnect = 8
-    
+
 
 class Answers(enum.Enum):
     Error = 1
     Successful = 2
     Data = 3
-    
-    
+
+
 class Package:
-    
+
     def __init__(self, requesttype, data):
         self.request = requesttype
         self.data = data
-        
+
     def to_bytes(self):
         return pickle.dumps(self)
-    
+
+
 def load(bytes):
     """load Package/... from bytes"""
     return pickle.loads(bytes)
 
 
-
 class DSPError(Exception):
     pass
+
 
 class UnkownDSPRequest(DSPError):
     pass
 
+
 class DSPLongError(DSPError):
     pass
+
 
 class DSPLoginError(DSPError):
     pass
 
+
 class ClientConnection(socketserver.BaseRequestHandler):
     """Should be subclassed
     database , ... ; so variables for the hole server, as classvariable"""
-    
+
     def __init__(self, request, client_address, server):
         print('Init')
         self.user = None
         self.longtype = None
         self.longparts = None
         super().__init__(request, client_address, server)
-        
+
     def handle(self):
         # Connection accepted
         # waiting for requests
-        
+
         ip = self.client_address
         print('Connected to [{}]'.format(ip))
         while True:
@@ -80,7 +83,7 @@ class ClientConnection(socketserver.BaseRequestHandler):
             else:
                 r = pickle.loads(br)
             print(r.request, self.user)
-            
+
             # Progress Request
             if self.longtype != None:  # Long
                 if r.request == Requests.Long:
@@ -92,15 +95,17 @@ class ClientConnection(socketserver.BaseRequestHandler):
                     data = b''
                     for p in self.longparts:
                         data += p
-                    
+
                     r = Package(self.longtype, load(data))
-                    
+
                     self.longttype = None
                     self.longparts = None
                 else:
-                    self.sendError(DSPLongError("Can't request {} while Long".format(r.request)))
+                    self.sendError(
+                        DSPLongError("Can't request {} while Long".format(
+                            r.request)))
                     continue
-               
+
             if r.request == Requests.Login:
                 an = self.login(r.data)
                 if issubclass(type(an), DSPError):
@@ -113,7 +118,7 @@ class ClientConnection(socketserver.BaseRequestHandler):
                 if issubclass(type(an), DSPError):
                     self.sendError(an)
                 else:
-                    self.sendData(an)                    
+                    self.sendData(an)
             elif r.request == Requests.NormalSync:
                 an = self.getData(r.data, self.user)
                 if issubclass(type(an), DSPError):
@@ -135,86 +140,84 @@ class ClientConnection(socketserver.BaseRequestHandler):
                 break
             else:
                 an = self.handle_other_request(r, self.user)
-                if issubclass(type(an), DSPError)                :
+                if issubclass(type(an), DSPError):
                     self.sendError(an)
                 elif an == True:
                     self.sendOK()
                 else:
                     self.sendData(an)
-    
+
     def sendp(self, p):
         b = p.to_bytes()
         self.request.sendall(b)
         self.request.sendall(b'end')
-                
-    
+
     def sendError(self, error):
         p = Package(Answers.Error, error)
         #self.request.sendall(p.to_bytes())
         self.sendp(p)
-    
+
     def sendOK(self):
         p = Package(Answers.Successful, None)
         self.sendp(p)
-    
+
     def sendData(self, data):
         p = Package(Answers.Data, data)
         self.sendp(p)
-            
+
     def getallData(self, user):
         """Should be overwritten
-        
+
         return data   or
         return DSPError if unsuccesful"""
         pass
-    
-    
+
     def getData(self, key, user):
         """Should be overwritten
-        
+
         return data   or
         return DSPError if unsuccesful"""
         pass
-    
+
     def newData(self, user, data):
         """Should be overwritten
-        
+
         return True if successful
         return DSPError if unsuccessful"""
         pass
-    
+
     def login(self, requestdata):
         """Should be overwritten
-        
+
         returns LoginError if login is unsuccessful
         returns login key if login is succesful"""
         return True
-    
+
     def disconnect(self, user):
         """Should be overwritten"""
         pass
-    
+
     def handle_other_request(self, package, user):
         """May be overwritten
-        
+
         return True if successful
         return DSPError if unsuccessful
         return data if data is required"""
         return UnkownDSPRequest(str(package.request))
-    
-        
-class  DSPSocket:
-    
+
+
+class DSPSocket:
+
     def __init__(self):
         self.c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          
+
     def connect(self, address):
         self.c.connect(address)
-    
+
     def sendRequest(self, package):
         b = package.to_bytes()
         self.c.sendall(b)
-        
+
         fullan = b''
         an = b''
         while True:
@@ -225,14 +228,14 @@ class  DSPSocket:
                 fullan += an
                 break
         return load(fullan)
-    
+
     def request(self, type, data=None):
         p = Package(type, data)
         return self.sendRequest(p)
-    
+
     def __enter__(self):
         pass
-   
+
     def __exit__(self, *args):
         try:
             self.request(Requests.Disconnect, None)
@@ -240,5 +243,3 @@ class  DSPSocket:
             pass
         finally:
             self.c.close()
-    
-        
