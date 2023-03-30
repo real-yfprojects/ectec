@@ -1,10 +1,9 @@
 ---
 name: Docs request
 about: Suggest an idea for this project
-title: ''
+title: ""
 labels: documentation
-assignees: ''
-
+assignees: ""
 ---
 
 **Is your feature request related to a problem? Please describe.**

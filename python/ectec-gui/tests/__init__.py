@@ -46,7 +46,7 @@ def _import_ectec(*submodules):
         ectec = __import__('ectec')
 
         for sbm in submodules:
-            __import__('ectec.'+sbm)
+            __import__('ectec.' + sbm)
     except:
         # PATH = sys.path
         path = osp.abspath(osp.join(osp.dirname(__file__), '../src/'))
@@ -57,7 +57,7 @@ def _import_ectec(*submodules):
         ectec = __import__('ectec')
 
         for sbm in submodules:
-            __import__('ectec.'+sbm)
+            __import__('ectec.' + sbm)
 
     return ectec
 
@@ -162,6 +162,7 @@ class EctecTestResult(unittest.TextTestResult):
 
 
 class EctecTestRunner(unittest.TextTestRunner):
+
     def run(self, test):
         "Run the given test case or test suite."
         result = self._makeResult()
@@ -179,9 +180,10 @@ class EctecTestRunner(unittest.TextTestRunner):
                 # noisy.  The -Wd and -Wa flags can be used to bypass this
                 # only when self.warnings is None.
                 if self.warnings in ['default', 'always']:
-                    warnings.filterwarnings('module',
-                                            category=DeprecationWarning,
-                                            message=r'Please use assert\w+ instead.')
+                    warnings.filterwarnings(
+                        'module',
+                        category=DeprecationWarning,
+                        message=r'Please use assert\w+ instead.')
             startTime = time.perf_counter()
             startTestRun = getattr(result, 'startTestRun', None)
             if startTestRun is not None:
@@ -205,8 +207,7 @@ class EctecTestRunner(unittest.TextTestRunner):
         expectedFails = unexpectedSuccesses = skipped = 0
         try:
             results = map(len, (result.expectedFailures,
-                                result.unexpectedSuccesses,
-                                result.skipped))
+                                result.unexpectedSuccesses, result.skipped))
         except AttributeError:
             pass
         else:
@@ -237,7 +238,7 @@ class EctecTestRunner(unittest.TextTestRunner):
         if unexpectedSuccesses:
             infos.append("unexpected successes=%d" % unexpectedSuccesses)
         if infos:
-            self.stream.writeln(" (%s)" % (", ".join(infos),))
+            self.stream.writeln(" (%s)" % (", ".join(infos), ))
         else:
             self.stream.write("\n")
         return result
