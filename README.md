@@ -25,7 +25,7 @@ in `python/ectec-gui/README.md`.
 ### Install as a python package
 
 First you will need to install a recent version of
-[Python](https://www.python.org/) *(>=3.7)* including the pip package installer.
+[Python](https://www.python.org/) _(>=3.7)_ including the pip package installer.
 Then head to the latest release of this repository. Download either
 the wheel distribution named `ectec-<version>.whl` or the sdist distribution
 named `ectec-<version>.tar.gz`.
@@ -52,7 +52,6 @@ extract its contents. There you will find the executables that launch the app.
 This installation method doesn't install the application system-wide but
 instead supplies a portable version of the app that is contained in one
 folder.
-
 
 ## User Guide
 
