@@ -82,6 +82,7 @@ class TracebackInfo:
         Exception: An error occurred.
 
     """
+
     def __init__(self, groupdict: Dict[str, str]):
         """
         Init the TracebackInfo
