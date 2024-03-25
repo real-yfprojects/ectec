@@ -53,7 +53,7 @@ class SimpleClientServerTests(unittest.TestCase):
         for record in self.handler.records:
             if record.exc_info:
                 raise record.exc_info[1]
-            if record.levelno > - logging.WARNING:
+            if record.levelno > -logging.WARNING:
                 raise Exception(record.msg)
 
     # @unittest.skip("")
@@ -101,8 +101,8 @@ class SimpleClientServerTests(unittest.TestCase):
                 self.assertEqual(server.users[0][1], ectec.Role.USER)
 
                 # send package
-                package = ectec.client.Package(
-                    'testsender', 'testrecipient', 'text/plain')
+                package = ectec.client.Package('testsender', 'testrecipient',
+                                               'text/plain')
 
                 client.send(package)
 
@@ -233,8 +233,8 @@ class SimpleClientServerTests(unittest.TestCase):
                     self.assertEqual(server.users[0][1], ectec.Role.USER)
 
                     # send package
-                    package = ectec.client.Package(
-                        'client1', 'client2', 'text/plain')
+                    package = ectec.client.Package('client1', 'client2',
+                                                   'text/plain')
                     client1.send(package)
 
                     time.sleep(0.05)
@@ -262,7 +262,7 @@ class SimpleClientServerTests(unittest.TestCase):
         clients = []
 
         with server.start(0):
-            try:  # for disconnecting already connected clients
+            try:    # for disconnecting already connected clients
 
                 # ---- connect clients
                 for i in range(N):
@@ -273,7 +273,8 @@ class SimpleClientServerTests(unittest.TestCase):
 
                     # check user list
                     time.sleep(0.01)
-                    self.assertEqual(len(client.users), i+1, f"Iteration {i}")
+                    self.assertEqual(len(client.users), i + 1,
+                                     f"Iteration {i}")
 
                 # check user list for server
                 self.assertEqual(len(server.users), N)
@@ -284,8 +285,8 @@ class SimpleClientServerTests(unittest.TestCase):
                     self.assertEqual(len(client.users), N, client.username)
 
                 # ---- send package
-                package = ectec.client.Package(
-                    'client1', 'client2', 'text/plain')
+                package = ectec.client.Package('client1', 'client2',
+                                               'text/plain')
                 clients[0].send(package)
 
                 # ---- receive package
@@ -305,13 +306,14 @@ class SimpleClientServerTests(unittest.TestCase):
 
                 def send_pkg(i):
                     send_event.wait()
-                    package = ectec.client.Package(
-                        f'userclient_{i}', f'userclient_{i+1}', 'text/plain')
+                    package = ectec.client.Package(f'userclient_{i}',
+                                                   f'userclient_{i+1}',
+                                                   'text/plain')
                     clients[i].send(package)
 
                 threads = []
                 for i in range(len(clients)):
-                    thread = threading.Thread(target=send_pkg, args=(i,))
+                    thread = threading.Thread(target=send_pkg, args=(i, ))
                     thread.start()
                     threads.append(thread)
 
@@ -333,11 +335,12 @@ class SimpleClientServerTests(unittest.TestCase):
                 for i in range(len(clients)):
                     clients[i].disconnect()
 
-                    if i < len(clients)-1:
+                    if i < len(clients) - 1:
                         # check user list
                         time.sleep(0.01)
-                        clients[i+1]._update()
-                        self.assertEqual(len(clients[i+1].users), N-i-1, i)
+                        clients[i + 1]._update()
+                        self.assertEqual(len(clients[i + 1].users), N - i - 1,
+                                         i)
 
             finally:
 

@@ -212,7 +212,7 @@ class UserClientWindow(QtWidgets.QDialog):
         # init comboboxes
         self.ui.comboBoxFrom.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.ui.comboBoxTo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-        self.slotUsersUpdated()  # add items
+        self.slotUsersUpdated()    # add items
 
         # Override deletion of the user list seperator in `comboBoxTo`
         self.ui.comboBoxTo.setLineEdit(UserListLineEdit())
@@ -249,7 +249,6 @@ class UserClientWindow(QtWidgets.QDialog):
         self.ui.action_about.triggered.connect(self.slotAbout)
         self.ui.action_logs.triggered.connect(open_logs)
 
-
     @pyqtSlot()
     def slotSend(self):
         """Send the package the user put into GUI."""
@@ -260,12 +259,12 @@ class UserClientWindow(QtWidgets.QDialog):
         receiver = raw_receiver.split('; ')
         if not receiver:
             logger.debug('Send: No receiver specified.')
-            return  # receiver needed
+            return    # receiver needed
         if not receiver[-1]:
             receiver = receiver[:-1]
         if not receiver:
             logger.debug('Send: No receiver specified.')
-            return  # receiver needed
+            return    # receiver needed
 
         # content
         content = self.ui.textEditContent.toPlainText()
@@ -343,9 +342,9 @@ class UserClientWindow(QtWidgets.QDialog):
         """
         logger.debug("Disconnecting.")
 
-        self.close()  # Does the disconnecting in `closeEvent`
+        self.close()    # Does the disconnecting in `closeEvent`
 
-        self.ended.emit()  # tells other's to return to previous window.
+        self.ended.emit()    # tells other's to return to previous window.
 
     @pyqtSlot()
     def slotConnectionClosed(self):
