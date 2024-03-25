@@ -42,6 +42,7 @@ class UserListLineEdit(QLineEdit):
     This subclass overrides the backspace and delete key behaviour.
 
     """
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Converts the given key press event into a line edit action.
@@ -56,7 +57,7 @@ class UserListLineEdit(QLineEdit):
             The key event to process
 
         """
-        if not self.hasSelectedText():  # selections are not supported
+        if not self.hasSelectedText():    # selections are not supported
             # switch key type
             key = event.key()
             if key == Qt.Key.Key_Backspace:
@@ -64,9 +65,9 @@ class UserListLineEdit(QLineEdit):
                 pos = self.cursorPosition()
                 text = self.text()
 
-                delete = None  # will hold the index span to delete
+                delete = None    # will hold the index span to delete
 
-                if pos > 1:  # check whether 0 < pos -1
+                if pos > 1:    # check whether 0 < pos -1
                     # else it will be a normal delete
                     if pos > 2 and text[pos - 1] == ' ':
                         # double backspace
@@ -75,7 +76,7 @@ class UserListLineEdit(QLineEdit):
                         # backspace and del
                         delete = (pos - 1, pos + 1)
 
-                    if delete:  # whether a double deletion should take place
+                    if delete:    # whether a double deletion should take place
                         text = text[:delete[0]] + text[delete[1]:]
                         pos = delete[0]
 
@@ -85,15 +86,15 @@ class UserListLineEdit(QLineEdit):
                         logger.debug(
                             'UserListLineEdit: Backspace deletes {}'.format(
                                 delete))
-                        return  # no more processing of this event
+                        return    # no more processing of this event
             elif key == Qt.Key.Key_Delete:
                 # check whether seperator gets deleted
                 pos = self.cursorPosition()
                 text = self.text()
 
-                delete = None  # will hold the index span to delete
+                delete = None    # will hold the index span to delete
 
-                if pos < len(text):  # check that pos isn't at the end
+                if pos < len(text):    # check that pos isn't at the end
                     # else it will be a normal delete
                     if 1 < pos and text[pos] == ' ':
                         # del and backspace
@@ -102,7 +103,7 @@ class UserListLineEdit(QLineEdit):
                         # double del
                         delete = (pos, pos + 2)
 
-                    if delete:  # whether a double deletion should take place
+                    if delete:    # whether a double deletion should take place
                         text = text[:delete[0]] + text[delete[1]:]
                         pos = delete[0]
 
@@ -112,7 +113,7 @@ class UserListLineEdit(QLineEdit):
                         logger.debug(
                             'UserListLineEdit: Delete deletes {}'.format(
                                 delete))
-                        return  # no more processing of this event
+                        return    # no more processing of this event
 
         return super().keyPressEvent(event)
 
@@ -131,6 +132,7 @@ class UsernameValidator(QValidator):
     max_length : int, optional
         The maximum length for the user name, by default None
     """
+
     def __init__(self, parent=None, max_length=None) -> None:
         """
         Init validator.
@@ -189,6 +191,7 @@ class UsernameValidator(QValidator):
 
 
 class UserListValidator(QValidator):
+
     def __init__(self,
                  parent=None,
                  max_user_length: int = None,
@@ -252,12 +255,12 @@ class UserListValidator(QValidator):
         # check and fix regular list by iterating over the letters and
         # inserting or removing letters as needed.
 
-        fixed = ''  # the fixed input string
-        new_pos = pos  # the new cursor position
+        fixed = ''    # the fixed input string
+        new_pos = pos    # the new cursor position
 
-        pre: str = None  # previous char
-        lname = 0  # the length of the currently processed word
-        lusers = 0  # the number of already processed users
+        pre: str = None    # previous char
+        lname = 0    # the length of the currently processed word
+        lusers = 0    # the number of already processed users
 
         for i, c in enumerate(input):
 
@@ -265,7 +268,7 @@ class UserListValidator(QValidator):
             if c.isspace():
                 # space at the beginning or after another space will be removed
                 if not pre or pre.isspace():
-                    if i < pos: new_pos -= 1  # adjust cursor pos
+                    if i < pos: new_pos -= 1    # adjust cursor pos
                     continue
 
                 if pre != ';':
@@ -274,12 +277,12 @@ class UserListValidator(QValidator):
                     lusers += 1
                     if self.max_users:
                         if lusers >= self.max_users:
-                            break  # max length of input reached
+                            break    # max length of input reached
 
                     # insert semicolon and space
                     pre = ' '
                     fixed += '; '
-                    if i < pos: new_pos += 1  # adjust cursor pos
+                    if i < pos: new_pos += 1    # adjust cursor pos
                 else:
                     # regular space after semicolon - no change
                     pre = c
@@ -290,14 +293,14 @@ class UserListValidator(QValidator):
                 # semicolon at start or after space or another semicolon
                 # is removed.
                 if not pre or pre.isspace() or pre == ';':
-                    if i < pos: new_pos -= 1  # adjust cursor pos
+                    if i < pos: new_pos -= 1    # adjust cursor pos
                 else:
                     # semicolon seperates the users -> new word
                     lname = 0
                     lusers += 1
                     if self.max_users:
                         if lusers >= self.max_users:
-                            break  # max length of input reached
+                            break    # max length of input reached
 
                     # add semicolon and space
                     pre = ' '
@@ -306,7 +309,7 @@ class UserListValidator(QValidator):
 
             elif re.fullmatch(r'\w', c):
                 # word - new char
-                if self.max_user_length:  # check length of the user name
+                if self.max_user_length:    # check length of the user name
                     lname += 1
                     if lname > self.max_user_length:
                         # no more chars for this user name
@@ -320,7 +323,7 @@ class UserListValidator(QValidator):
 
             else:
                 # no valid char -> remove
-                if i < pos: new_pos -= 1  # adjust cursor pos
+                if i < pos: new_pos -= 1    # adjust cursor pos
 
         # complete check
         if self.regex.fullmatch(fixed):
