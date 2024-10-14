@@ -5,10 +5,9 @@ Created on Wed Nov 25 17:50:45 2020
 @author: Simon
 """
 
+import _thread
 import socket
 import time
-import _thread
-
 
 HOST = '127.0.0.1'
 PORT = 65432
@@ -21,6 +20,7 @@ def on_new_client(clientsocket, addr):
             time.sleep(0.1)
             data = conn.recv(1024)
             print(str(data))
+
 
 while True:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
