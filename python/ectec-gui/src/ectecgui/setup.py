@@ -80,12 +80,12 @@ def setup_logging(args: Namespace, program: str, default_log_filename: str):
     if args.log_file:
         if args.log_file_path is None:
             log_dir = Path(user_log_dir(APPNAME, APPAUTHOR))
-            log_dir.mkdir(parents=True, exist_ok=True)  # ensure dir exists
+            log_dir.mkdir(parents=True, exist_ok=True)    # ensure dir exists
             log_file = log_dir / default_log_filename
         else:
             log_file = args.log_file_path
 
-        max_size = 300 * 1024 * 1024  # 300 MiB
+        max_size = 300 * 1024 * 1024    # 300 MiB
         file_handler = logs.SessionRotatingFileHandler(log_file,
                                                        sessionCount=5)
         file_handler.setFormatter(logs.EctecGuiFormatter(program))

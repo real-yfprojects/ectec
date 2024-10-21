@@ -482,7 +482,7 @@ class PackageStorage(AbstractPackageStorage):
             for recipient in recipients:
                 if recipient in pkg.recipient:
                     yield pkg
-                    break  # breaks inner loop
+                    break    # breaks inner loop
 
 
 # ---- Client - General
@@ -513,13 +513,13 @@ class Client:
     This class provides methods useful for all Ectec clients.
     """
 
-    TIMEOUT = 2  #: s timeout for awaited commands
+    TIMEOUT = 2    #: s timeout for awaited commands
 
-    TRANSMISSION_TIMEOUT = 0.200  #: seconds of timeout between parts
-    COMMAND_TIMEOUT = 0.300  #: s timeout for a command to end
-    SOCKET_BUFSIZE = 8192  #: bytes to read from socket at once
-    COMMAND_SEPERATOR = b'\n'  #: seperates commands of the ectec protocol
-    COMMAND_LENGTH = 4096  #: bytes - the maximum length of a command
+    TRANSMISSION_TIMEOUT = 0.200    #: seconds of timeout between parts
+    COMMAND_TIMEOUT = 0.300    #: s timeout for a command to end
+    SOCKET_BUFSIZE = 8192    #: bytes to read from socket at once
+    COMMAND_SEPERATOR = b'\n'    #: seperates commands of the ectec protocol
+    COMMAND_LENGTH = 4096    #: bytes - the maximum length of a command
 
     def __init__(self):
         self.socket: socket.SocketType = None
@@ -563,7 +563,7 @@ class Client:
             self.socket.settimeout(start_timeout)
 
             try:
-                msg = self.socket.recv(bufsize)  # msg was empty
+                msg = self.socket.recv(bufsize)    # msg was empty
             except socket.timeout as error:
                 raise CommandTimeout(
                     "The receiving of the data timed out.") from error
@@ -572,7 +572,7 @@ class Client:
                 # connection was closed
                 raise ConnectionClosed("The connection was closed.")
 
-        if len(msg) >= length:  # separator found
+        if len(msg) >= length:    # separator found
             data = msg[:length]
             self._buffer = msg[length:]
 
@@ -589,7 +589,7 @@ class Client:
 
         data_length = len(msg)
         needed = length - data_length
-        while True:  # ends by an error or a return
+        while True:    # ends by an error or a return
             try:
                 part = self.socket.recv(bufsize)
             except socket.timeout as error:
@@ -671,7 +671,7 @@ class Client:
             self.socket.settimeout(start_timeout)
 
             try:
-                msg = self.socket.recv(bufsize)  # msg was empty
+                msg = self.socket.recv(bufsize)    # msg was empty
             except socket.timeout as error:
                 raise CommandTimeout(
                     "The receiving of the command timed out.") from error
@@ -683,9 +683,9 @@ class Client:
         # check buffer or first data received
         i = msg.find(seperator)
 
-        if i >= 0:  # separator found
+        if i >= 0:    # separator found
             command = msg[:i]
-            self._buffer = msg[i + len(seperator):]  # seperator is removed
+            self._buffer = msg[i + len(seperator):]    # seperator is removed
 
             # for expected behavoir check length of command
             cmd_length = len(command)
@@ -706,7 +706,7 @@ class Client:
         timeout = timeout * 0.000000001 if timeout is not None else None
 
         length = len(msg)
-        while True:  # ends by an error or a return
+        while True:    # ends by an error or a return
             try:
                 part = self.socket.recv(bufsize)
             except socket.timeout as error:
@@ -718,8 +718,8 @@ class Client:
 
             time_elapsed = time.perf_counter_ns() - start_time
 
-            i = part.find(seperator)  # end of command?
-            if i >= 0:  # separator found
+            i = part.find(seperator)    # end of command?
+            if i >= 0:    # separator found
                 command = msg + part[:i]
                 # seperator is removed
                 self._buffer = part[i + len(seperator):]
@@ -1080,7 +1080,7 @@ class UserClientThread(threading.Thread):
 
                     # Handle UPDATE USERS command
                     res = self.client.parse_update(cmd)
-                    if res is not False:  # in case of empty list
+                    if res is not False:    # in case of empty list
                         # update users
                         self.client._update_users(res)
                         continue
@@ -1266,7 +1266,7 @@ class UserClient(Client, AbstractUserClient):
             self.client.disconnect()
 
             # wether to raise the Exception or suppress
-            return False  # do not suppress
+            return False    # do not suppress
 
     def connect(self, server: str, port: int):
         """
@@ -1377,7 +1377,7 @@ class UserClient(Client, AbstractUserClient):
         """
         if self._thread and self._thread.is_alive():
             self._thread.end.set()
-            self._thread.join()  # raises an exception if thread isn't alive
+            self._thread.join()    # raises an exception if thread isn't alive
 
         if self.socket:
             self.socket.close()

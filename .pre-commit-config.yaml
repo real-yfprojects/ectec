@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9 # frozen: v4.4.0
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b # frozen: v5.0.0
     hooks:
       # check file system problems
       - id: check-case-conflict
@@ -30,13 +30,13 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: cc27459d0f843a9333dd181e7451a8d041591a25 # frozen: v0.12.1
+    rev: c0af833f6d540aa5ede2bf64d6bb8ce552c3cfce # frozen: v0.21
     hooks:
       - id: validate-pyproject
         files: pyproject.toml$
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 00804a44a0c6c4d3acbd67d9a31c47049b3d8b85 # frozen: 2.7.1
+    rev: 1a92c0953500d402fc49ceb67ad7fbf7cabad38a # frozen: 3.0.3
     hooks:
       - id: editorconfig-checker
         alias: ec
@@ -44,7 +44,7 @@ repos:
           - "--disable-indent-size"
 
   - repo: https://github.com/google/yapf
-    rev: d3873c0693fe08e6233177c2f342af62547dcaa6 # frozen: v0.32.0
+    rev: 3e6cd99b6652cd00867b86e5e82a1dbccc5c0f72 # frozen: v0.40.2
     hooks:
       - id: yapf
         exclude: /ui_[^/]+\.py$|_res.py$
@@ -52,19 +52,19 @@ repos:
           - "toml"
 
   - repo: https://github.com/pycqa/isort
-    rev: dbf82f2dd09ae41d9355bcd7ab69187a19e6bf2f # frozen: 5.12.0
+    rev: c235f5e450b4b84e58d114ed4c589cbf454175a3 # frozen: 5.13.2
     hooks:
       - id: isort
         name: isort (python)
         exclude: /ui_[^/]+\.py$|_res.py$
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "cafd5506f18eea191804850dacc0a4264772d59d" # frozen: v3.0.0-alpha.4
+    rev: "f12edd9c7be1c20cfa42420fd0e6df71e42b51ea" # frozen: v4.0.0-alpha.8
     hooks:
       - id: prettier
 
   - repo: https://github.com/rstcheck/rstcheck
-    rev: "77751d7a7d81a5d47aa344d802f41809c4d063c0" # frozen: v6.1.1
+    rev: "f30c4d170a36ea3812bceb5f33004afc213bd797" # frozen: v6.2.4
     hooks:
       - id: rstcheck
         additional_dependencies: [sphinx]
@@ -82,7 +82,7 @@ repos:
   #     - id: mypy
 
   - repo: https://github.com/PyCQA/bandit
-    rev: "1ed79063e3672a1c6d91ee27cb648e07a7465344" # frozen: 1.7.4
+    rev: "36fd65054fc8864b4037d0918904f9331512feb5" # frozen: 1.7.10
     hooks:
       - id: bandit
         files: "python/ectec-gui/src/"
