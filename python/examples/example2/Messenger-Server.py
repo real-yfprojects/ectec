@@ -6,9 +6,10 @@ Created on Tue Oct 16 18:17:02 2018
 @author: Yannick Funke
 """
 
-import messengerstuff
 import socketserver
 import threading
+
+import messengerstuff
 
 port = 40000
 

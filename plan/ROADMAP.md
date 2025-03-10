@@ -17,7 +17,7 @@
 
 <br>
 
-- [x] *About*
+- [x] _About_
 
 <br>
 
@@ -53,7 +53,6 @@
 - [ ] UR: Encryption using AES
 - [ ] UR: Hashing
 - [ ] UR: Signing
-
 
 # Planned
 

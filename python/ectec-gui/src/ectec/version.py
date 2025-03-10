@@ -35,6 +35,7 @@ class VersionException(Exception):
     Superclass of all Exceptions related to versions
     """
 
+
 class Version:
     """
     The superclass of all Versions.
@@ -53,6 +54,7 @@ class SubVersionException(SemanticVersionException):
     """
     Raise if there are too many subversions in a semantic version.
     """
+
 
 @total_ordering
 class SemanticVersion(Version):

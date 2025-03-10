@@ -46,14 +46,14 @@ class PackageTestCase(unittest.TestCase):
         with self.subTest('No time, one recipient'):
             p = client.Package('testsender', 'testrecipient', 'testtype')
             self.assertEqual(p.sender, 'testsender')
-            self.assertEqual(p.recipient, ('testrecipient',))
+            self.assertEqual(p.recipient, ('testrecipient', ))
             self.assertEqual(p.content, b'')
             self.assertEqual(p.type, 'testtype')
             self.assertEqual(p.time, None)
 
         with self.subTest('No time, more recipients'):
-            p = client.Package(
-                'testsender', ['testrecipient', 'reci'], 'testtype')
+            p = client.Package('testsender', ['testrecipient', 'reci'],
+                               'testtype')
             self.assertEqual(p.sender, 'testsender')
             self.assertEqual(p.recipient, ('testrecipient', 'reci'))
             self.assertEqual(p.content, b'')
@@ -65,7 +65,7 @@ class PackageTestCase(unittest.TestCase):
             p = client.Package('testsender', 'testrecipient', 'testtype',
                                time.timestamp())
             self.assertEqual(p.sender, 'testsender')
-            self.assertEqual(p.recipient, ('testrecipient',))
+            self.assertEqual(p.recipient, ('testrecipient', ))
             self.assertEqual(p.content, b'')
             self.assertEqual(p.type, 'testtype')
             self.assertEqual(p.time, time)
@@ -118,8 +118,8 @@ class PackageTestCase(unittest.TestCase):
 
         with self.subTest('Different recipients'):
             p1 = client.Package('testsender', 'testrecipient', 'testtype')
-            p2 = client.Package(
-                'testsender', ['testrecipient', 'testman'], 'testtype')
+            p2 = client.Package('testsender', ['testrecipient', 'testman'],
+                                'testtype')
 
             self.assertNotEqual(p1, p2)
             self.assertNotEqual(hash(p1), hash(p2))
@@ -225,8 +225,9 @@ class PackageStorageTestCase(unittest.TestCase):
             self.assertEqual(ps.all(), [p2, p3, p4, p6])
 
         with self.subTest('Remove with function filter.'):
+
             def filter_function(pkg):
-                return bool(pkg.time)  # removed if there is a time
+                return bool(pkg.time)    # removed if there is a time
 
             ps = client.PackageStorage()
             ps.add(as_list=packages)
@@ -237,8 +238,9 @@ class PackageStorageTestCase(unittest.TestCase):
             self.assertEqual(ps.all(), [p1, p4, p5])
 
         with self.subTest('remove one and remove with function filter.'):
+
             def filter_function(pkg):
-                return bool(pkg.time)  # removed if there is a time
+                return bool(pkg.time)    # removed if there is a time
 
             ps = client.PackageStorage()
             ps.add(as_list=packages)
@@ -276,8 +278,8 @@ class PackageStorageTestCase(unittest.TestCase):
         p4 = client.Package('testsender', 'testrecipient', 'sometype')
         p5 = client.Package('testman', 'testrecipient', 'testtype')
         p6 = client.Package('testman', 'testrecipient', 'testtype', 2)
-        p7 = client.Package(
-            'testman', ['testrecipient', 'someman'], 'testtype', 2)
+        p7 = client.Package('testman', ['testrecipient', 'someman'],
+                            'testtype', 2)
 
         packages = [p1, p2, p3, p4, p5, p6, p7]
 
@@ -297,7 +299,7 @@ class PackageStorageTestCase(unittest.TestCase):
             ps.add(as_list=packages)
             self.assertEqual(ps.all(), packages)
 
-            filtered = list(ps.filter(recipient=('testrecipient',)))
+            filtered = list(ps.filter(recipient=('testrecipient', )))
 
             self.assertEqual(filtered, [p1, p2, p3, p4, p5, p6])
 
@@ -386,8 +388,7 @@ class PackageStorageTestCase(unittest.TestCase):
         p4 = client.Package('testsender', 'name2', 'sometype')
         p5 = client.Package('testman', 'name2', 'testtype')
         p6 = client.Package('testman', 'name3', 'testtype', 2)
-        p7 = client.Package(
-            'testman', ['name2', 'someman'], 'testtype', 2)
+        p7 = client.Package('testman', ['name2', 'someman'], 'testtype', 2)
 
         packages = [p1, p2, p3, p4, p5, p6, p7]
 
@@ -464,17 +465,16 @@ class ClientTestCase(unittest.TestCase):
     def test_recv_bytes(self):
         """Test the receiving of x random bytes."""
 
-        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000, 500 * 1000]
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096, 6500, 30000, 500 * 1000]
 
         # no buffer required
-        self.client.socket.settimeout(0)  # wrong timout - should be handled
+        self.client.socket.settimeout(0)    # wrong timout - should be handled
         for length in numbers:
             with self.subTest("Same length", length=length):
                 data = secrets.token_bytes(length)
 
-                thread = FunctionThread(
-                    target=self.client.recv_bytes, args=[length])
+                thread = FunctionThread(target=self.client.recv_bytes,
+                                        args=[length])
                 thread.start()
 
                 t1 = time.perf_counter()
@@ -495,8 +495,8 @@ class ClientTestCase(unittest.TestCase):
             with self.subTest("Buffer needed", length=length):
                 data = secrets.token_bytes(length)
 
-                thread = FunctionThread(
-                    target=self.client.recv_bytes, args=[length])
+                thread = FunctionThread(target=self.client.recv_bytes,
+                                        args=[length])
                 thread.start()
 
                 self.server_socket.sendall(data)
@@ -519,7 +519,7 @@ class ClientTestCase(unittest.TestCase):
                 t1 = time.perf_counter()
                 self.client.recv_bytes(100, start_timeout=timeout)
             t2 = time.perf_counter()
-            if t2-t1 > timeout+0.100:
+            if t2 - t1 > timeout + 0.100:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
         # test end timeout
@@ -529,31 +529,30 @@ class ClientTestCase(unittest.TestCase):
         with self.subTest("Part timout", timeout=timeout):
 
             def run(self, timeout, length):
-                times = timeout * 2 // (self.client.COMMAND_TIMEOUT*0.5)
+                times = timeout * 2 // (self.client.COMMAND_TIMEOUT * 0.5)
                 for i in range(int(times)):
-                    data = secrets.token_bytes(length//10)
+                    data = secrets.token_bytes(length // 10)
 
                     self.server_socket.sendall(data)
-                    time.sleep(self.client.COMMAND_TIMEOUT*0.5)
+                    time.sleep(self.client.COMMAND_TIMEOUT * 0.5)
 
             thread = FunctionThread(target=run, args=[self, timeout, length])
             thread.start()
             with self.assertRaises(client.CommandTimeout):
                 t1 = time.perf_counter()
-                self.client.recv_bytes(length, timeout=timeout)  # in seconds
+                self.client.recv_bytes(length, timeout=timeout)    # in seconds
             t2 = time.perf_counter()
             thread.join()
 
-            if t2-t1 > timeout+self.client.COMMAND_TIMEOUT:
+            if t2 - t1 > timeout + self.client.COMMAND_TIMEOUT:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
     def test_recv_command(self):
         """Test the receiving of a random command."""
-        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000, 500 * 1000]
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096, 6500, 30000, 500 * 1000]
 
         # no buffer required
-        self.client.socket.settimeout(0)  # wrong timout - should be handled
+        self.client.socket.settimeout(0)    # wrong timout - should be handled
         for length in numbers:
             with self.subTest("Same length", length=length):
                 data = secrets.token_bytes(length).replace(
@@ -561,11 +560,11 @@ class ClientTestCase(unittest.TestCase):
 
                 thread = FunctionThread(
                     target=self.client.recv_command,
-                    args=[length*2 + len(self.client.COMMAND_SEPERATOR)])
+                    args=[length * 2 + len(self.client.COMMAND_SEPERATOR)])
                 thread.start()
 
-                self.server_socket.sendall(
-                    data + self.client.COMMAND_SEPERATOR)
+                self.server_socket.sendall(data +
+                                           self.client.COMMAND_SEPERATOR)
 
                 thread.join()
 
@@ -582,12 +581,13 @@ class ClientTestCase(unittest.TestCase):
                 data = secrets.token_bytes(length).replace(
                     self.client.COMMAND_SEPERATOR, b'a')
 
-                thread = FunctionThread(
-                    target=self.client.recv_command, args=[length*2])
+                thread = FunctionThread(target=self.client.recv_command,
+                                        args=[length * 2])
                 thread.start()
 
-                self.server_socket.sendall(
-                    data[:-4] + self.client.COMMAND_SEPERATOR + data[-4:])
+                self.server_socket.sendall(data[:-4] +
+                                           self.client.COMMAND_SEPERATOR +
+                                           data[-4:])
 
                 thread.join()
 
@@ -607,7 +607,7 @@ class ClientTestCase(unittest.TestCase):
                 t1 = time.perf_counter()
                 self.client.recv_command(100, start_timeout=timeout)
             t2 = time.perf_counter()
-            if t2-t1 > timeout+0.100:
+            if t2 - t1 > timeout + 0.100:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
         # test end timeout
@@ -617,24 +617,24 @@ class ClientTestCase(unittest.TestCase):
         with self.subTest("Part timout", timeout=timeout):
 
             def run(self, timeout, length):
-                times = timeout * 2 // (self.client.COMMAND_TIMEOUT*0.5)
+                times = timeout * 2 // (self.client.COMMAND_TIMEOUT * 0.5)
                 for i in range(int(times)):
-                    data = secrets.token_bytes(length//10).replace(
+                    data = secrets.token_bytes(length // 10).replace(
                         self.client.COMMAND_SEPERATOR, b'a')
 
                     self.server_socket.sendall(data)
-                    time.sleep(self.client.COMMAND_TIMEOUT*0.5)
+                    time.sleep(self.client.COMMAND_TIMEOUT * 0.5)
 
             thread = FunctionThread(target=run, args=[self, timeout, length])
             thread.start()
             with self.assertRaises(client.CommandTimeout):
                 t1 = time.perf_counter()
-                self.client.recv_command(
-                    length*2, timeout=timeout)  # in seconds
+                self.client.recv_command(length * 2,
+                                         timeout=timeout)    # in seconds
             t2 = time.perf_counter()
             thread.join()
 
-            if t2-t1 > timeout+self.client.COMMAND_TIMEOUT:
+            if t2 - t1 > timeout + self.client.COMMAND_TIMEOUT:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
     def test_parse_info(self):
@@ -818,30 +818,32 @@ class ClientTestCase(unittest.TestCase):
 
             ans = self.server_socket.recv(4096)
 
-            self.assertEqual(ans, b'HELLO test g3' +
-                             self.client.COMMAND_SEPERATOR)
+            self.assertEqual(ans,
+                             b'HELLO test g3' + self.client.COMMAND_SEPERATOR)
 
         with self.subTest("With data"):
             self.client.send_command('HELLO test g3', b'gjkl')
 
             ans = self.server_socket.recv(4096)
 
-            self.assertEqual(ans, b'HELLO test g3' +
-                             self.client.COMMAND_SEPERATOR + b'gjkl')
+            self.assertEqual(
+                ans,
+                b'HELLO test g3' + self.client.COMMAND_SEPERATOR + b'gjkl')
 
     def test_send_info(self):
         self.client.send_info('testversion')
         ans = self.server_socket.recv(4096)
 
-        self.assertEqual(ans, b'INFO testversion' +
-                         self.client.COMMAND_SEPERATOR)
+        self.assertEqual(ans,
+                         b'INFO testversion' + self.client.COMMAND_SEPERATOR)
 
     def test_send_register(self):
         self.client.send_register('testname', 'testrole')
         ans = self.server_socket.recv(4096)
 
-        self.assertEqual(ans, b'REGISTER testname AS testrole' +
-                         self.client.COMMAND_SEPERATOR)
+        self.assertEqual(
+            ans,
+            b'REGISTER testname AS testrole' + self.client.COMMAND_SEPERATOR)
 
     def test_send_package(self):
         sep = self.client.COMMAND_SEPERATOR
@@ -929,23 +931,23 @@ class UserClientThreadTestCase(unittest.TestCase):
 
     @unittest.skip("Not implemented yet.")
     def test_bad_command(self):
-        pass  # TODO test_bad_command
+        pass    # TODO test_bad_command
 
     @unittest.skip("Not implemented yet.")
     def test_package(self):
-        pass  # TODO test_package
+        pass    # TODO test_package
 
     @unittest.skip("Not implemented yet.")
     def test_update(self):
-        pass  # TODO test_update
+        pass    # TODO test_update
 
     @unittest.skip("Not implemented yet.")
     def test_error(self):
-        pass  # TODO test_error
+        pass    # TODO test_error
 
     @unittest.skip("Not implemented yet.")
     def test_all_commands(self):
-        pass  # TODO test_all_commands
+        pass    # TODO test_all_commands
 
 
 class UserClientTestCase(unittest.TestCase):

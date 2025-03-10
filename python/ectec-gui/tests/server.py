@@ -38,7 +38,6 @@ ectec = _import_ectec('server', 'version')
 ectecserver = ectec.server
 ectecversion = ectec.version
 
-
 # ---- TestCases
 
 CLIENTS = copy.deepcopy(ectecserver.ClientHandler.clients)
@@ -64,8 +63,8 @@ class ClientHandlerTestCase(unittest.TestCase):
         # connect client socket
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.connect_thread = FunctionThread(
-            target=self.server_socket.accept, daemon=True)
+        self.connect_thread = FunctionThread(target=self.server_socket.accept,
+                                             daemon=True)
         self.connect_thread.start()
 
         self.client_socket.connect(("127.0.0.1", port))
@@ -87,9 +86,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
         TestHandler.clients = copy.deepcopy(CLIENTS)
 
-        self.handler = TestHandler(self.handler_socket,
-                                   self.address,
-                                   server)
+        self.handler = TestHandler(self.handler_socket, self.address, server)
         self.handler.log = mock.MagicMock(spec=logging.LoggerAdapter)
         self.handler.setup()
 
@@ -106,17 +103,16 @@ class ClientHandlerTestCase(unittest.TestCase):
     def test_recv_bytes(self):
         """Test the `receiving of x random bytes."""
 
-        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000, 500 * 1000]
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096, 6500, 30000, 500 * 1000]
 
         # no buffer required
-        self.handler_socket.settimeout(0)  # wrong timout - should be handled
+        self.handler_socket.settimeout(0)    # wrong timout - should be handled
         for length in numbers:
             with self.subTest("Same length", length=length):
                 data = secrets.token_bytes(length)
 
-                thread = FunctionThread(
-                    target=self.handler.recv_bytes, args=[length])
+                thread = FunctionThread(target=self.handler.recv_bytes,
+                                        args=[length])
                 thread.start()
 
                 t1 = time.perf_counter()
@@ -137,8 +133,8 @@ class ClientHandlerTestCase(unittest.TestCase):
             with self.subTest("Buffer needed", length=length):
                 data = secrets.token_bytes(length)
 
-                thread = FunctionThread(
-                    target=self.handler.recv_bytes, args=[length])
+                thread = FunctionThread(target=self.handler.recv_bytes,
+                                        args=[length])
                 thread.start()
 
                 self.client_socket.sendall(data)
@@ -161,7 +157,7 @@ class ClientHandlerTestCase(unittest.TestCase):
                 t1 = time.perf_counter()
                 self.handler.recv_bytes(100, start_timeout=timeout)
             t2 = time.perf_counter()
-            if t2-t1 > timeout+0.200:
+            if t2 - t1 > timeout + 0.200:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
         # test end timeout
@@ -171,31 +167,31 @@ class ClientHandlerTestCase(unittest.TestCase):
         with self.subTest("Part timout", timeout=timeout):
 
             def run(self, timeout, length):
-                times = timeout * 2 // (self.handler.COMMAND_TIMEOUT*0.5)
+                times = timeout * 2 // (self.handler.COMMAND_TIMEOUT * 0.5)
                 for i in range(int(times)):
-                    data = secrets.token_bytes(length//10)
+                    data = secrets.token_bytes(length // 10)
 
                     self.client_socket.sendall(data)
-                    time.sleep(self.handler.COMMAND_TIMEOUT*0.5)
+                    time.sleep(self.handler.COMMAND_TIMEOUT * 0.5)
 
             thread = FunctionThread(target=run, args=[self, timeout, length])
             thread.start()
             with self.assertRaises(ectecserver.CommandTimeout):
                 t1 = time.perf_counter()
-                self.handler.recv_bytes(length, timeout=timeout)  # in seconds
+                self.handler.recv_bytes(length,
+                                        timeout=timeout)    # in seconds
             t2 = time.perf_counter()
             thread.join()
 
-            if t2-t1 > timeout+self.handler.COMMAND_TIMEOUT+0.2:
+            if t2 - t1 > timeout + self.handler.COMMAND_TIMEOUT + 0.2:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
     def test_recv_command(self):
         """Test the receiving of a random command."""
-        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000, 500 * 1000]
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096, 6500, 30000, 500 * 1000]
 
         # no buffer required
-        self.handler_socket.settimeout(0)  # wrong timout - should be handled
+        self.handler_socket.settimeout(0)    # wrong timout - should be handled
         for length in numbers:
             with self.subTest("Same length", length=length):
                 data = secrets.token_bytes(length).replace(
@@ -203,11 +199,11 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                 thread = FunctionThread(
                     target=self.handler.recv_command,
-                    args=[length*2 + len(self.handler.COMMAND_SEPERATOR)])
+                    args=[length * 2 + len(self.handler.COMMAND_SEPERATOR)])
                 thread.start()
 
-                self.client_socket.sendall(
-                    data + self.handler.COMMAND_SEPERATOR)
+                self.client_socket.sendall(data +
+                                           self.handler.COMMAND_SEPERATOR)
 
                 thread.join()
 
@@ -224,12 +220,13 @@ class ClientHandlerTestCase(unittest.TestCase):
                 data = secrets.token_bytes(length).replace(
                     self.handler.COMMAND_SEPERATOR, b'a')
 
-                thread = FunctionThread(
-                    target=self.handler.recv_command, args=[length*2])
+                thread = FunctionThread(target=self.handler.recv_command,
+                                        args=[length * 2])
                 thread.start()
 
-                self.client_socket.sendall(
-                    data[:-4] + self.handler.COMMAND_SEPERATOR + data[-4:])
+                self.client_socket.sendall(data[:-4] +
+                                           self.handler.COMMAND_SEPERATOR +
+                                           data[-4:])
 
                 thread.join()
 
@@ -249,7 +246,7 @@ class ClientHandlerTestCase(unittest.TestCase):
                 t1 = time.perf_counter()
                 self.handler.recv_command(100, start_timeout=timeout)
             t2 = time.perf_counter()
-            if t2-t1 > timeout+0.200:
+            if t2 - t1 > timeout + 0.200:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
         # test end timeout
@@ -259,30 +256,29 @@ class ClientHandlerTestCase(unittest.TestCase):
         with self.subTest("Part timout", timeout=timeout):
 
             def run(self, timeout, length):
-                times = timeout * 2 // (self.handler.COMMAND_TIMEOUT*0.5)
+                times = timeout * 2 // (self.handler.COMMAND_TIMEOUT * 0.5)
                 for i in range(int(times)):
-                    data = secrets.token_bytes(length//10).replace(
+                    data = secrets.token_bytes(length // 10).replace(
                         self.handler.COMMAND_SEPERATOR, b'a')
 
                     self.client_socket.sendall(data)
-                    time.sleep(self.handler.COMMAND_TIMEOUT*0.5)
+                    time.sleep(self.handler.COMMAND_TIMEOUT * 0.5)
 
             thread = FunctionThread(target=run, args=[self, timeout, length])
             thread.start()
             with self.assertRaises(ectecserver.CommandTimeout):
                 t1 = time.perf_counter()
-                self.handler.recv_command(
-                    length*2, timeout=timeout)  # in seconds
+                self.handler.recv_command(length * 2,
+                                          timeout=timeout)    # in seconds
             t2 = time.perf_counter()
             thread.join()
 
-            if t2-t1 > timeout+self.handler.COMMAND_TIMEOUT+0.200:
+            if t2 - t1 > timeout + self.handler.COMMAND_TIMEOUT + 0.200:
                 self.fail(f"Timout too late by: {t2-t1-timeout}")
 
     def test_recv_info(self):
         """Test receiving of the INFO command."""
-        versions = ['1.1.1', '1.1.1-label',
-                    '7.2.6+meta', '3.5.2-labe+meta']
+        versions = ['1.1.1', '1.1.1-label', '7.2.6+meta', '3.5.2-labe+meta']
 
         version = ''
         with self.subTest(version=version):
@@ -323,8 +319,7 @@ class ClientHandlerTestCase(unittest.TestCase):
         for role in roles:
             for name in names:
                 with self.subTest(name=name, role=role.value):
-                    command = 'REGISTER {} AS {}'.format(name,
-                                                         role.value)
+                    command = 'REGISTER {} AS {}'.format(name, role.value)
                     command = command.encode(encoding='utf-8')
                     command += self.handler.COMMAND_SEPERATOR
 
@@ -337,12 +332,12 @@ class ClientHandlerTestCase(unittest.TestCase):
 
     def test_recv_pkg(self):
         """Test the receiving of a package using the PACKAGE command."""
-        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500, 30000]
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096, 6500, 30000]
 
         names = ['plain', '_underscore_', 'long_name', 'Numbers1234']
-        types = ['plain', 'meme/type', '_undescore_',
-                 'long-type', 'numbered133type']
+        types = [
+            'plain', 'meme/type', '_undescore_', 'long-type', 'numbered133type'
+        ]
 
         self.client_socket.settimeout(1)
 
@@ -357,9 +352,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                         template = 'PACKAGE {} FROM {} TO {} WITH {}'
 
-                        command = template.format(typ,
-                                                  sender,
-                                                  recipient,
+                        command = template.format(typ, sender, recipient,
                                                   str(length))
 
                         command = command.encode(encoding='utf-8')
@@ -369,8 +362,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                         package = (sender, recipient, typ, content)
 
-                        thread = FunctionThread(
-                            target=self.handler.recv_pkg)
+                        thread = FunctionThread(target=self.handler.recv_pkg)
                         thread.start()
 
                         self.client_socket.sendall(command)
@@ -390,9 +382,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                         template = 'PACKAGE {} FROM {} TO {} WITH {}'
 
-                        command = template.format(typ,
-                                                  sender,
-                                                  recipient,
+                        command = template.format(typ, sender, recipient,
                                                   str(length))
 
                         command = command.encode(encoding='utf-8')
@@ -402,8 +392,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                         package = (sender, recipient, typ, content)
 
-                        thread = FunctionThread(
-                            target=self.handler.recv_pkg)
+                        thread = FunctionThread(target=self.handler.recv_pkg)
                         thread.start()
 
                         self.client_socket.sendall(command)
@@ -416,17 +405,16 @@ class ClientHandlerTestCase(unittest.TestCase):
 
     def test_send_pkg(self):
         """Test the sending of a package."""
-        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096,
-                   6500,  30000, 500 * 1000]
+        numbers = [1, 2, 3, 4, 5, 6, 10, 11, 14, 4096, 6500, 30000, 500 * 1000]
 
         for length in numbers:
             with self.subTest(length=length):
                 content = secrets.token_bytes(length)
-                package = ectecserver.Package(
-                    'plain', 'plain', 'some_type', content)
+                package = ectecserver.Package('plain', 'plain', 'some_type',
+                                              content)
 
-                thread = FunctionThread(
-                    target=self.handler.send_pkg, args=[package])
+                thread = FunctionThread(target=self.handler.send_pkg,
+                                        args=[package])
                 thread.start()
 
                 command = 'PACKAGE some_type FROM plain TO plain WITH ' + \
@@ -437,7 +425,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
                 i = 0
                 result = b''
-                while i < length*0.5 and len(result) < len(expected):
+                while i < length * 0.5 and len(result) < len(expected):
                     result += self.client_socket.recv(8192)
                     i += 1
 
@@ -459,9 +447,11 @@ class ClientHandlerTestCase(unittest.TestCase):
 
         # users
         with self.subTest("3 registered users"):
-            cl = [ectecserver.ClientData('one', 'user', None, None),
-                  ectecserver.ClientData('two', 'user', None, None),
-                  ectecserver.ClientData('three', 'user', None, None)]
+            cl = [
+                ectecserver.ClientData('one', 'user', None, None),
+                ectecserver.ClientData('two', 'user', None, None),
+                ectecserver.ClientData('three', 'user', None, None)
+            ]
             self.handler.clients[ectec.Role.USER.value] = cl
 
             self.handler.send_update()
@@ -472,7 +462,7 @@ class ClientHandlerTestCase(unittest.TestCase):
 
             result = self.client_socket.recv(4096)
 
-            self.assertEqual(command+data, result)
+            self.assertEqual(command + data, result)
 
     def test_send_error(self):
         """Test the `send_error` method."""
@@ -547,7 +537,7 @@ class ClientHandlerAdvancedTestCase(unittest.TestCase):
     def test_handling_user(self):
         """Tests the handling of one user client."""
         sep = self.handler.COMMAND_SEPERATOR
-        self.client_socket.settimeout(1)  # test shouldn't hang on fail
+        self.client_socket.settimeout(1)    # test shouldn't hang on fail
 
         thread = FunctionThread(target=self.handler.handle)
         thread.start()
@@ -584,8 +574,9 @@ class ClientHandlerAdvancedTestCase(unittest.TestCase):
 
         client_list = self.handler.get_client_list()
         address = ectec.Address._make(self.client_socket.getsockname())
-        expected_list = [ectecserver.ClientData(
-            name, role, address, self.handler)]
+        expected_list = [
+            ectecserver.ClientData(name, role, address, self.handler)
+        ]
 
         self.assertEqual(client_list, expected_list)
 
