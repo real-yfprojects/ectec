@@ -24,14 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 import os.path as osp
-import unittest
 import sys
+import unittest
 
 from . import EctecTestResult, EctecTestRunner
 
 if __name__ == '__main__':
     loader = unittest.TestLoader()
-    runner = EctecTestRunner(verbosity=3, buffer=True,
+    runner = EctecTestRunner(verbosity=3,
+                             buffer=True,
                              resultclass=EctecTestResult)
     suite = suite = unittest.TestSuite([])
 

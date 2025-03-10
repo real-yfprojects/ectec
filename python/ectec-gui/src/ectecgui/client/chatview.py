@@ -49,6 +49,7 @@ class ModelPackageStorage(PackageStorage):
     model : EctecPackageModel
         The connected model.
     """
+
     def __init__(self, model: 'EctecPackageModel'):
         """
         Init a PackageStorage that is connected to a Model.
@@ -131,6 +132,7 @@ class EctecPackageModel(QAbstractListModel):
         The ModelPackageStorage used by this Model, by default None
 
     """
+
     def __init__(self,
                  parent=None,
                  storage: ModelPackageStorage = None) -> None:
@@ -198,6 +200,7 @@ class ChatViewDelegate(QStyledItemDelegate):
         The color role for the bubble's border.
 
     """
+
     def __init__(self, local_name: str, parent: Optional[QObject] = None):
         """
         Init the delegate.
@@ -480,12 +483,13 @@ class ChatViewDelegate(QStyledItemDelegate):
             tooltipRect = receiver_rect
         else:
             # no tooltip available
-            QToolTip.hideText()  # hiding the tooltip isn't done automatically
-            event.ignore()  # necessary after hiding the tooltip
+            QToolTip.hideText(
+            )    # hiding the tooltip isn't done automatically
+            event.ignore()    # necessary after hiding the tooltip
             return False
 
         # pos to global
-        tooltipPos = event.globalPos()  # cursor position on screen\
+        tooltipPos = event.globalPos()    # cursor position on screen\
 
         # Show tooltip
         QToolTip.showText(tooltipPos, tooltipText, view, tooltipRect)
@@ -536,7 +540,7 @@ class ChatViewDelegate(QStyledItemDelegate):
                                             -self.margin - self.border_width,
                                             -self.margin - self.border_width)
         indent = int(bubble_frame.width() * (1 - self.rel_size))
-        if local:  # message by local client
+        if local:    # message by local client
             bubble_frame.adjust(indent, 0, 0, 0)
         else:
             bubble_frame.adjust(0, 0, -indent, 0)
@@ -557,7 +561,7 @@ class ChatViewDelegate(QStyledItemDelegate):
             receiver_text)
         font.setItalic(False)
 
-        if local:  # message by local client
+        if local:    # message by local client
             title_rect = QRect(0, 0, inner_frame.width(),
                                receiver_rect.height())
             title_rect.translate(inner_frame.topLeft())
@@ -669,6 +673,7 @@ class ChatView(QListView):
         it should be able to cope with data of type `Package`,
         by default ChatViewDelegate.
     """
+
     def __init__(self, parent=None, local_name='', delegate=None):
         """
         Init.
@@ -705,7 +710,8 @@ class ChatView(QListView):
         """Set `local_name` in qt fashion."""
         self.local_name = str(local_name)
         if isinstance(self.itemDelegate(), ChatViewDelegate):
-            delegate = cast(ChatViewDelegate, self.itemDelegate())  # type hint
+            delegate = cast(ChatViewDelegate,
+                            self.itemDelegate())    # type hint
             delegate.local_name = local_name
 
     def localName(self) -> str:

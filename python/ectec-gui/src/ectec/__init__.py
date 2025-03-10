@@ -40,11 +40,11 @@ VERSION: Version = SemanticVersion.parse(__version__)
 
 # ---- Logging
 
-logger = logs.getLogger(__name__)  # Parent logger for the module
+logger = logs.getLogger(__name__)    # Parent logger for the module
 logger.setLevel(logs.DEBUG)
 
 # Disable logging output sot that users of this lib can log as desired.
-nullhandler = logs.NullHandler()  # Bin for logs
+nullhandler = logs.NullHandler()    # Bin for logs
 logger.addHandler(nullhandler)
 
 # ---- Exceptions Client Side

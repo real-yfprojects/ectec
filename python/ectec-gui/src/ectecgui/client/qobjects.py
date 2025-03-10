@@ -36,11 +36,10 @@ from PyQt5.QtGui import QValidator
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
 # ---- Validators ------------------------------------------------------------
 
 # host name re as specified in https://www.rfc-editor.org/rfc/rfc952 as hname
-name = r"(?!-)[a-zA-Z0-9-]+(?<!-)"  # may not start or end with a hyphen
+name = r"(?!-)[a-zA-Z0-9-]+(?<!-)"    # may not start or end with a hyphen
 hname = r"({name}.?)+".format(name=name)
 regex_hname = re.compile(hname)
 

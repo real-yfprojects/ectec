@@ -45,7 +45,7 @@ DEFAULT_PORT = 50234
 
 # ---- Logging ---------------------------------------------------------------
 
-logger = logging.getLogger(__name__)  # Parent logger for the module
+logger = logging.getLogger(__name__)    # Parent logger for the module
 logger.setLevel(logs.DEBUG)
 
 # Disable default logging behaviour by creating bin for log events

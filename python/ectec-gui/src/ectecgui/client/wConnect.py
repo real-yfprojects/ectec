@@ -46,12 +46,10 @@ from .userclient.window import UserClientWindow
 #: The function that provides internationalization by translation.
 _tr = QApplication.translate
 
-
 # ---- Logging ---------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
 
 # ---- Add widgets to the main window form -----------------------------------
 
@@ -295,7 +293,7 @@ class ConnectWindow(QtWidgets.QDialog):
         # start connecting
         self.ui.labelStatus.setText(_tr('dConnect', 'Connecting...'))
         QApplication.processEvents(
-            QEventLoop.ExcludeUserInputEvents)  # update label
+            QEventLoop.ExcludeUserInputEvents)    # update label
 
         self.ct = self.ConnectThread(self.client, address, port)
         self.ct.succeeded.connect(self.slotConnected)
@@ -336,7 +334,7 @@ class ConnectWindow(QtWidgets.QDialog):
 
         This shows a message box and inits the *Connect* phase.
         """
-        self.ct = None  # free thread
+        self.ct = None    # free thread
 
         logger.warning("Connecting failed: " + str(exception))
 
@@ -364,7 +362,7 @@ class ConnectWindow(QtWidgets.QDialog):
 
         This opens the client window matching the user role
         """
-        self.ct = None  # free thread
+        self.ct = None    # free thread
 
         role = ectec.Role(self.ui.comboBoxRole.currentText())
 

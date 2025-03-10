@@ -33,6 +33,7 @@ from PyQt5.QtCore import pyqtSignal
 
 
 class ThreadQ(QtCore.QThread):
+
     def __init__(self, parent=None, target: Callable = None):
         super().__init__(parent=parent)
         self._target = target
@@ -47,6 +48,7 @@ class ThreadQ(QtCore.QThread):
 
 
 def pyqtClassSignal(*types, name):
+
     class ClassSignal(QtCore.QObject):
 
         signal = QtCore.pyqtSignal(*types, name=name)
@@ -67,6 +69,7 @@ def pyqtClassSignal(*types, name):
 
 
 def signal(*args, name=None):
+
     class Signal(QtCore.QObject):
 
         signal = pyqtSignal(*args, name=name) if name else pyqtSignal(*args)
@@ -85,6 +88,7 @@ def signal(*args, name=None):
 
     # descriptor class
     class SignalInstancer:
+
         def __init__(self, name=None) -> None:
             self.name = name if name else None
 

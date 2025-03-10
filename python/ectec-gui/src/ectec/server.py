@@ -81,6 +81,7 @@ class ConnectionAdapter(logging.LoggerAdapter):
         More context. The default is {}.
 
     """
+
     def __init__(self, logger, remote, extra=None):
         """
         Adapter to add connection context information.
@@ -264,13 +265,13 @@ class ClientHandler(socketserver.BaseRequestHandler):
     """
 
     # ---- Process (server) wide constants
-    TIMEOUT = 0.5  #: s timeout for awaited commands
+    TIMEOUT = 0.5    #: s timeout for awaited commands
 
-    TRANSMISSION_TIMEOUT = 0.200  #: seconds of timeout between parts
-    COMMAND_TIMEOUT = 0.300  #: s timeout for a command to end
-    SOCKET_BUFSIZE = 8192  #: bytes to read from socket at once
-    COMMAND_SEPERATOR = b'\n'  #: seperates commands of the ectec protocol
-    COMMAND_LENGTH = 4096  #: bytes - the maximum length of a command
+    TRANSMISSION_TIMEOUT = 0.200    #: seconds of timeout between parts
+    COMMAND_TIMEOUT = 0.300    #: s timeout for a command to end
+    SOCKET_BUFSIZE = 8192    #: bytes to read from socket at once
+    COMMAND_SEPERATOR = b'\n'    #: seperates commands of the ectec protocol
+    COMMAND_LENGTH = 4096    #: bytes - the maximum length of a command
 
     #: Users with the listed roles are shared with all clients
     PUBLIC_ROLES = [Role.USER]
@@ -310,7 +311,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.client_data: ClientData = None
 
         #: stores received bytes that belong to the next command
-        self.buffer: bytes = bytes(0)  # bytes object with zero bytes
+        self.buffer: bytes = bytes(0)    # bytes object with zero bytes
 
         #: lock used when accessing socket for sending
         self.sending_lock = threading.Lock()
@@ -428,9 +429,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         if not compatible:
             # Version is incompatible
-            self.send_info(False)  # Tell the client
+            self.send_info(False)    # Tell the client
             self.log.debug('Incompatible version. Refused')
-            return  # The connection socket is closed automatically
+            return    # The connection socket is closed automatically
 
         self.log.debug("Version check passed. Sending answer.")
 
@@ -453,14 +454,14 @@ class ClientHandler(socketserver.BaseRequestHandler):
             raise RequestRefusedError(
                 f"'{role_str}' is not a valid role") from None
 
-        if role_str not in self.clients:  # Defined as class variable
+        if role_str not in self.clients:    # Defined as class variable
             raise RequestRefusedError(f"'{role_str}' is not a valid role")
 
         # Check if name is already used
         with self.Locks.clients:
             for dummy, client_list in self.clients.items():
-                for client in client_list:  # client : ClientData
-                    if client.name.lower() == name.lower():  # Design choice
+                for client in client_list:    # client : ClientData
+                    if client.name.lower() == name.lower():    # Design choice
                         # Name in use
                         raise RequestRefusedError(
                             f"'{name}' collides with an existing clients name")
@@ -532,7 +533,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         while True:
             try:
                 package = self.recv_pkg()
-            except (OSError, ConnectionClosed) as error:  # Connection closed
+            except (OSError, ConnectionClosed) as error:    # Connection closed
                 return
             except CommandTimeout as error:
                 # wait for next command
@@ -596,7 +597,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.request.settimeout(start_timeout)
 
             try:
-                msg = self.request.recv(bufsize)  # msg was empty
+                msg = self.request.recv(bufsize)    # msg was empty
             except socket.timeout as error:
                 raise CommandTimeout(
                     "The receiving of the data timed out.") from error
@@ -606,7 +607,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 raise ConnectionClosed(
                     "The connection was closed by the client.")
 
-        if len(msg) >= length:  # separator found
+        if len(msg) >= length:    # separator found
             data = msg[:length]
             self.buffer = msg[length:]
 
@@ -623,7 +624,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         data_length = len(msg)
         needed = length - data_length
-        while True:  # ends by an error or a return
+        while True:    # ends by an error or a return
             try:
                 part = self.request.recv(bufsize)
             except socket.timeout as error:
@@ -704,7 +705,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.request.settimeout(start_timeout)
 
             try:
-                msg = self.request.recv(bufsize)  # msg was empty
+                msg = self.request.recv(bufsize)    # msg was empty
             except socket.timeout as error:
                 raise CommandTimeout(
                     "The receiving of the command timed out.") from error
@@ -717,9 +718,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
         # check buffer or first data received
         i = msg.find(seperator)
 
-        if i >= 0:  # separator found
+        if i >= 0:    # separator found
             command = msg[:i]
-            self.buffer = msg[i + len(seperator):]  # seperator is removed
+            self.buffer = msg[i + len(seperator):]    # seperator is removed
 
             # for expected behavoir check length of command
             cmd_length = len(command)
@@ -740,7 +741,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         timeout = timeout * 0.000000001 if timeout is not None else None
 
         length = len(msg)
-        while True:  # ends by an error or a return
+        while True:    # ends by an error or a return
             try:
                 part = self.request.recv(bufsize)
             except socket.timeout as error:
@@ -753,10 +754,11 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
             time_elapsed = time.perf_counter_ns() - start_time
 
-            i = part.find(seperator)  # end of command?
-            if i >= 0:  # separator found
+            i = part.find(seperator)    # end of command?
+            if i >= 0:    # separator found
                 command = msg + part[:i]
-                self.buffer = part[i + len(seperator):]  # seperator is removed
+                self.buffer = part[i +
+                                   len(seperator):]    # seperator is removed
 
                 # for expected behavoir check length of command
                 cmd_length = len(command)
@@ -816,7 +818,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         cmd = raw_cmd.decode(encoding='utf-8', errors='backslashreplace')
 
         # match regular expression
-        match = self.regex_info.fullmatch(cmd)  # should match the whole text
+        match = self.regex_info.fullmatch(cmd)    # should match the whole text
 
         if not match:
             raise CommandError("Received data doesn't match INFO command.")
@@ -1217,7 +1219,7 @@ class EctecTCPMixIn():
             # the socket and waits for GC to perform the actual close.
             request.shutdown(socket.SHUT_RDWR)
         except OSError:
-            pass  # some platforms may raise ENOTCONN here
+            pass    # some platforms may raise ENOTCONN here
         self.close_request(request)
 
     def process_request_thread(self, request, client_address):
@@ -1246,12 +1248,12 @@ class EctecTCPMixIn():
         t.start()
 
         # Extra part
-        t.name = str(client_address[0])  # name thread after ip
-        t.request_socket = request  # add attribute
+        t.name = str(client_address[0])    # name thread after ip
+        t.request_socket = request    # add attribute
 
     def server_close(self):
         """Cleanup the server."""
-        super().server_close()  # should call socketserver.TCPServer's method
+        super().server_close()    # should call socketserver.TCPServer's method
 
         # Changed from socketserver.ThreadingMixIn
         if self.block_on_close:
@@ -1428,20 +1430,21 @@ class Server(AbstractServer):
 
     class ServerRunningContextManager:
         """The ContextManager for a running server."""
+
         def __init__(self, server):
             """Init the ContextManager"""
             self.server = server
 
         def __enter__(self):
             """Enter the context. Does nothing."""
-            return self  # not necessary
+            return self    # not necessary
 
         def __exit__(self, exc_type, exc_value, traceback):
             """Exit the context and stop the server."""
             self.server.stop()
 
             # wether to raise the Exception or suppress
-            return False  # do not suppress
+            return False    # do not suppress
 
     def start(self, port: int, address: str = ""):
         """

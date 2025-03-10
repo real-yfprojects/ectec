@@ -59,12 +59,12 @@ def indent(text, by, space=" ", prefix="", suffix=""):
         The indented text.
 
     """
-    t = ""  # Stores the indented lines and will be returned
+    t = ""    # Stores the indented lines and will be returned
 
     # Iterate of the lines of the text
     for l in text.splitlines(True):
         # The indented line is added to the result
-        t += prefix + by*space + suffix + l
+        t += prefix + by * space + suffix + l
 
     return t
 
@@ -87,5 +87,5 @@ class EctecFormatter(logging.Formatter):
         """
         Format an exception so that it prints on a single line.
         """
-        result = super().formatException(exc_info)  # Super formats for us.
-        return indent(result, 2, prefix="| >>>")  # Indent output
+        result = super().formatException(exc_info)    # Super formats for us.
+        return indent(result, 2, prefix="| >>>")    # Indent output
